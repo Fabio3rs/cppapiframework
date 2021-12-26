@@ -1,0 +1,157 @@
+#pragma once
+#ifndef LOGGING_SYSTEM_CLOG_H
+#define LOGGING_SYSTEM_CLOG_H
+#include <Poco/JSON/Object.h>
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <exception>
+#include <fstream>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <type_traits>
+#include <utility>
+
+#define CLOG_EXCEPTION_LOG(e)                                                  \
+    CLog::log().multiRegister("EXCEPTION (%0) AT %1:%2", e.what(), __FILE__,   \
+                              __LINE__)
+
+#define CLOG_LOG(format, ...)                                                  \
+    CLog::log().multiRegister("%1:%2 (%0) " format, __func__, __FILE__,   \
+                              __LINE__, __VA_ARGS__)
+
+class CLog {
+    std::mutex Logmtx;
+    std::string FileName;
+    std::fstream LogFile;
+
+    class argToString {
+        const std::string str;
+
+      public:
+        [[nodiscard]] auto getStr() const -> const std::string & { return str; }
+
+        argToString(bool value) : str(value ? "true" : "false") {}
+
+        argToString(const char *s) : str(s) {}
+
+        argToString(const std::exception &e) : str(e.what()) {}
+
+        argToString(std::string s) : str(std::move(s)) {}
+
+        template <class T,
+                  typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+        argToString(T value) : str(std::to_string(value)) {}
+    };
+
+    bool Finished;
+
+  public:
+    ~CLog() noexcept;
+    void AddToLog(const std::string &Text, const std::string &extraid = "");
+
+    template <class... Types>
+    auto multiRegister(const std::string &format, Types &&... args)
+        -> std::string {
+        const std::array<argToString,
+                         std::tuple_size<std::tuple<Types...>>::value>
+            a = {std::forward<Types>(args)...};
+        std::string printbuf;
+
+        std::string numbuf;
+
+        bool ignoreNext = false;
+
+        for (size_t i = 0, size = format.size(); i < size; i++) {
+            auto ch = format[i];
+            size_t ti = i + 1;
+
+            switch (ch) {
+            case '\\':
+                if (ignoreNext) {
+                    printbuf.insert(printbuf.end(), 1, ch);
+                    ignoreNext = false;
+                    break;
+                }
+
+                ignoreNext = true;
+                break;
+
+            case '%':
+                if (ignoreNext) {
+                    printbuf.insert(printbuf.end(), 1, ch);
+                    ignoreNext = false;
+                    break;
+                }
+
+                numbuf = "";
+
+                {
+                    bool stringEnd = true;
+                    while (ti < size) {
+                        if (format[ti] < '0' || format[ti] > '9') {
+                            i = ti - 1;
+                            if (!numbuf.empty()) {
+                                size_t argId = std::stoul(numbuf);
+
+                                if (argId >= 0 && argId < a.size()) {
+                                    printbuf += a[argId].getStr();
+                                } else {
+                                    printbuf += "%";
+                                    printbuf += numbuf;
+                                }
+
+                                stringEnd = false;
+
+                                break;
+                            }
+                        } else {
+                            numbuf.insert(numbuf.end(), 1, format[ti]);
+                        }
+
+                        ti++;
+                    }
+
+                    if (stringEnd) {
+                        i = size;
+                        if (!numbuf.empty()) {
+                            size_t argId = std::stoul(numbuf);
+
+                            if (argId >= 0 && argId < a.size()) {
+                                printbuf += a[argId].getStr();
+                            } else {
+                                printbuf += "%";
+                                printbuf += numbuf;
+                            }
+                        }
+                    }
+                }
+                break;
+
+            default:
+                ignoreNext = false;
+                printbuf.insert(printbuf.end(), 1, ch);
+                break;
+            }
+        }
+
+        AddToLog(printbuf);
+        return printbuf;
+    }
+
+    void FinishLog();
+    void SaveBuffer();
+    void operator<<(const std::string &Text) { AddToLog(Text); }
+    void logjson(Poco::JSON::Object::Ptr jsonobj, const std::string &extraid);
+    static auto GetDateAndTime() -> std::string;
+
+    static auto log(const char *filepath = nullptr) -> CLog &;
+
+    CLog(const CLog &) = delete;
+
+  private:
+    explicit CLog(const std::string &NameOfFile);
+};
+#endif
