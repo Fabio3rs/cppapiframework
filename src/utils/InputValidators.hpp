@@ -354,7 +354,7 @@ class StringLengthValidator : public InputValidator {
     [[nodiscard]] auto fail_message(std::string_view fieldname) const
         -> std::string override {
         std::string fail_message;
-        fail_message.reserve(32);
+        fail_message.reserve(56);
 
         fail_message.append(fieldname);
         fail_message.append(" deve ter entre ");

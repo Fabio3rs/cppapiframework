@@ -126,7 +126,7 @@ class CSql {
                   typename = std::enable_if_t<std::is_arithmetic<T>::value>>
         explicit argToString(T value) : str(std::to_string(value)) {}
 
-        constexpr explicit operator std::string_view() { return str; }
+        explicit operator std::string_view() { return str; }
     };
 
     using field_data_pair_t = std::pair<std::string_view, argToString>;

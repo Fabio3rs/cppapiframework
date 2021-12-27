@@ -120,6 +120,8 @@ class CController {
             stream.write(&ch, 1);
         }
         stream << Pistache::Http::ends;
+
+        return true;
     }
 
     /**
