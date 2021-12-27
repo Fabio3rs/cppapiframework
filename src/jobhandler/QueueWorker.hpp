@@ -3,7 +3,9 @@
 #include "../queues/GenericQueue.hpp"
 #include "../stdafx.hpp"
 #include "../utils/LogDefines.hpp"
+#include "../utils/ScopedStreamRedirect.hpp"
 #include "JobsHandler.hpp"
+#include <fstream>
 #include <unistd.h>
 
 namespace job {
@@ -15,7 +17,7 @@ class QueueWorker {
     std::shared_ptr<GenericQueue> queueServiceInst;
 
   protected:
-    int queueTimeout{10}, retryInTimeout{0};
+    int queueTimeout{1}, retryInTimeout{0};
     std::atomic<bool> running{true};
     std::atomic<bool> forkToHandle{false};
 
@@ -38,8 +40,8 @@ class QueueWorker {
         jobStatus result = noerror;
 
         try {
-            LOGINFO() << "Instancing job " << json->getValue<std::string>("className")
-                      << std::endl;
+            LOGINFO() << "Instancing job "
+                      << json->getValue<std::string>("className") << std::endl;
             newjob = jobhandler->instance_from_payload(json);
         } catch (const std::exception &e) {
             std::cerr << e.what() << '\n';
@@ -55,6 +57,8 @@ class QueueWorker {
             LOGINFO() << "Job " << newjob->getName() << " tries "
                       << newjob->tries << std::endl;
             newjob->tries++;
+            std::fstream joblog(json->getValue<std::string>("uuid"),
+                                std::ios::in | std::ios::out | std::ios::trunc);
 
             pid = fork_process();
 
@@ -63,13 +67,23 @@ class QueueWorker {
                 throw std::runtime_error("Fork failed");
                 break;
 
-            case 0:
+            case 0: {
+                ScopedStreamRedirect red(std::cout, joblog);
                 newjob->handle();
-                break;
+                std::cout.flush();
+            } break;
 
             default:
                 result = waitpid(pid) == 0 ? noerror
                                            : process_retry_condition(newjob);
+                if (forkToHandle) {
+                    std::string line;
+                    joblog.seekg(std::ios::beg);
+                    while (std::getline(joblog, line)) {
+                        std::cout << "JOB LINE " << line << std::endl;
+                    }
+                }
+
                 break;
             }
         } catch (const std::exception &e) {
