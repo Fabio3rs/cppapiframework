@@ -27,10 +27,23 @@ file(
     "${srcdir}/*.cpp"
 )
 
-set(TEST_COMPILE_FLAGS -Weverything -Werror -Wno-disabled-macro-expansion -Wno-global-constructors -std=c++17 -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-exit-time-destructors -Wno-global-constructors)
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything -Werror -std=c++17 -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors")
-
 add_executable(apiframework_test ${ALL_TESTS_SOURCES} ${QUEUES_SOURCES} ${UTILS_SOURCES} ${JOBHANDLER_SOURCES})
+
+# Compiler-specific compile flags
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    message(STATUS "Setting G++ flags")
+    # G++
+    target_compile_options(apiframework_test PRIVATE -Wall -Werror -Wextra -std=c++17 -Wformat-security -Wconversion -Wsign-conversion)
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
+    message(STATUS "Setting MSVC flags")
+    # MSVC
+    target_compile_options(apiframework_test PRIVATE /EHsc /W2 /c)
+elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    message(STATUS "Setting Clang flags")
+    target_compile_options(apiframework_test PRIVATE -o2 -Weverything -Werror -std=c++17 -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors)
+    # Clang-tidy
+    set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-header-filter=${CMAKE_CURRENT_SOURCE_DIR}/src;--warnings-as-errors=\"*\";-extra-arg=-std=c++17;-export-fixes;-checks=read*,modern*,hicpp*,performance*")
+endif()
 
 target_precompile_headers(apiframework_test PRIVATE "${msrcdir}/stdafx.hpp")
 

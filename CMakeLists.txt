@@ -2,7 +2,6 @@ set(projectname cppapiframework)
 
 cmake_minimum_required(VERSION 3.6.0)
 project(${projectname} VERSION 0.1.0)
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything -Werror -std=c++17 -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -55,7 +54,7 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
     target_compile_options(${projectname} PRIVATE /EHsc /W2 /c)
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     message(STATUS "Setting Clang flags")
-    target_compile_options(${projectname} PRIVATE -Weverything -Werror -Wno-date-time -Wno-disabled-macro-expansion -Wno-global-constructors -std=c++17 -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-exit-time-destructors)
+    target_compile_options(${PROJECT_NAME} PRIVATE -o2 -Weverything -Werror -std=c++17 -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors)
     # Clang-tidy
     set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-header-filter=${CMAKE_CURRENT_SOURCE_DIR}/src;--warnings-as-errors=\"*\";-extra-arg=-std=c++17;-export-fixes;-checks=read*,modern*,hicpp*,performance*")
 endif()
