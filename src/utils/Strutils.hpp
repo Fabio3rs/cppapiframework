@@ -74,6 +74,61 @@ class Strutils {
 
         return result;
     }
+
+    static auto url_decode(const std::string &str) -> std::string {
+        std::string result;
+        result.reserve(str.size());
+
+        std::unordered_map<char, int> arrmap = {
+            std::pair<char, int>('0', 0),   std::pair<char, int>('1', 1),
+            std::pair<char, int>('2', 2),   std::pair<char, int>('3', 3),
+            std::pair<char, int>('4', 4),   std::pair<char, int>('5', 5),
+            std::pair<char, int>('6', 6),   std::pair<char, int>('7', 7),
+            std::pair<char, int>('8', 8),   std::pair<char, int>('9', 9),
+            std::pair<char, int>('A', 0xA), std::pair<char, int>('B', 0xB),
+            std::pair<char, int>('C', 0xC), std::pair<char, int>('D', 0xD),
+            std::pair<char, int>('E', 0xE), std::pair<char, int>('F', 0xF),
+        };
+
+        int chrsize = 0;
+        int tempchchr = 0;
+        bool inchr = false;
+
+        for (auto &c : str) {
+            if (chrsize == 2) {
+                result.append(1u, static_cast<char>(tempchchr));
+                inchr = false;
+                chrsize = 0;
+                tempchchr = 0;
+            }
+
+            if (c == '%') {
+                inchr = true;
+                chrsize = 0;
+                tempchchr = 0;
+                continue;
+            }
+
+            if (inchr) {
+                if (chrsize == 0) {
+                    tempchchr = 0;
+                    tempchchr |= arrmap[c] << 4;
+                    ++chrsize;
+                } else {
+                    tempchchr |= arrmap[c];
+                    ++chrsize;
+                }
+            } else {
+                result.append(1u, c);
+            }
+        }
+
+        if (chrsize == 2) {
+            result.append(1u, static_cast<char>(tempchchr));
+        }
+
+        return result;
+    }
 };
 
 #endif
