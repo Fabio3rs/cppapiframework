@@ -41,7 +41,8 @@ auto CController::default_json_return(bool success, const std::string &msg)
     return result;
 }
 
-auto CController::default_json_return(bool success, const std::string &msg, const Poco::UUID &uuid)
+auto CController::default_json_return(bool success, const std::string &msg,
+                                      const Poco::UUID &uuid)
     -> Poco::JSON::Object::Ptr {
     Poco::JSON::Object::Ptr result(new Poco::JSON::Object);
 

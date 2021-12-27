@@ -185,4 +185,3 @@ template <class poolobject_t> class BorrowPool {
 };
 
 #endif
-

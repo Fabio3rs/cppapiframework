@@ -52,7 +52,7 @@ class DBMigrate {
 
     /**
      *@brief Apaga todas as tabelas desse db
-     * 
+     *
      */
     void drop_all();
 

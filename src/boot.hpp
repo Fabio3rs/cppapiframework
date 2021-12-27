@@ -2,8 +2,6 @@
 
 #include "stdafx.hpp"
 
-namespace apiframework{
-    int mainboot(int argc, char *argv[], char **envp);
+namespace apiframework {
+int mainboot(int argc, char *argv[], char **envp);
 }
-
-

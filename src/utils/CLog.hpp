@@ -19,7 +19,7 @@
                               __LINE__)
 
 #define CLOG_LOG(format, ...)                                                  \
-    CLog::log().multiRegister("%1:%2 (%0) " format, __func__, __FILE__,   \
+    CLog::log().multiRegister("%1:%2 (%0) " format, __func__, __FILE__,        \
                               __LINE__, __VA_ARGS__)
 
 class CLog {

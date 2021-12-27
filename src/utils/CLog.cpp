@@ -1,8 +1,8 @@
 #include "CLog.hpp"
-#include <exception>
-#include <iostream>
 #include <cstdio>
 #include <ctime>
+#include <exception>
+#include <iostream>
 
 #ifndef LOG_FILE_NAME_PATH
 #define LOG_FILE_NAME_PATH "program.log"
@@ -17,7 +17,7 @@ CLog::CLog(const std::string &NameOfFile) {
     Finished = false;
     FileName = NameOfFile;
     std::cout << "Iniciando log em " << NameOfFile << std::endl;
-    //LogFile.rdbuf()->pubsetbuf(nullptr, 0);
+    // LogFile.rdbuf()->pubsetbuf(nullptr, 0);
     LogFile.open(NameOfFile, std::ios::out | std::ios::app);
 
     if (!LogFile.good()) {
@@ -86,7 +86,7 @@ void CLog::logjson(Poco::JSON::Object::Ptr jsonobj,
     Temp.reserve(64);
     Temp += GetDateAndTime();
     Temp += ": ";
-    
+
     if (jsonobj.isNull()) {
         Temp += extraid;
         Temp += " JSON Object is NULL";

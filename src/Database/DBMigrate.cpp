@@ -37,7 +37,7 @@ void DBMigrate::init_migration_table() {
 void DBMigrate::drop_all() {
     /**
      *@brief Unimplemented
-     * 
+     *
      */
 }
 

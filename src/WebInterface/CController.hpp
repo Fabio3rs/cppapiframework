@@ -60,7 +60,8 @@ class CController {
     static auto default_json_return(bool success, const std::string &msg)
         -> Poco::JSON::Object::Ptr;
 
-    static auto default_json_return(bool success, const std::string &msg, const Poco::UUID &uuid)
+    static auto default_json_return(bool success, const std::string &msg,
+                                    const Poco::UUID &uuid)
         -> Poco::JSON::Object::Ptr;
 
     static auto default_json_return_as_str(bool success, const std::string &msg)

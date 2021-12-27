@@ -4,80 +4,80 @@
 auto ObjectValidator::validate(std::string_view fieldname,
                                const Poco::Dynamic::Var &s)
     -> Poco::Dynamic::Var {
-  // Recebemos um valor null
-  // TODO: Implementar para controlar essa checagem se retorna erro ou não?
-  if (s.isEmpty()) {
-    return Poco::Dynamic::Var();
-  }
+    // Recebemos um valor null
+    // TODO: Implementar para controlar essa checagem se retorna erro ou não?
+    if (s.isEmpty()) {
+        return Poco::Dynamic::Var();
+    }
 
-  Poco::JSON::Object::Ptr ptr;
+    Poco::JSON::Object::Ptr ptr;
 
-  try {
-    ptr = s.extract<Poco::JSON::Object::Ptr>();
-  } catch (const std::exception & /***/) {
-    // std::cerr << e.what() << '\n';
-    return fail_message(fieldname);
-  }
+    try {
+        ptr = s.extract<Poco::JSON::Object::Ptr>();
+    } catch (const std::exception & /***/) {
+        // std::cerr << e.what() << '\n';
+        return fail_message(fieldname);
+    }
 
-  if (ptr.isNull()) {
-    return fail_message(fieldname);
-  }
+    if (ptr.isNull()) {
+        return fail_message(fieldname);
+    }
 
-  ControllerInputValidator inputval(ptr);
+    ControllerInputValidator inputval(ptr);
 
-  validatefn(fieldname, inputval);
+    validatefn(fieldname, inputval);
 
-  auto responsedata = inputval.get_only_messages();
+    auto responsedata = inputval.get_only_messages();
 
-  if (responsedata.isNull()) {
-    return Poco::Dynamic::Var();
-  }
+    if (responsedata.isNull()) {
+        return Poco::Dynamic::Var();
+    }
 
-  return responsedata;
+    return responsedata;
 }
 
 auto ArrayValidator::validate(std::string_view fieldname,
                               const Poco::Dynamic::Var &s)
     -> Poco::Dynamic::Var {
-  // Recebemos um valor null
-  // TODO: Implementar para controlar essa checagem se retorna erro ou não?
-  if (s.isEmpty()) {
-    return Poco::Dynamic::Var();
-  }
-
-  Poco::JSON::Array::Ptr ptr;
-
-  try {
-    ptr = s.extract<Poco::JSON::Array::Ptr>();
-  } catch (const std::exception & /***/) {
-    // std::cerr << e.what() << '\n';
-    return fail_message(fieldname);
-  }
-
-  if (ptr.isNull()) {
-    return fail_message(fieldname);
-  }
-
-  Poco::JSON::Object::Ptr temporaryObject;
-  Poco::Dynamic::Var resultadoValidacao;
-
-  size_t index = 0;
-  for (auto &data : (*ptr)) {
-
-    resultadoValidacao = validatefn(fieldname, index, data);
-
-    // faz algo com o resultado aqui, por exemplo validar por linhas
-    if (resultadoValidacao.isEmpty()) {
-      if (temporaryObject.isNull()) {
-        temporaryObject = new Poco::JSON::Object;
-      }
-
-      temporaryObject->set(std::to_string(index), resultadoValidacao);
+    // Recebemos um valor null
+    // TODO: Implementar para controlar essa checagem se retorna erro ou não?
+    if (s.isEmpty()) {
+        return Poco::Dynamic::Var();
     }
-    ++index;
-  }
 
-  return resultadoValidacao;
+    Poco::JSON::Array::Ptr ptr;
+
+    try {
+        ptr = s.extract<Poco::JSON::Array::Ptr>();
+    } catch (const std::exception & /***/) {
+        // std::cerr << e.what() << '\n';
+        return fail_message(fieldname);
+    }
+
+    if (ptr.isNull()) {
+        return fail_message(fieldname);
+    }
+
+    Poco::JSON::Object::Ptr temporaryObject;
+    Poco::Dynamic::Var resultadoValidacao;
+
+    size_t index = 0;
+    for (auto &data : (*ptr)) {
+
+        resultadoValidacao = validatefn(fieldname, index, data);
+
+        // faz algo com o resultado aqui, por exemplo validar por linhas
+        if (resultadoValidacao.isEmpty()) {
+            if (temporaryObject.isNull()) {
+                temporaryObject = new Poco::JSON::Object;
+            }
+
+            temporaryObject->set(std::to_string(index), resultadoValidacao);
+        }
+        ++index;
+    }
+
+    return resultadoValidacao;
 }
 
 RequiredValidator::~RequiredValidator() {}

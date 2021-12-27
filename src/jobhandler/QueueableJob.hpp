@@ -149,7 +149,7 @@ class QueueableJob {
 
 /**
  * @brief Defines the serialization functions for the job
- * 
+ *
  */
 #define QUEUEABLE_SERIALIZE(...)                                               \
     auto dump_json() const->Poco::JSON::Object::Ptr override {                 \
