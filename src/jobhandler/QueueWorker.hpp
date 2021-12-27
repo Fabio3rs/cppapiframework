@@ -35,10 +35,23 @@ class QueueWorker {
         return errorremove;
     }
 
-    jobStatus work(const std::string & /***/, Poco::JSON::Object::Ptr &json) {
+    /**
+     * @brief instanciates and run the job
+     * @todo improve the error catching design, log the tries
+     *
+     * param queue queue name
+     * @param json json payload
+     * @return jobStatus job result
+     */
+    jobStatus work(const std::string & /*queue*/,
+                   Poco::JSON::Object::Ptr &json) {
         std::shared_ptr<QueueableJob> newjob;
         jobStatus result = noerror;
 
+        /**
+         * @brief allocate and construct the instance
+         *
+         */
         try {
             LOGINFO() << "Instancing job "
                       << json->getValue<std::string>("className") << std::endl;
@@ -56,10 +69,15 @@ class QueueWorker {
         try {
             LOGINFO() << "Job " << newjob->getName() << " tries "
                       << newjob->tries << std::endl;
+
             newjob->tries++;
             std::fstream joblog(json->getValue<std::string>("uuid"),
                                 std::ios::in | std::ios::out | std::ios::trunc);
 
+            /**
+             * @brief Fork the process if the flag is enabled
+             *
+             */
             pid = fork_process();
 
             switch (pid) {
@@ -92,6 +110,10 @@ class QueueWorker {
         }
 
         if (forkToHandle && pid == 0) {
+            /**
+             * @brief Forked process exit with result
+             *
+             */
             exit(result);
         }
 
@@ -100,6 +122,10 @@ class QueueWorker {
                       << std::endl;
         }
 
+        /**
+         * @brief Refresh the payload
+         *
+         */
         if (result == errorretry) {
             auto tmpptr = jobhandler->recreate_jobpayload(json, *newjob);
 
