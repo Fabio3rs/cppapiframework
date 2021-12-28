@@ -322,6 +322,11 @@ template <class... Types> class OrValidator : public InputValidator {
     ~OrValidator() override {}
 };
 
+template<class... Types>
+static inline auto make_orvalidator(Types &&... args){
+    return OrValidator<Types...>(std::forward<Types>(args)...);
+}
+
 class StringLengthValidator : public InputValidator {
     size_t min;
     size_t max;

@@ -114,3 +114,19 @@ TEST(InputValidatorTest, CheckArrayValidator) {
 
     EXPECT_FALSE(arrval.validate(mockfname, mockarr).isEmpty());
 }
+
+TEST(InputValidatorTest, CheckOrValidator) {
+    auto orval = make_orvalidator(IntegerValidator(), EmailValidator());
+
+    EXPECT_FALSE(orval.validate(mockfname, "").isEmpty());
+    EXPECT_FALSE(orval.validate(mockfname, "aaaaa").isEmpty());
+    EXPECT_FALSE(orval.validate(mockfname, "a-123456").isEmpty());
+
+    EXPECT_FALSE(orval.validate(mockfname, "aaaaa@bbbb").isEmpty());
+    EXPECT_TRUE(orval.validate(mockfname, "aaaaa@bbbb.com").isEmpty());
+    EXPECT_TRUE(orval.validate(mockfname, "aaa.aa@bbbb.com").isEmpty());
+    EXPECT_TRUE(orval.validate(mockfname, "aaa_aa@bbbb.com").isEmpty());
+    EXPECT_TRUE(orval.validate(mockfname, "123456").isEmpty());
+    EXPECT_TRUE(orval.validate(mockfname, "123456789101112").isEmpty());
+    EXPECT_TRUE(orval.validate(mockfname, "123456789101112").isEmpty());
+}
