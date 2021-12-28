@@ -122,6 +122,11 @@ class RedisService {
     template <class T>
     auto set_cache(const std::pair<std::string, T> &data, int key_expire = 0) {
         auto connection = get_connection();
+
+        if (!connection) {
+            return T{};
+        }
+
         return set_cache<T>(*connection, data, key_expire);
     }
 
@@ -133,6 +138,11 @@ class RedisService {
 
     template <class T> auto get_cache(const std::string &key_name) {
         auto connection = get_connection();
+
+        if (!connection) {
+            return T{};
+        }
+
         return get_cache<T>(*connection, key_name);
     }
 
