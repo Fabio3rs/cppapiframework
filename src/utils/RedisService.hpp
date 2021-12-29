@@ -233,6 +233,24 @@ class RedisService {
         return hset(*connection, key_name, map);
     }
 
+    static auto hdel(Poco::Redis::Client &inst, const std::string &key_name,
+                     const std::vector<std::string> &fieldsname) -> int64_t {
+        Poco::Redis::Command hdelcmd =
+            Poco::Redis::Command::hdel(key_name, fieldsname);
+        return inst.execute<int64_t>(hdelcmd);
+    }
+
+    auto hdel(const std::string &key_name,
+              const std::vector<std::string> &fieldsname) -> int64_t {
+        auto connection = get_connection();
+
+        if (!connection) {
+            return -1;
+        }
+
+        return hdel(*connection, key_name, fieldsname);
+    }
+
     static auto del(Poco::Redis::Client &inst,
                     const std::vector<std::string> &keysname) -> int64_t {
         Poco::Redis::Command delcmd = Poco::Redis::Command::del(keysname);

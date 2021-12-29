@@ -44,6 +44,38 @@ TEST(TestRedisService, hgetReturnsOne) {
     EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
 }
 
+TEST(TestRedisService, hdelTest) {
+    std::cout << "Using redis key " << test_hashset_key << std::endl;
+    EXPECT_EQ(RedisService::default_inst().hset(
+                  test_hashset_key,
+                  {{"firstkey", "firstdata"}, {"secondkey", "seconddata"}}),
+              2);
+
+    auto hgetallresult = RedisService::default_inst().hgetall(test_hashset_key);
+
+    EXPECT_EQ(
+        RedisService::default_inst()
+            .hget<Poco::Nullable<std::string>>(test_hashset_key, "firstkey")
+            .value(std::string()),
+        "firstdata");
+    EXPECT_EQ(
+        RedisService::default_inst()
+            .hget<Poco::Nullable<std::string>>(test_hashset_key, "secondkey")
+            .value(std::string()),
+        "seconddata");
+
+    EXPECT_EQ(RedisService::default_inst().hdel(test_hashset_key, {"firstkey"}),
+              1);
+    EXPECT_EQ(
+        RedisService::default_inst().hdel(test_hashset_key, {"secondkey"}), 1);
+    EXPECT_EQ(RedisService::default_inst().hdel(test_hashset_key, {"firstkey"}),
+              0);
+
+    EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}),
+              0); // Se não houverem mais valores isso deve retornar 0 pois a
+                  // key também não existe mais
+}
+
 TEST(TestRedisService, hgetallReturnsEverything) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
     EXPECT_EQ(RedisService::default_inst().hset(
