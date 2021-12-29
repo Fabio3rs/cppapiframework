@@ -30,26 +30,18 @@ pid_t job::QueueWorker::waitpid(pid_t pid) {
     return -1;
 }
 
-void job::QueueWorker::push(const std::string &queue,
+/*void job::QueueWorker::push(const std::string &queue,
                             const Poco::JSON::Object::Ptr &json) {
     std::stringstream sstr;
     json->stringify(sstr);
 
     queueServiceInst->push(queue, sstr.str());
-}
+}*/
 
 auto job::QueueWorker::pop(const std::string &queue, int timeout)
-    -> Poco::JSON::Object::Ptr {
+    -> std::string {
     auto data = queueServiceInst->pop(queue, timeout);
-
-    if (!data) {
-        return nullptr;
-    }
-
-    Poco::JSON::Parser parser;
-    Poco::Dynamic::Var jsonvar = parser.parse(data.value());
-
-    return jsonvar.extract<Poco::JSON::Object::Ptr>();
+    return data.value_or(std::string());
 }
 
 job::QueueWorker::~QueueWorker() {}

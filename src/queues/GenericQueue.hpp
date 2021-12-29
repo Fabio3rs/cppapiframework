@@ -16,6 +16,15 @@ class GenericQueue {
     virtual auto getName() const -> std::string = 0;
     virtual void setName(const std::string &name) = 0;
 
+    virtual auto getPersistentData(const std::string &name) const
+        -> std::unordered_map<std::string, std::string> = 0;
+        
+    virtual void
+    setPersistentData(const std::string &name,
+                      const std::unordered_map<std::string, std::string> &data) = 0;
+
+    virtual void delPersistentData(const std::string &name) = 0;
+
     virtual auto isConnected() const -> bool = 0;
 
     GenericQueue();

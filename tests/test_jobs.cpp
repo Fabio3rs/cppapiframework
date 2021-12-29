@@ -247,7 +247,7 @@ TEST(TestJobQueues, AddToTheQueueProcessRunOne) {
 
     {
         OtherPrintJob anyjob;
-        queuew.push(queue_name, handler->create_jobpayload(anyjob));
+        queuew.push(queue_name, anyjob);
         EXPECT_EQ(nqueue->getNumQueues(), 1);
         EXPECT_EQ(nqueue->getQueueSize(queue_name), 1);
     }
@@ -279,7 +279,7 @@ TEST(TestJobQueues, AddToTheQueueProcessRunOneAndFail) {
 
         anyjob.shouldfail = true; /// Force fail flag
 
-        queuew.push(queue_name, handler->create_jobpayload(anyjob));
+        queuew.push(queue_name, anyjob);
         EXPECT_EQ(nqueue->getNumQueues(), 1);
         EXPECT_EQ(nqueue->getQueueSize(queue_name), 1);
     }
@@ -315,7 +315,7 @@ TEST(TestJobQueues, AddToTheQueueProcessRunMultipleAllFail) {
 
         anyjob.setMaxTries(MAX_TRIES);
 
-        queuew.push(queue_name, handler->create_jobpayload(anyjob));
+        queuew.push(queue_name, anyjob);
         EXPECT_EQ(nqueue->getNumQueues(), 1);
         EXPECT_EQ(nqueue->getQueueSize(queue_name), 1);
     }

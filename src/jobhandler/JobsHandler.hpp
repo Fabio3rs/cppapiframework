@@ -116,10 +116,6 @@ class JobsHandler {
         Poco::JSON::Object::Ptr result(new Poco::JSON::Object);
 
         result->set("className", std::string(getTypeName<T>()));
-        result->set(
-            "uuid",
-            Poco::UUIDGenerator::defaultGenerator().createOne().toString());
-
         result->set("data", job.dump_json());
 
         return result;

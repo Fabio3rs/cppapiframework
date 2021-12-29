@@ -40,11 +40,11 @@ class QueueWorker {
      * @todo improve the error catching design, log the tries
      *
      * param queue queue name
-     * @param json json payload
+     * @param datamap all job data
      * @return jobStatus job result
      */
     jobStatus work(const std::string & /*queue*/,
-                   Poco::JSON::Object::Ptr &json) {
+                   std::unordered_map<std::string, std::string> &datamap) {
         std::shared_ptr<QueueableJob> newjob;
         jobStatus result = noerror;
 
@@ -52,14 +52,26 @@ class QueueWorker {
          * @brief allocate and construct the instance
          *
          */
+        Poco::JSON::Object::Ptr json;
         try {
-            LOGINFO() << "Instancing job "
-                      << json->getValue<std::string>("className") << std::endl;
+            LOGINFO() << "Instancing job " << datamap.at("className")
+                      << std::endl;
+
+            Poco::JSON::Parser parser;
+            json = parser.parse(datamap["payload"])
+                       .extract<Poco::JSON::Object::Ptr>();
+
+            auto dataobj = json->getObject("data");
+            dataobj->set("tries", std::stoull(datamap["tries"]));
+            dataobj->set("maxtries", std::stoull(datamap["maxtries"]));
+
             newjob = jobhandler->instance_from_payload(json);
         } catch (const std::exception &e) {
             std::cerr << e.what() << '\n';
             return errorremove;
         }
+
+        datamap.erase("payload");
 
         if (!newjob) {
             return errorretry;
@@ -127,11 +139,8 @@ class QueueWorker {
          *
          */
         if (result == errorretry) {
-            auto tmpptr = jobhandler->recreate_jobpayload(json, *newjob);
-
-            if (tmpptr) {
-                json = tmpptr;
-            }
+            datamap["tries"] = std::to_string(newjob->getTries());
+            datamap["maxtries"] = std::to_string(newjob->getMaxTries());
         }
 
         return result;
@@ -140,41 +149,72 @@ class QueueWorker {
     pid_t fork_process();
     pid_t waitpid(pid_t pid);
 
-    void push(const std::string &queue, const Poco::JSON::Object::Ptr &json);
-    auto pop(const std::string &queue, int timeout) -> Poco::JSON::Object::Ptr;
+    template <class T> void push(const std::string &queue, const T &job) {
+        auto json = jobhandler->create_jobpayload(job);
+        constexpr size_t KEYSIZE = sizeof("job_instance:") + 36;
+        std::string jobuuid =
+            Poco::UUIDGenerator::defaultGenerator().createOne().toString();
+
+        std::string persistentkey;
+        persistentkey.reserve(KEYSIZE);
+        persistentkey = "job_instance:";
+        persistentkey += jobuuid;
+
+        json->set("uuid", jobuuid);
+
+        std::stringstream sstr;
+        json->stringify(sstr);
+
+        queueServiceInst->setPersistentData(
+            persistentkey, {{"tries", "0"},
+                            {"maxtries", std::to_string(job.getMaxTries())},
+                            {"payload", sstr.str()},
+                            {"created_at_unixt", std::to_string(time(nullptr))},
+                            {"className", std::string(job.getName())}});
+
+        queueServiceInst->push(queue, persistentkey);
+    }
+
+    // void push(const std::string &queue, const Poco::JSON::Object::Ptr &json);
+    auto pop(const std::string &queue, int timeout) -> std::string;
 
     /**
      * @brief Process the job result, re-adds in the queue if is errorretry
      *
      * @param queue queue name
-     * @param jobpayload job json payload
+     * @param jobname name of the job to the queue
      * @param workresult job run result
      */
-    void process_job_result(const std::string &queue,
-                            const Poco::JSON::Object::Ptr &jobpayload,
-                            jobStatus workresult) {
+    void process_job_result(
+        const std::string &queue, const std::string &jobname,
+        const std::unordered_map<std::string, std::string> &datamap,
+        jobStatus workresult) {
         switch (workresult) {
         case noerror:
-            /* code */
+            queueServiceInst->delPersistentData(jobname);
             break;
 
         case errorremove:
             break;
 
         case errorretry:
-            push(queue, jobpayload);
+            queueServiceInst->setPersistentData(jobname, datamap);
+            queueServiceInst->push(queue, jobname);
             break;
         }
     }
 
-    bool do_one(const std::string &queue, Poco::JSON::Object::Ptr &jobpayload) {
-        if (jobpayload.isNull()) {
+    bool do_one(const std::string &queue, std::string &jobname) {
+        if (jobname.empty()) {
             return false;
         }
 
-        jobStatus workresult = work(queue, jobpayload);
+        LOGINFO() << "Job UUID name " << jobname << std::endl;
+        auto jobdata = queueServiceInst->getPersistentData(jobname);
 
-        process_job_result(queue, jobpayload, workresult);
+        jobStatus workresult = work(queue, jobdata);
+
+        process_job_result(queue, jobname, jobdata, workresult);
 
         return true;
     }
@@ -189,7 +229,7 @@ class QueueWorker {
     bool do_one(const std::string &queue) {
         auto jobpayload = pop(queue, queueTimeout);
 
-        if (jobpayload.isNull()) {
+        if (jobpayload.empty()) {
             return false;
         }
 
