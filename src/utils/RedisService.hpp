@@ -146,6 +146,109 @@ class RedisService {
         return get_cache<T>(*connection, key_name);
     }
 
+    template <class T>
+    static auto hget(Poco::Redis::Client &inst, const std::string &key_name,
+                     const std::string &field) {
+        return inst.execute<T>(Poco::Redis::Command::hget(key_name, field));
+    }
+
+    template <class T>
+    auto hget(const std::string &key_name, const std::string &field) {
+        auto connection = get_connection();
+
+        if (!connection) {
+            return T{};
+        }
+
+        return hget<T>(*connection, key_name, field);
+    }
+
+    static auto hgetall(Poco::Redis::Client &inst,
+                        const std::string &key_name) {
+        auto result = inst.execute<Poco::Redis::Array>(
+            Poco::Redis::Command::hgetall(key_name));
+
+        std::unordered_map<std::string, std::string> resultmap;
+        if (result.isNull()) {
+            return resultmap;
+        }
+
+        if (result.size() % 2 != 0) {
+            throw std::runtime_error("hgetall result is not multiple of 2");
+        }
+
+        resultmap.reserve(result.size() / 2);
+
+        for (unsigned int i = 0; i < result.size(); i += 2) {
+            resultmap[result.get<Poco::Redis::BulkString>(i).value(
+                std::string())] =
+                result.get<Poco::Redis::BulkString>(i + 1).value(std::string());
+        }
+
+        return resultmap;
+    }
+
+    auto hgetall(const std::string &key_name)
+        -> std::unordered_map<std::string, std::string> {
+        auto connection = get_connection();
+
+        if (!connection) {
+            return {};
+        }
+
+        return hgetall(*connection, key_name);
+    }
+
+    /**
+     * @brief hset is like a map in the redis
+     *
+     * @param inst redis client instance
+     * @param keyname name of the key
+     * @param map map of the values
+     * @return auto int64_t number of the new elements
+     */
+    static auto hset(Poco::Redis::Client &inst, const std::string &keyname,
+                     const std::unordered_map<std::string, std::string> &map)
+        -> int64_t {
+        Poco::Redis::Command hsetcmd = Poco::Redis::Command("hset");
+
+        hsetcmd << keyname;
+
+        for (const auto &keypair : map) {
+            hsetcmd << keypair.first << keypair.second;
+        }
+
+        return inst.execute<int64_t>(hsetcmd);
+    }
+
+    auto hset(const std::string &key_name,
+              const std::unordered_map<std::string, std::string> &map)
+        -> int64_t {
+        auto connection = get_connection();
+
+        if (!connection) {
+            return -1;
+        }
+
+        return hset(*connection, key_name, map);
+    }
+
+    static auto del(Poco::Redis::Client &inst,
+                    const std::vector<std::string> &keysname) -> int64_t {
+        Poco::Redis::Command delcmd = Poco::Redis::Command::del(keysname);
+        return inst.execute<int64_t>(delcmd);
+    }
+
+    auto del(const std::vector<std::string> &keysname) -> int64_t {
+        auto connection = get_connection();
+
+        if (!connection) {
+            return -1;
+        }
+
+        return del(*connection, keysname);
+    }
+
     auto connect(Poco::Redis::Client &inst) -> bool {
         if (inst.isConnected()) {
             return true;
