@@ -67,6 +67,8 @@ class CPistacheEndpoint {
      */
     CPistacheEndpoint() noexcept;
 
+    auto get_router() -> Pistache::Rest::Router& { return router; }
+
   private:
     /**
      *@brief Internal setup routes functions
