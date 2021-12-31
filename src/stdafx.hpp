@@ -7,6 +7,7 @@
 #include <Poco/HMACEngine.h>
 #include <Poco/JSON/JSON.h>
 #include <Poco/JSON/Parser.h>
+#include <Poco/StreamCopier.h>
 #include <Poco/UUID.h>
 #include <Poco/UUIDGenerator.h>
 #include <atomic>
