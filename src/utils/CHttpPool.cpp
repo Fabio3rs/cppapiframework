@@ -34,7 +34,7 @@ CHttpPool::setupSession(const Poco::URI &uri) {
         }
 
         session->setKeepAlive(true);
-        session->setKeepAliveTimeout(60 * 1000 * 1000);
+        session->setKeepAliveTimeout(Poco::Timespan(600L, 0L));
     }
 
     return session_inst;
