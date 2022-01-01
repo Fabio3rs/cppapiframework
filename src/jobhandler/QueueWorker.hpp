@@ -20,6 +20,7 @@ class QueueWorker {
     int queueTimeout{1}, retryInTimeout{0}, jobLogExpireSeconds{3600};
     std::atomic<bool> running{true};
     std::atomic<bool> forkToHandle{false};
+    std::atomic<bool> cleanSuccessfulJobsLogs{true};
 
   public:
     jobStatus
@@ -95,7 +96,11 @@ class QueueWorker {
         jobStatus workresult) {
         switch (workresult) {
         case noerror:
-            queueServiceInst->delPersistentData(jobname);
+            if (cleanSuccessfulJobsLogs) {
+                queueServiceInst->delPersistentData(jobname);
+            } else {
+                queueServiceInst->expire(jobname, jobLogExpireSeconds);
+            }
             break;
 
         case errorremove:
