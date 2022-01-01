@@ -61,7 +61,14 @@ auto job::QueueWorker::handle_job_run(std::shared_ptr<QueueableJob> newjob,
         case 0: {
             ScopedStreamRedirect red(std::cout, joblog);
             ScopedStreamRedirect redcerr(std::cerr, joblogerr);
-            newjob->handle();
+
+            try {
+                newjob->handle();
+            } catch (const std::exception &e) {
+                std::cerr << e.what() << '\n';
+                result = errexcept;
+            }
+
             std::cout.flush();
             std::cerr.flush();
         } break;
