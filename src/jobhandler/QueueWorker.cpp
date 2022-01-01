@@ -12,6 +12,26 @@ pid_t job::QueueWorker::fork_process() {
     return 0;
 }
 
+static auto putLogInDataMap(std::fstream &joblog, const std::string &key,
+                            GenericQueue::datamap_t &datamap) {
+    std::string line;
+    std::string fullstrlog;
+    joblog.seekg(0, std::ios::end);
+
+    std::streampos printsize = joblog.tellg();
+    fullstrlog.reserve((printsize > 0 ? static_cast<size_t>(printsize) : 0) +
+                       8);
+    joblog.seekg(0, std::ios::beg);
+
+    while (std::getline(joblog, line)) {
+        std::cout << "JOB LINE " << line << std::endl;
+        fullstrlog += line;
+        fullstrlog += "\n";
+    }
+
+    datamap[key] = fullstrlog;
+}
+
 auto job::QueueWorker::handle_job_run(std::shared_ptr<QueueableJob> newjob,
                                       const Poco::JSON::Object::Ptr &json,
                                       GenericQueue::datamap_t &datamap)
@@ -23,6 +43,9 @@ auto job::QueueWorker::handle_job_run(std::shared_ptr<QueueableJob> newjob,
     newjob->tries++;
     std::fstream joblog(json->getValue<std::string>("uuid"),
                         std::ios::in | std::ios::out | std::ios::trunc);
+
+    std::fstream joblogerr(json->getValue<std::string>("uuid") + ".stderr",
+                           std::ios::in | std::ios::out | std::ios::trunc);
 
     /**
      * @brief Fork the process if the flag is enabled
@@ -37,8 +60,10 @@ auto job::QueueWorker::handle_job_run(std::shared_ptr<QueueableJob> newjob,
 
         case 0: {
             ScopedStreamRedirect red(std::cout, joblog);
+            ScopedStreamRedirect redcerr(std::cerr, joblogerr);
             newjob->handle();
             std::cout.flush();
+            std::cerr.flush();
         } break;
 
         default:
@@ -61,22 +86,14 @@ auto job::QueueWorker::handle_job_run(std::shared_ptr<QueueableJob> newjob,
     }
 
     try {
-        std::string line;
-        std::string fullstrlog;
-        joblog.seekg(0, std::ios::end);
+        putLogInDataMap(joblogerr, "JobStderr", datamap);
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
+        datamap["LastException"] = e.what();
+    }
 
-        std::streampos printsize = joblog.tellg();
-        fullstrlog.reserve(
-            (printsize > 0 ? static_cast<size_t>(printsize) : 0) + 8);
-        joblog.seekg(0, std::ios::beg);
-
-        while (std::getline(joblog, line)) {
-            std::cout << "JOB LINE " << line << std::endl;
-            fullstrlog += line;
-            fullstrlog += "\n";
-        }
-
-        datamap["JobStdout"] = fullstrlog;
+    try {
+        putLogInDataMap(joblog, "JobStdout", datamap);
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         datamap["LastException"] = e.what();
