@@ -17,7 +17,9 @@ class QueueWorker {
     std::shared_ptr<JobsHandler> jobhandler;
     std::shared_ptr<GenericQueue> queueServiceInst;
 
-    int queueTimeout{1}, retryInTimeout{0}, jobLogExpireSeconds{3600};
+    int queueTimeout{1}, retryInTimeout{0};
+    int64_t jobLogExpireSeconds{3600};
+    
     std::atomic<bool> running{true};
     std::atomic<bool> forkToHandle{false};
     std::atomic<bool> cleanSuccessfulJobsLogs{true};
@@ -99,11 +101,13 @@ class QueueWorker {
             if (cleanSuccessfulJobsLogs) {
                 queueServiceInst->delPersistentData(jobname);
             } else {
+                queueServiceInst->setPersistentData(jobname, datamap);
                 queueServiceInst->expire(jobname, jobLogExpireSeconds);
             }
             break;
 
         case errorremove:
+            queueServiceInst->setPersistentData(jobname, datamap);
             queueServiceInst->expire(jobname, jobLogExpireSeconds);
             break;
 
@@ -159,6 +163,25 @@ class QueueWorker {
     }
 
     void setForkToHandleJob(bool forkstatus) { forkToHandle = forkstatus; }
+
+    /**
+     * @brief Should keep the completed jobs data in the persistent storage?
+     *
+     * @param value true keep the logs; false don't
+     */
+    void setCleanSuccessfulJobsLogs(bool value) {
+        cleanSuccessfulJobsLogs = value;
+    }
+
+    /**
+     * @brief Finished jobs should be keep in the persistent storage for how
+     * many seconds after it's finished?
+     *
+     * @param value seconds in integer
+     */
+    void setJobFinishedExpireSeconds(int64_t value) {
+        jobLogExpireSeconds = value;
+    }
 
     QueueWorker(std::shared_ptr<JobsHandler> jobh,
                 std::shared_ptr<GenericQueue> queueService)
