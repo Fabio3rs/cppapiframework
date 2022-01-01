@@ -267,6 +267,60 @@ class RedisService {
         return del(*connection, keysname);
     }
 
+    class argToString {
+        const std::string str;
+
+      public:
+        [[nodiscard]] inline auto getStr() const -> const std::string & {
+            return str;
+        } // NOLINT(google-explicit-constructor)
+
+        inline argToString(bool value)
+            : str(value ? "true" : "false") {
+        } // NOLINT(google-explicit-constructor)
+
+        inline argToString(const char *s)
+            : str(s) {} // NOLINT(google-explicit-constructor)
+
+        inline argToString(const std::exception &e)
+            : str(e.what()) {} // NOLINT(google-explicit-constructor)
+
+        inline argToString(std::string s)
+            : str(std::move(s)) {} // NOLINT(google-explicit-constructor)
+
+        template <class T,
+                  typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+        inline argToString(T value)
+            : str(std::to_string(value)) {
+        } // NOLINT(google-explicit-constructor)
+    };
+
+    template <class T, class... Types>
+    static inline auto cmd_inst(Poco::Redis::Client &inst, const std::string &cmd,
+                         Types &&... args) -> T {
+        Poco::Redis::Command custom_cmd = Poco::Redis::Command(cmd);
+
+        std::array<argToString, std::tuple_size<std::tuple<Types...>>::value>
+            argslist = {std::forward<Types>(args)...};
+
+        for (auto &a : argslist) {
+            custom_cmd.add(a.getStr());
+        }
+
+        return inst.execute<T>(custom_cmd);
+    }
+
+    template <class T, class... Types>
+    inline auto cmd(const std::string &cmd, Types &&... args) -> T {
+        auto connection = get_connection();
+
+        if (!connection) {
+            return T{};
+        }
+
+        return cmd_inst<T>(*connection, cmd, std::forward<Types>(args)...);
+    }
+
     auto connect(Poco::Redis::Client &inst) -> bool {
         if (inst.isConnected()) {
             return true;

@@ -90,3 +90,22 @@ TEST(TestRedisService, hgetallReturnsEverything) {
 
     EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
 }
+
+TEST(TestRedisService, customCmdExpireTTL) {
+    std::cout << "Using redis key " << test_hashset_key << std::endl;
+    EXPECT_EQ(RedisService::default_inst().hset(
+                  test_hashset_key,
+                  {{"firstkey", "firstdata"}, {"secondkey", "seconddata"}}),
+              2);
+
+    EXPECT_EQ(RedisService::default_inst().cmd<int64_t>("expire",
+                                                        test_hashset_key, 32),
+              1);
+
+    EXPECT_GT(
+        RedisService::default_inst().cmd<int64_t>("ttl", test_hashset_key), 10);
+    EXPECT_LE(
+        RedisService::default_inst().cmd<int64_t>("ttl", test_hashset_key), 32);
+
+    EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
+}

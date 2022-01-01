@@ -28,6 +28,9 @@ class RedisQueue : public GenericQueue {
 
     auto isConnected() const -> bool override;
 
+    auto expire(const std::string &name, int64_t seconds) -> bool override;
+    auto ttl(const std::string &name) -> int64_t override;
+
     RedisQueue();
     ~RedisQueue() override;
 };

@@ -10,14 +10,14 @@
 
 namespace job {
 
-enum jobStatus { noerror, errorremove, errorretry };
+enum jobStatus { noerror, errorremove, errorretry, errexcept };
 
 class QueueWorker {
+  protected:
     std::shared_ptr<JobsHandler> jobhandler;
     std::shared_ptr<GenericQueue> queueServiceInst;
 
-  protected:
-    int queueTimeout{1}, retryInTimeout{0};
+    int queueTimeout{1}, retryInTimeout{0}, jobLogExpireSeconds{3600};
     std::atomic<bool> running{true};
     std::atomic<bool> forkToHandle{false};
 
@@ -35,6 +35,10 @@ class QueueWorker {
         return errorremove;
     }
 
+    auto handle_job_run(std::shared_ptr<QueueableJob> newjob,
+                        const Poco::JSON::Object::Ptr &json,
+                        GenericQueue::datamap_t &datamap) -> jobStatus;
+
     /**
      * @brief instanciates and run the job
      * @todo improve the error catching design, log the tries
@@ -43,108 +47,8 @@ class QueueWorker {
      * @param datamap all job data
      * @return jobStatus job result
      */
-    jobStatus work(const std::string & /*queue*/,
-                   std::unordered_map<std::string, std::string> &datamap) {
-        std::shared_ptr<QueueableJob> newjob;
-        jobStatus result = noerror;
-
-        /**
-         * @brief allocate and construct the instance
-         *
-         */
-        Poco::JSON::Object::Ptr json;
-        try {
-            LOGINFO() << "Instancing job " << datamap.at("className")
-                      << std::endl;
-
-            Poco::JSON::Parser parser;
-            json = parser.parse(datamap["payload"])
-                       .extract<Poco::JSON::Object::Ptr>();
-
-            auto dataobj = json->getObject("data");
-            dataobj->set("tries", std::stoull(datamap["tries"]));
-            dataobj->set("maxtries", std::stoull(datamap["maxtries"]));
-
-            newjob = jobhandler->instance_from_payload(json);
-        } catch (const std::exception &e) {
-            std::cerr << e.what() << '\n';
-            return errorremove;
-        }
-
-        datamap.erase("payload");
-
-        if (!newjob) {
-            return errorretry;
-        }
-
-        pid_t pid = -1;
-        try {
-            LOGINFO() << "Job " << newjob->getName() << " tries "
-                      << newjob->tries << std::endl;
-
-            newjob->tries++;
-            std::fstream joblog(json->getValue<std::string>("uuid"),
-                                std::ios::in | std::ios::out | std::ios::trunc);
-
-            /**
-             * @brief Fork the process if the flag is enabled
-             *
-             */
-            pid = fork_process();
-
-            switch (pid) {
-            case -1:
-                throw std::runtime_error("Fork failed");
-                break;
-
-            case 0: {
-                ScopedStreamRedirect red(std::cout, joblog);
-                newjob->handle();
-                std::cout.flush();
-            } break;
-
-            default:
-                result = waitpid(pid) == 0 ? noerror
-                                           : process_retry_condition(newjob);
-                if (forkToHandle) {
-                    std::string line;
-                    joblog.seekg(std::ios::beg);
-                    while (std::getline(joblog, line)) {
-                        std::cout << "JOB LINE " << line << std::endl;
-                    }
-                }
-
-                break;
-            }
-        } catch (const std::exception &e) {
-            std::cerr << e.what() << '\n';
-            result = process_retry_condition(newjob);
-        }
-
-        if (forkToHandle && pid == 0) {
-            /**
-             * @brief Forked process exit with result
-             *
-             */
-            exit(result);
-        }
-
-        if (result != noerror) {
-            LOGINFO() << "Job " << newjob->getName() << " error " << result
-                      << std::endl;
-        }
-
-        /**
-         * @brief Refresh the payload
-         *
-         */
-        if (result == errorretry) {
-            datamap["tries"] = std::to_string(newjob->getTries());
-            datamap["maxtries"] = std::to_string(newjob->getMaxTries());
-        }
-
-        return result;
-    }
+    auto work(const std::string & /*queue*/, GenericQueue::datamap_t &datamap)
+        -> jobStatus;
 
     pid_t fork_process();
     pid_t waitpid(pid_t pid);
@@ -195,8 +99,10 @@ class QueueWorker {
             break;
 
         case errorremove:
+            queueServiceInst->expire(jobname, jobLogExpireSeconds);
             break;
 
+        case errexcept:
         case errorretry:
             queueServiceInst->setPersistentData(jobname, datamap);
             queueServiceInst->push(queue, jobname);
