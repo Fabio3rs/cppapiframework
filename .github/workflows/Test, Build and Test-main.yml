@@ -1,4 +1,4 @@
-name: Test, Build and Deploy - MAIN
+name: Test, Build and Test - MAIN
 
 on: 
   push:
