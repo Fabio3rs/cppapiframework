@@ -8,26 +8,11 @@ set(msrcdir "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 set(mainbinary "${CMAKE_CURRENT_SOURCE_DIR}/../bin")
 
 file(
-    GLOB UTILS_SOURCES 
-    "${msrcdir}/utils/*.cpp"
-)
-
-file(
-    GLOB JOBHANDLER_SOURCES 
-    "${msrcdir}/jobhandler/*.cpp"
-)
-
-file(
-    GLOB QUEUES_SOURCES 
-    "${msrcdir}/queues/*.cpp"
-)
-
-file(
     GLOB ALL_TESTS_SOURCES 
     "${srcdir}/*.cpp"
 )
 
-add_executable(apiframework_test ${ALL_TESTS_SOURCES} ${QUEUES_SOURCES} ${UTILS_SOURCES} ${JOBHANDLER_SOURCES})
+add_executable(apiframework_test ${ALL_TESTS_SOURCES})
 
 # Compiler-specific compile flags
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
@@ -48,7 +33,7 @@ endif()
 target_precompile_headers(apiframework_test PRIVATE "${msrcdir}/stdafx.hpp")
 
 target_compile_options(apiframework_test PUBLIC ${TEST_COMPILE_FLAGS})
-target_link_libraries(apiframework_test GTest::GTest GTest::Main)
+target_link_libraries(apiframework_test GTest::GTest GTest::Main cppapiframework)
 
 if(Poco_FOUND)
     message("-- Poco encontrado!")

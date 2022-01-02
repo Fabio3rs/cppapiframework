@@ -24,8 +24,6 @@ find_package(OpenSSL REQUIRED)
 find_package(PkgConfig)
 pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
-
 # setando todos arquivos fontes que serão compilados
 file(
     GLOB SOURCES 
@@ -78,4 +76,4 @@ endif(Pistache_FOUND)
 
 target_link_libraries(${projectname} mysqlcppconn)
 
-
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
