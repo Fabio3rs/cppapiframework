@@ -1,0 +1,72 @@
+name: Test, Build and Deploy - MAIN
+
+on: 
+  push:
+    branches:
+      - main
+
+jobs:
+  Testing_Code_Quality: 
+    needs: Testing_build_with_address_sanitizer
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      #instalando dependencias das libraries
+      - name: Installing Dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install build-essential
+          suto apt install cmake
+          suto apt install clang clang-tidy clang-format ninja-build -y
+          sudo add-apt-repository ppa:pistache+team/unstable && sudo apt update && sudo apt install libpistache-dev
+          sudo apt-get update && sudo apt-get install libcurl4 libcurl4-openssl-dev libpoco-dev libmysqlcppconn-dev -y
+      
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.8
+        with:
+          cmake-version: '3.16.x'
+        
+      - name: Build project
+        run: |
+          export CURRENT_SOURCE_DIR=$(pwd)
+          mkdir build && cd build
+          export CURRENT_BUILD_DIR=$(pwd)
+          cmake .. -G Ninja
+          cmake --config Debug --target all -j$(nproc) --build .
+
+      - name: Test project
+        run: |
+          ctest -j$(nproc) -C Debug -T test --output-on-failure
+
+      - name: running clang tidy # with checks readability, mordenize, hipperformace, performance
+        run: |
+          clang-tidy -p build --fix-errors -header-filter="${CURRENT_SOURCE_DIR}" --warnings-as-errors="*" --checks="-*,read*,modern*,hicpp*,performance*" > report_code_quality.txt
+          
+      - name: Upload Artifacts    
+        if: ${{ failure() }} || ${{ success() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: report_code_quality
+          path: ./report_code_quality.txt
+
+      # Publish updates to apply clang-tidy --fix-errors  
+      - name: Delete report
+        if: ${{ failure() }} || ${{ success() }}
+        run: |
+          rm -rf report_code_quality.txt
+      - name: Get the current branch name
+        if: ${{ failure() }} || ${{ success() }}
+        run: echo "::set-output name=branch::${GITHUB_REF#refs/heads/}"
+        id: myref
+
+      - name: publish updates   
+        if: ${{ failure() }} || ${{ success() }}
+        uses: mikeal/publish-to-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ steps.myref.outputs.branch }} # Current branch 
+      
