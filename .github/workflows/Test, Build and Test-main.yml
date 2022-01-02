@@ -41,4 +41,4 @@ jobs:
       - name: Test project
         run: |
           cd build
-          ctest -j$(nproc) -C Debug -T test --output-on-failure
+          ctest -j 20 -C Debug -T test --output-on-failure
