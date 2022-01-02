@@ -24,6 +24,9 @@ jobs:
           sudo add-apt-repository ppa:pistache+team/unstable && sudo apt update && sudo apt install libpistache-dev
           sudo apt-get update && sudo apt-get install libcurl4 libcurl4-openssl-dev libpoco-dev libmysqlcppconn-dev -y
           sudo apt install libgtest-dev googletest -y
+          sudo apt install redis-server redis-tools -y
+          sudo sed -i 's/^supervised no/supervised systemd/g' /etc/redis/redis.conf
+          sudo systemctl restart redis-server
       
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.8
