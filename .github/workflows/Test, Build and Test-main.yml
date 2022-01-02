@@ -40,6 +40,5 @@ jobs:
 
       - name: Test project
         run: |
-          cd "${CURRENT_BUILD_DIR}"
+          cd build
           ctest -j$(nproc) -C Debug -T test --output-on-failure
-          
