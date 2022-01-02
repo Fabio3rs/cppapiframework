@@ -36,37 +36,10 @@ jobs:
           mkdir build && cd build
           export CURRENT_BUILD_DIR=$(pwd)
           cmake .. -G Ninja
-          cmake --config Debug --target all -j$(nproc) --build .
+          cmake --build . --config Debug --target all -j $(nproc) --
 
       - name: Test project
         run: |
+          cd "${CURRENT_BUILD_DIR}"
           ctest -j$(nproc) -C Debug -T test --output-on-failure
-
-      - name: running clang tidy # with checks readability, mordenize, hipperformace, performance
-        run: |
-          clang-tidy -p build --fix-errors -header-filter="${CURRENT_SOURCE_DIR}" --warnings-as-errors="*" --checks="-*,read*,modern*,hicpp*,performance*" > report_code_quality.txt
           
-      - name: Upload Artifacts    
-        if: ${{ failure() }} || ${{ success() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: report_code_quality
-          path: ./report_code_quality.txt
-
-      # Publish updates to apply clang-tidy --fix-errors  
-      - name: Delete report
-        if: ${{ failure() }} || ${{ success() }}
-        run: |
-          rm -rf report_code_quality.txt
-      - name: Get the current branch name
-        if: ${{ failure() }} || ${{ success() }}
-        run: echo "::set-output name=branch::${GITHUB_REF#refs/heads/}"
-        id: myref
-
-      - name: publish updates   
-        if: ${{ failure() }} || ${{ success() }}
-        uses: mikeal/publish-to-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH_NAME: ${{ steps.myref.outputs.branch }} # Current branch 
-      
