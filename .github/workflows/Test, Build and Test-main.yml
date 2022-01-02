@@ -7,7 +7,6 @@ on:
 
 jobs:
   Testing_Code_Quality: 
-    needs: Testing_build_with_address_sanitizer
     runs-on: ubuntu-latest
     steps:
       # Checkout
