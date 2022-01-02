@@ -19,10 +19,11 @@ jobs:
       - name: Installing Dependencies
         run: |
           sudo apt-get update && sudo apt-get install build-essential
-          sudo apt install cmake
+          sudo apt install cmake -y
           sudo apt install clang clang-tidy clang-format ninja-build -y
           sudo add-apt-repository ppa:pistache+team/unstable && sudo apt update && sudo apt install libpistache-dev
           sudo apt-get update && sudo apt-get install libcurl4 libcurl4-openssl-dev libpoco-dev libmysqlcppconn-dev -y
+          sudo apt install googletest -y
       
       - name: Setup cmake
         uses: jwlawson/actions-setup-cmake@v1.8
