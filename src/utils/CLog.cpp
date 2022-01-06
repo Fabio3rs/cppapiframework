@@ -100,6 +100,8 @@ void CLog::logjson(Poco::JSON::Object::Ptr jsonobj,
     LogFile << Temp;
     jsonobj->stringify(LogFile);
     LogFile << "\n";
+    
+    LogFile.flush();
 }
 
 void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
@@ -113,6 +115,8 @@ void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
     Temp += Text;
     Temp += "\n";
     LogFile << Temp;
+
+    LogFile.flush();
 }
 
 void CLog::FinishLog() {
