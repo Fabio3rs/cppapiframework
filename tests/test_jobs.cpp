@@ -5,6 +5,9 @@
 
 #include <gtest/gtest.h>
 
+#include <utility>
+
+static constexpr int JSON_INDENT = 5;
 static bool jobrunned = false;
 static const std::string queue_name = "test_queue_worker:queue:default";
 
@@ -22,35 +25,33 @@ class MockJob : public job::QueueableJob {
   public:
     QUEUEABLE_SERIALIZE(jsondata, strdata, integerdata)
 
-    auto getName() const -> std::string_view override {
+    [[nodiscard]] auto getName() const -> std::string_view override {
         return getTypeNameByInst(*this);
     }
 
     void handle() override;
 
-    auto getJobResult() const noexcept -> const std::string & {
+    [[nodiscard]] auto getJobResult() const noexcept -> const std::string & {
         return jobresult;
     }
 
-    MockJob();
-    MockJob(const Poco::JSON::Object::Ptr &inputdata,
-            const std::string &inputstr, int inputint);
+    MockJob() = default;
+    MockJob(const Poco::JSON::Object::Ptr &inputdata, std::string inputstr,
+            int inputint);
 };
 
-MockJob::MockJob() : QueueableJob() {}
-
-MockJob::MockJob(const Poco::JSON::Object::Ptr &inputdata,
-                 const std::string &inputstr, int inputint)
-    : QueueableJob(), jsondata(inputdata), strdata(inputstr),
-      integerdata(inputint) {}
+MockJob::MockJob(const Poco::JSON::Object::Ptr &inputdata, std::string inputstr,
+                 int inputint)
+    : jsondata(inputdata), strdata(std::move(inputstr)), integerdata(inputint) {
+}
 
 void MockJob::handle() {
     jobrunned = true;
-    jsondata->stringify(std::cout, 5);
+    jsondata->stringify(std::cout, JSON_INDENT);
     std::cout << std::endl;
 
     std::stringstream sstr;
-    jsondata->stringify(sstr, 5);
+    jsondata->stringify(sstr, JSON_INDENT);
 
     sstr << std::endl;
     sstr << strdata;
@@ -70,7 +71,7 @@ class OtherPrintJob : public job::QueueableJob {
   public:
     QUEUEABLE_SERIALIZE(data, shouldfail)
 
-    auto getName() const -> std::string_view override {
+    [[nodiscard]] auto getName() const -> std::string_view override {
         return getTypeNameByInst(*this);
     }
 
@@ -78,19 +79,17 @@ class OtherPrintJob : public job::QueueableJob {
 
     void handle() override;
 
-    OtherPrintJob();
-    OtherPrintJob(const Poco::JSON::Object::Ptr &inputdata);
+    OtherPrintJob() = default;
+    explicit OtherPrintJob(const Poco::JSON::Object::Ptr &inputdata);
 };
 
-OtherPrintJob::OtherPrintJob() : QueueableJob() {}
-
 OtherPrintJob::OtherPrintJob(const Poco::JSON::Object::Ptr &inputdata)
-    : QueueableJob(), data(inputdata) {}
+    : data(inputdata) {}
 
 void OtherPrintJob::handle() {
     jobrunned = true;
-    if (data) {
-        data->stringify(std::cout, 5);
+    if (!data.isNull()) {
+        data->stringify(std::cout, JSON_INDENT);
         std::cout << std::endl;
     } else {
         std::cout << "PrintJob data is null" << std::endl;
@@ -106,6 +105,7 @@ void OtherPrintJob::handle() {
  *
  */
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobHandler, AddJobClassToKnownJobsOk) {
     job::JobsHandler handler;
     EXPECT_FALSE(handler.is_job_registered<MockJob>());
@@ -115,6 +115,7 @@ TEST(TestJobHandler, AddJobClassToKnownJobsOk) {
     EXPECT_TRUE(handler.is_job_registered<MockJob>());
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobHandler, AddRepeatedJobThrows) {
     job::JobsHandler handler;
     EXPECT_FALSE(handler.is_job_registered<MockJob>());
@@ -122,21 +123,26 @@ TEST(TestJobHandler, AddRepeatedJobThrows) {
     handler.register_job_handler<MockJob>();
 
     EXPECT_TRUE(handler.is_job_registered<MockJob>());
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_ANY_THROW(handler.register_job_handler<MockJob>());
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobHandler, AddDifferentJobNoThrows) {
     job::JobsHandler handler;
     EXPECT_FALSE(handler.is_job_registered<MockJob>());
     EXPECT_FALSE(handler.is_job_registered<OtherPrintJob>());
 
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler.register_job_handler<OtherPrintJob>());
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler.register_job_handler<MockJob>());
 
     EXPECT_TRUE(handler.is_job_registered<MockJob>());
     EXPECT_TRUE(handler.is_job_registered<OtherPrintJob>());
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobHandler, JobPayloadHasItClassName) {
     job::JobsHandler handler;
     EXPECT_FALSE(handler.is_job_registered<MockJob>());
@@ -144,24 +150,27 @@ TEST(TestJobHandler, JobPayloadHasItClassName) {
 
     MockJob mockjob;
 
-    auto payload = handler.create_jobpayload(mockjob);
-    const std::string className = payload->getValue<std::string>("className");
+    auto payload = job::JobsHandler::create_jobpayload(mockjob);
+    const auto className = payload->getValue<std::string>("className");
 
     EXPECT_EQ(className, job::JobsHandler::getTypeName<MockJob>());
     EXPECT_NE(className, job::JobsHandler::getTypeName<OtherPrintJob>());
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobHandler, JobPayloadReinstanceCorrectDynCast) {
     job::JobsHandler handler;
 
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler.register_job_handler<OtherPrintJob>());
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler.register_job_handler<MockJob>());
 
     Poco::JSON::Object::Ptr payload;
 
     {
         MockJob mockjob;
-        payload = handler.create_jobpayload(mockjob);
+        payload = job::JobsHandler::create_jobpayload(mockjob);
     }
 
     {
@@ -172,10 +181,13 @@ TEST(TestJobHandler, JobPayloadReinstanceCorrectDynCast) {
     }
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobHandler, TestJobDataIntegrity) {
     job::JobsHandler handler;
 
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler.register_job_handler<OtherPrintJob>());
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler.register_job_handler<MockJob>());
 
     Poco::JSON::Object::Ptr payload;
@@ -188,8 +200,10 @@ TEST(TestJobHandler, TestJobDataIntegrity) {
         tmpjson->set("str", "this is a string");
         tmpjson->set("boolval", true);
 
-        MockJob mockjob(tmpjson, "test string asdfghjkl", 123456789);
-        payload = handler.create_jobpayload(mockjob);
+        constexpr int ANYTHING_NUM = 123456789;
+
+        MockJob mockjob(tmpjson, "test string asdfghjkl", ANYTHING_NUM);
+        payload = job::JobsHandler::create_jobpayload(mockjob);
 
         EXPECT_TRUE(mockjob.getJobResult().empty());
         mockjob.handle();
@@ -215,11 +229,14 @@ TEST(TestJobHandler, TestJobDataIntegrity) {
     }
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobQueues, NewQueueIsEmptyDoOneIsFalse) {
     std::shared_ptr<job::JobsHandler> handler(
         std::make_shared<job::JobsHandler>());
 
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler->register_job_handler<OtherPrintJob>());
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler->register_job_handler<MockJob>());
 
     std::shared_ptr<StdQueue> nqueue(std::make_shared<StdQueue>());
@@ -232,11 +249,14 @@ TEST(TestJobQueues, NewQueueIsEmptyDoOneIsFalse) {
     EXPECT_EQ(nqueue->getQueueSize(queue_name), 0);
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobQueues, AddToTheQueueProcessRunOne) {
     std::shared_ptr<job::JobsHandler> handler(
         std::make_shared<job::JobsHandler>());
 
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler->register_job_handler<OtherPrintJob>());
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler->register_job_handler<MockJob>());
 
     std::shared_ptr<StdQueue> nqueue(std::make_shared<StdQueue>());
@@ -261,11 +281,14 @@ TEST(TestJobQueues, AddToTheQueueProcessRunOne) {
     }
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobQueues, AddToTheQueueProcessRunOneAndFail) {
     std::shared_ptr<job::JobsHandler> handler(
         std::make_shared<job::JobsHandler>());
 
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler->register_job_handler<OtherPrintJob>());
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler->register_job_handler<MockJob>());
 
     std::shared_ptr<StdQueue> nqueue(std::make_shared<StdQueue>());
@@ -293,11 +316,14 @@ TEST(TestJobQueues, AddToTheQueueProcessRunOneAndFail) {
     }
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestJobQueues, AddToTheQueueProcessRunMultipleAllFail) {
     std::shared_ptr<job::JobsHandler> handler(
         std::make_shared<job::JobsHandler>());
 
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler->register_job_handler<OtherPrintJob>());
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(handler->register_job_handler<MockJob>());
 
     std::shared_ptr<StdQueue> nqueue(std::make_shared<StdQueue>());
@@ -333,4 +359,5 @@ TEST(TestJobQueues, AddToTheQueueProcessRunMultipleAllFail) {
     EXPECT_EQ(nqueue->getQueueSize(queue_name), 0); // Queue empty
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(Nothing, CheckNothing) { EXPECT_TRUE(true); }

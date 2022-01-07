@@ -1,12 +1,12 @@
 #include "CHttpPool.hpp"
 
-CHttpPool &CHttpPool::default_inst() {
+auto CHttpPool::default_inst() -> CHttpPool & {
     static CHttpPool pool;
     return pool;
 }
 
-BorrowedObject<CHttpPool::inst_t>
-CHttpPool::setupSession(const Poco::URI &uri) {
+auto
+CHttpPool::setupSession(const Poco::URI &uri) -> BorrowedObject<CHttpPool::inst_t> {
     sessionid_t session_id_map{uri.getHost(), uri.getPort()};
 
     auto poolinst = sessions.try_emplace(session_id_map, 16u);

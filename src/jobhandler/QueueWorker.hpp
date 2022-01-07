@@ -38,7 +38,7 @@ class QueueWorker {
         return errorremove;
     }
 
-    auto handle_job_run(std::shared_ptr<QueueableJob> newjob,
+    auto handle_job_run(const std::shared_ptr<QueueableJob>& newjob,
                         const Poco::JSON::Object::Ptr &json,
                         GenericQueue::datamap_t &datamap) -> jobStatus;
 
@@ -54,7 +54,7 @@ class QueueWorker {
         -> jobStatus;
 
     pid_t fork_process();
-    pid_t waitpid(pid_t pid);
+    static pid_t waitpid(pid_t pid);
 
     template <class T> void push(const std::string &queue, const T &job) {
         auto json = jobhandler->create_jobpayload(job);

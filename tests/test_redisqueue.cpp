@@ -5,11 +5,13 @@ static const std::string queue_name = "test_queue_worker:queue:default";
 
 static std::shared_ptr<RedisQueue> redisq(std::make_shared<RedisQueue>());
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisQueue, IsConnected) {
     EXPECT_TRUE(redisq);
     EXPECT_TRUE(redisq->isConnected());
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisQueue, PushPops) {
     EXPECT_TRUE(redisq);
     EXPECT_TRUE(redisq->isConnected());
@@ -24,6 +26,7 @@ TEST(TestRedisQueue, PushPops) {
     EXPECT_EQ(popdata.value_or(std::string()), data);
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisQueue, ExpireTTLQueue) {
     EXPECT_TRUE(redisq);
     EXPECT_TRUE(redisq->isConnected());

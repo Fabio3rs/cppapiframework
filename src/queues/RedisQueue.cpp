@@ -45,7 +45,7 @@ void RedisQueue::delPersistentData(const std::string &name) {
 
 auto RedisQueue::expire(const std::string &name, int64_t seconds) -> bool {
     return RedisService::default_inst().cmd<int64_t>("expire", aliasname + name,
-                                                     seconds);
+                                                     seconds) != 0;
 }
 
 auto RedisQueue::ttl(const std::string &name) -> int64_t {

@@ -7,10 +7,12 @@ static std::string test_hashset_key =
     "test_hashset:" +
     Poco::UUIDGenerator::defaultGenerator().createRandom().toString();
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, IsConnected) {
     EXPECT_TRUE(RedisService::default_inst().get_connection());
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, hsetReturnsOne) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
     EXPECT_EQ(RedisService::default_inst().hset(
@@ -21,6 +23,7 @@ TEST(TestRedisService, hsetReturnsOne) {
     EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, hgetReturnsOne) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
     EXPECT_EQ(RedisService::default_inst().hset(
@@ -44,6 +47,7 @@ TEST(TestRedisService, hgetReturnsOne) {
     EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, hdelTest) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
     EXPECT_EQ(RedisService::default_inst().hset(
@@ -76,8 +80,10 @@ TEST(TestRedisService, hdelTest) {
                   // key também não existe mais
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, hgetallReturnsEverything) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_EQ(RedisService::default_inst().hset(
                   test_hashset_key,
                   {{"firstkey", "firstdata"}, {"secondkey", "seconddata"}}),
@@ -85,12 +91,15 @@ TEST(TestRedisService, hgetallReturnsEverything) {
 
     auto hgetallresult = RedisService::default_inst().hgetall(test_hashset_key);
 
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(EXPECT_EQ(hgetallresult.at("firstkey"), "firstdata"));
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
     EXPECT_NO_THROW(EXPECT_EQ(hgetallresult.at("secondkey"), "seconddata"));
 
     EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, customCmdExpireTTL) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
     EXPECT_EQ(RedisService::default_inst().hset(

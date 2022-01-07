@@ -4,7 +4,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-pid_t job::QueueWorker::fork_process() {
+auto job::QueueWorker::fork_process() -> pid_t {
     if (forkToHandle) {
         return fork();
     }
@@ -32,7 +32,7 @@ static auto putLogInDataMap(std::fstream &joblog, const std::string &key,
     datamap[key] = fullstrlog;
 }
 
-auto job::QueueWorker::handle_job_run(std::shared_ptr<QueueableJob> newjob,
+auto job::QueueWorker::handle_job_run(const std::shared_ptr<QueueableJob>& newjob,
                                       const Poco::JSON::Object::Ptr &json,
                                       GenericQueue::datamap_t &datamap)
     -> jobStatus {
@@ -179,19 +179,25 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
     return result;
 }
 
-pid_t job::QueueWorker::waitpid(pid_t pid) {
+auto job::QueueWorker::waitpid(pid_t pid) -> pid_t {
     int status = 0;
     ::waitpid(pid, &status, 0);
 
     if (WIFEXITED(status)) {
         printf("exited, status=%d\n", WEXITSTATUS(status));
         return WEXITSTATUS(status);
-    } else if (WIFSIGNALED(status)) {
+    } if (WIFSIGNALED(status)) {
+
         printf("killed by signal %d\n", WTERMSIG(status));
+
     } else if (WIFSTOPPED(status)) {
+
         printf("stopped by signal %d\n", WSTOPSIG(status));
+
     } else if (WIFCONTINUED(status)) {
+
         printf("continued\n");
+
     }
 
     return -1;

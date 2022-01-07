@@ -62,8 +62,7 @@ auto ArrayValidator::validate(std::string_view fieldname,
     Poco::Dynamic::Var resultadoValidacao;
 
     size_t index = 0;
-    for (auto &data : (*ptr)) {
-
+    for (const auto &data : (*ptr)) {
         resultadoValidacao = validatefn(fieldname, index, data);
 
         // faz algo com o resultado aqui, por exemplo validar por linhas

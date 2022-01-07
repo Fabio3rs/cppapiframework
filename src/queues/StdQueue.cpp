@@ -13,7 +13,7 @@ auto StdQueue::pop(const std::string &queue, int /**/)
     -> std::optional<std::string> {
     auto &queueInst = queue_map[queue];
 
-    if (queueInst.size() == 0) {
+    if (queueInst.empty()) {
         return std::nullopt;
     }
 
