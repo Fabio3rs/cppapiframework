@@ -214,7 +214,7 @@ auto CController::get_auth(httpStreamPack httpdata)
         return std::nullopt;
     }
 
-    const std::optional<std::string> result = auth_header->value();
+    std::optional<std::string> result = auth_header->value();
 
     if (result.value_or(std::string()).empty()) {
         returnPocoJson(Pistache::Http::Code::Bad_Request,

@@ -32,9 +32,9 @@ static auto putLogInDataMap(std::fstream &joblog, const std::string &key,
     datamap[key] = fullstrlog;
 }
 
-auto job::QueueWorker::handle_job_run(const std::shared_ptr<QueueableJob>& newjob,
-                                      const Poco::JSON::Object::Ptr &json,
-                                      GenericQueue::datamap_t &datamap)
+auto job::QueueWorker::handle_job_run(
+    const std::shared_ptr<QueueableJob> &newjob,
+    const Poco::JSON::Object::Ptr &json, GenericQueue::datamap_t &datamap)
     -> jobStatus {
     jobStatus result = noerror;
     LOGINFO() << "Job " << newjob->getName() << " tries " << newjob->tries
@@ -183,33 +183,23 @@ auto job::QueueWorker::waitpid(pid_t pid) -> pid_t {
     int status = 0;
     ::waitpid(pid, &status, 0);
 
-    if (WIFEXITED(status)) {
-        printf("exited, status=%d\n", WEXITSTATUS(status));
-        return WEXITSTATUS(status);
-    } if (WIFSIGNALED(status)) {
-
-        printf("killed by signal %d\n", WTERMSIG(status));
-
-    } else if (WIFSTOPPED(status)) {
-
-        printf("stopped by signal %d\n", WSTOPSIG(status));
-
-    } else if (WIFCONTINUED(status)) {
-
-        printf("continued\n");
-
+    if (WIFEXITED(status)) { // NOLINT
+                             // NOLINTNEXTLINE
+        LOGINFO() << "exited, status=" << WEXITSTATUS(status) << std::endl;
+        return WEXITSTATUS(status); // NOLINT
+    }
+    if (WIFSIGNALED(status)) { // NOLINT
+        LOGINFO() << "killed by signal %d\n"
+                  << WTERMSIG(status) << std::endl; // NOLINT
+    } else if (WIFSTOPPED(status)) {                // NOLINT
+        LOGINFO() << "stopped by signal %d\n"
+                  << WSTOPSIG(status) << std::endl; // NOLINT
+    } else if (WIFCONTINUED(status)) {              // NOLINT
+        LOGINFO() << "continued" << std::endl;
     }
 
     return -1;
 }
-
-/*void job::QueueWorker::push(const std::string &queue,
-                            const Poco::JSON::Object::Ptr &json) {
-    std::stringstream sstr;
-    json->stringify(sstr);
-
-    queueServiceInst->push(queue, sstr.str());
-}*/
 
 auto job::QueueWorker::pop(const std::string &queue, int timeout)
     -> std::string {
@@ -217,4 +207,4 @@ auto job::QueueWorker::pop(const std::string &queue, int timeout)
     return data.value_or(std::string());
 }
 
-job::QueueWorker::~QueueWorker() {}
+job::QueueWorker::~QueueWorker() = default;

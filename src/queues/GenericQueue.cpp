@@ -1,5 +1,5 @@
 #include "GenericQueue.hpp"
 
-GenericQueue::GenericQueue() {}
+GenericQueue::GenericQueue() = default;
 
-GenericQueue::~GenericQueue() {}
+GenericQueue::~GenericQueue() = default;

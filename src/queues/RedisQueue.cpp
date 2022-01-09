@@ -52,6 +52,6 @@ auto RedisQueue::ttl(const std::string &name) -> int64_t {
     return RedisService::default_inst().cmd<int64_t>("ttl", aliasname + name);
 }
 
-RedisQueue::RedisQueue() {}
+RedisQueue::RedisQueue() = default;
 
-RedisQueue::~RedisQueue() {}
+RedisQueue::~RedisQueue() = default;

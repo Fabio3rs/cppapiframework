@@ -9,7 +9,7 @@ auto
 CHttpPool::setupSession(const Poco::URI &uri) -> BorrowedObject<CHttpPool::inst_t> {
     sessionid_t session_id_map{uri.getHost(), uri.getPort()};
 
-    auto poolinst = sessions.try_emplace(session_id_map, 16u);
+    auto poolinst = sessions.try_emplace(session_id_map, 16U);
 
     if (poolinst.first == sessions.end()) {
         throw std::runtime_error("Falha para receber o objeto do map");

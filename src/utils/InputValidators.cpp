@@ -79,20 +79,20 @@ auto ArrayValidator::validate(std::string_view fieldname,
     return resultadoValidacao;
 }
 
-RequiredValidator::~RequiredValidator() {}
+RequiredValidator::~RequiredValidator() = default;
 
-IntegerValidator::~IntegerValidator() {}
+IntegerValidator::~IntegerValidator() = default;
 
-InputValidator::~InputValidator() {}
+InputValidator::~InputValidator() = default;
 
-EmailValidator::EmailValidator() {}
+EmailValidator::EmailValidator() = default;
 
-EmailValidator::~EmailValidator() {}
+EmailValidator::~EmailValidator() = default;
 
-DefaultIfNotPresentValidator::~DefaultIfNotPresentValidator() {}
+DefaultIfNotPresentValidator::~DefaultIfNotPresentValidator() = default;
 
-ObjectValidator::~ObjectValidator() {}
+ObjectValidator::~ObjectValidator() = default;
 
-ArrayValidator::~ArrayValidator() {}
+ArrayValidator::~ArrayValidator() = default;
 
-StringLengthValidator::~StringLengthValidator() {}
+StringLengthValidator::~StringLengthValidator() = default;

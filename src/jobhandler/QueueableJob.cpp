@@ -1,5 +1,5 @@
 #include "QueueableJob.hpp"
 
-job::QueueableJob::QueueableJob() {}
+job::QueueableJob::QueueableJob() = default;
 
-job::QueueableJob::~QueueableJob() {}
+job::QueueableJob::~QueueableJob() = default;

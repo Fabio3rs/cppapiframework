@@ -25,6 +25,6 @@ auto StdQueue::pop(const std::string &queue, int /**/)
 auto StdQueue::getName() const -> std::string { return "in_memory"; }
 void StdQueue::setName(const std::string & /*ununsed*/) {}
 
-StdQueue::StdQueue() {}
+StdQueue::StdQueue() = default;
 
-StdQueue::~StdQueue() {}
+StdQueue::~StdQueue() = default;
