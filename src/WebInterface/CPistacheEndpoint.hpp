@@ -65,7 +65,7 @@ class CPistacheEndpoint {
      * @brief Construct a new CPistacheEndpoint object
      *
      */
-    CPistacheEndpoint() noexcept;
+    CPistacheEndpoint();
 
     auto get_router() -> Pistache::Rest::Router& { return router; }
 

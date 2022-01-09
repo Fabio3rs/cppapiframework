@@ -9,7 +9,7 @@
  */
 #include "CPistacheEndpoint.hpp"
 
-CPistacheEndpoint::CPistacheEndpoint() noexcept = default;
+CPistacheEndpoint::CPistacheEndpoint() = default;
 
 void CPistacheEndpoint::init(Pistache::Address addr, size_t thr) {
     httpEndpoint = std::make_shared<Pistache::Http::Endpoint>(addr);
