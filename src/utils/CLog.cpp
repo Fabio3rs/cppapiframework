@@ -34,7 +34,7 @@ CLog::CLog(const std::string &NameOfFile) {
                    " " + __TIME__;
     LogFile << "\n*********************************************************"
                    "********************\n";
-    LogFile << "Full commit hash: " FULL_COMMIT_HASH;
+    LogFile << "* Full commit hash: " FULL_COMMIT_HASH;
     LogFile << "\n*********************************************************"
                    "********************\n";
     LogFile << "***********************************************************"
@@ -42,6 +42,7 @@ CLog::CLog(const std::string &NameOfFile) {
     LogFile <<  GetDateAndTime();
     LogFile << "\n*********************************************************"
                    "********************\n\n";
+    LogFile.flush();
 }
 
 CLog::~CLog() noexcept { FinishLog(); }
