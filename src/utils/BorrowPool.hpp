@@ -21,7 +21,9 @@
 #include <mutex>
 #include <vector>
 
+#ifndef CPU_COMMON_CACHELINE_SIZE
 #define CPU_COMMON_CACHELINE_SIZE 64
+#endif
 
 template <class T> class BorrowPool;
 
@@ -44,8 +46,8 @@ template <class T> class BorrowedObject {
     auto operator*() -> T & { return bobject->a; }
     auto operator*() const -> const T & { return *bobject->a; }
 
-    auto get() -> T * { return &bobject->a; }
-    auto get() const -> const T * { return &bobject->a; }
+    [[nodiscard]] auto get() -> T * { return &bobject->a; }
+    [[nodiscard]] auto get() const -> const T * { return &bobject->a; }
 
     explicit operator bool() const { return bobject != nullptr; }
 

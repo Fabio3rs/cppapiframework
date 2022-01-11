@@ -32,6 +32,69 @@ static auto putLogInDataMap(std::fstream &joblog, const std::string &key,
     datamap[key] = fullstrlog;
 }
 
+auto job::QueueWorker::allocateJobOutputStream(
+    const Poco::JSON::Object::Ptr &json)
+    -> std::pair<std::fstream, std::fstream> {
+    auto tmpdir = std::filesystem::temp_directory_path();
+    std::string tmpfilename = "tmp" + json->getValue<std::string>("uuid");
+
+    std::fstream joblog(tmpdir / tmpfilename,
+                        std::ios::in | std::ios::out | std::ios::trunc);
+
+    std::fstream joblogerr(tmpdir / (tmpfilename + ".stderr"),
+                           std::ios::in | std::ios::out | std::ios::trunc);
+
+    if (!joblog.is_open()) {
+        LOGERR() << "fail to open " << (tmpdir / tmpfilename).string()
+                 << std::endl;
+    }
+
+    if (!joblogerr.is_open()) {
+        LOGERR() << "fail to open "
+                 << (tmpdir / (tmpfilename + ".stderr")).string() << std::endl;
+    }
+
+    return std::pair<std::fstream, std::fstream>(std::move(joblog),
+                                                 std::move(joblogerr));
+}
+
+auto job::QueueWorker::handle(const std::shared_ptr<QueueableJob> &newjob,
+                              std::ostream &outstream,
+                              std::ostream &errstream) {
+    jobStatus result = noerror;
+    ScopedStreamRedirect red(std::cout, outstream);
+    ScopedStreamRedirect redcerr(std::cerr, errstream);
+
+    try {
+        newjob->handle();
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
+        result = errexcept;
+    }
+
+    std::cout.flush();
+    std::cerr.flush();
+    return result;
+}
+
+auto job::QueueWorker::saveJobLog(std::fstream &outstream,
+                                  std::fstream &errstream,
+                                  GenericQueue::datamap_t &datamap) {
+    try {
+        putLogInDataMap(errstream, "JobStderr", datamap);
+    } catch (const std::exception &e) {
+        LOGERR() << e.what() << '\n';
+        datamap["LastException"] = e.what();
+    }
+
+    try {
+        putLogInDataMap(outstream, "JobStdout", datamap);
+    } catch (const std::exception &e) {
+        LOGERR() << e.what() << '\n';
+        datamap["LastException"] = e.what();
+    }
+}
+
 auto job::QueueWorker::handle_job_run(
     const std::shared_ptr<QueueableJob> &newjob,
     const Poco::JSON::Object::Ptr &json, GenericQueue::datamap_t &datamap)
@@ -41,11 +104,8 @@ auto job::QueueWorker::handle_job_run(
               << std::endl;
 
     newjob->tries++;
-    std::fstream joblog(json->getValue<std::string>("uuid"),
-                        std::ios::in | std::ios::out | std::ios::trunc);
 
-    std::fstream joblogerr(json->getValue<std::string>("uuid") + ".stderr",
-                           std::ios::in | std::ios::out | std::ios::trunc);
+    auto [joblog, joblogerr] = allocateJobOutputStream(json);
 
     /**
      * @brief Fork the process if the flag is enabled
@@ -59,18 +119,7 @@ auto job::QueueWorker::handle_job_run(
             throw std::runtime_error("Fork failed");
 
         case 0: {
-            ScopedStreamRedirect red(std::cout, joblog);
-            ScopedStreamRedirect redcerr(std::cerr, joblogerr);
-
-            try {
-                newjob->handle();
-            } catch (const std::exception &e) {
-                std::cerr << e.what() << '\n';
-                result = errexcept;
-            }
-
-            std::cout.flush();
-            std::cerr.flush();
+            result = handle(newjob, joblog, joblogerr);
         } break;
 
         default:
@@ -92,19 +141,7 @@ auto job::QueueWorker::handle_job_run(
         exit(result);
     }
 
-    try {
-        putLogInDataMap(joblogerr, "JobStderr", datamap);
-    } catch (const std::exception &e) {
-        std::cerr << e.what() << '\n';
-        datamap["LastException"] = e.what();
-    }
-
-    try {
-        putLogInDataMap(joblog, "JobStdout", datamap);
-    } catch (const std::exception &e) {
-        std::cerr << e.what() << '\n';
-        datamap["LastException"] = e.what();
-    }
+    saveJobLog(joblog, joblogerr, datamap);
 
     return result;
 }

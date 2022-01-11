@@ -19,10 +19,19 @@ class QueueWorker {
 
     int queueTimeout{1}, retryInTimeout{0};
     int64_t jobLogExpireSeconds{3600};
-    
+
     std::atomic<bool> running{true};
     std::atomic<bool> forkToHandle{false};
     std::atomic<bool> cleanSuccessfulJobsLogs{true};
+
+    static auto allocateJobOutputStream(const Poco::JSON::Object::Ptr &json)
+        -> std::pair<std::fstream, std::fstream>;
+
+    static auto handle(const std::shared_ptr<QueueableJob> &newjob,
+                       std::ostream &outstream, std::ostream &errstream);
+
+    static auto saveJobLog(std::fstream &outstream, std::fstream &errstream,
+                           GenericQueue::datamap_t &datamap);
 
   public:
     jobStatus
@@ -38,7 +47,7 @@ class QueueWorker {
         return errorremove;
     }
 
-    auto handle_job_run(const std::shared_ptr<QueueableJob>& newjob,
+    auto handle_job_run(const std::shared_ptr<QueueableJob> &newjob,
                         const Poco::JSON::Object::Ptr &json,
                         GenericQueue::datamap_t &datamap) -> jobStatus;
 
