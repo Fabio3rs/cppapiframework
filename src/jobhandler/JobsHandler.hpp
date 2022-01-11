@@ -24,12 +24,12 @@ class JobsHandler {
      * @tparam T the type
      * @return constexpr std::string_view the name of the type
      */
-    template <class T> static constexpr std::string getTypeName() {
+    template <class T> static std::string getTypeName() {
         return QueueableJob::concatJobSystemVersion(typeid(T).name());
     }
 
     template <class T>
-    static constexpr std::string getTypeNameByInst(const T & /*ununsed*/) {
+    static std::string getTypeNameByInst(const T & /*ununsed*/) {
         return QueueableJob::concatJobSystemVersion(typeid(T).name());
     }
 
