@@ -53,7 +53,7 @@ class QueueableJob {
      * @tparam T type
      */
     template <class T>
-    static constexpr auto getTypeNameByInst(const T & /*ununsed*/)
+    static auto getTypeNameByInst(const T & /*ununsed*/)
         -> std::string {
         return concatJobSystemVersion(typeid(T).name());
     }
