@@ -23,6 +23,29 @@ class QueueableJob {
     bool failed{false};
 
   public:
+    static constexpr std::string_view jobVersionStr
+
+#ifdef CUR_JOB_FRAMEWORK_VERSION
+        {CUR_JOB_FRAMEWORK_VERSION};
+#else
+        {""};
+#endif
+
+    static auto getJobSystemVersion() -> std::string {
+        return std::string(jobVersionStr);
+    }
+
+    static auto concatJobSystemVersion(std::string_view str) -> std::string {
+        std::string result;
+        std::string version = getJobSystemVersion();
+
+        result.reserve(str.size() + version.size() + 1);
+
+        result.append(str);
+        result.append(version);
+        return result;
+    }
+
     /**
      * @brief get the type name in string format, this is not compile portable,
      * to use in different programs only one compiler should be used
@@ -30,8 +53,9 @@ class QueueableJob {
      * @tparam T type
      */
     template <class T>
-    static constexpr std::string_view getTypeNameByInst(const T & /*ununsed*/) {
-        return typeid(T).name();
+    static constexpr auto getTypeNameByInst(const T & /*ununsed*/)
+        -> std::string {
+        return concatJobSystemVersion(typeid(T).name());
     }
 
     virtual auto dump_json() const -> Poco::JSON::Object::Ptr {
@@ -71,7 +95,7 @@ class QueueableJob {
      *
      * @return std::string_view the string name
      */
-    virtual auto getName() const -> std::string_view = 0;
+    virtual auto getName() const -> std::string = 0;
 
     /**
      * @brief the job has failed

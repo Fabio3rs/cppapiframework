@@ -18,11 +18,34 @@ include(CTest)
 enable_testing()
 find_package(GTest REQUIRED)
 include(GoogleTest)
+find_package(Git)
 
 find_package(Poco REQUIRED COMPONENTS Crypto JSON Net NetSSL Redis)
 find_package(OpenSSL REQUIRED)
 find_package(PkgConfig)
 pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+
+if (NOT DEFINED CURRENT_SHORT_MAIN_GIT_COMMIT)
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        RESULTS_VARIABLE GIT_REV_PARSE_SHORT_HEAD_RES
+        OUTPUT_VARIABLE CURRENT_SHORT_MAIN_GIT_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message("Commit short ${CURRENT_SHORT_MAIN_GIT_COMMIT}")
+endif()
+
+if (NOT DEFINED CURRENT_FULL_MAIN_GIT_COMMIT)
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        RESULTS_VARIABLE GIT_REV_PARSE_FULL_HEAD_RES
+        OUTPUT_VARIABLE CURRENT_FULL_MAIN_GIT_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message("Commit full ${CURRENT_FULL_MAIN_GIT_COMMIT}")
+endif()
+
+if (NOT DEFINED CURRENT_JOB_VERSION)
+    set(CURRENT_JOB_VERSION "@${CURRENT_SHORT_MAIN_GIT_COMMIT}")
+endif()
 
 # setando todos arquivos fontes que serão compilados
 file(
@@ -39,6 +62,8 @@ file(
 
 add_library(${projectname} ${SOURCES})
 
+add_compile_definitions("CUR_JOB_FRAMEWORK_VERSION=\"${CURRENT_JOB_VERSION}\"")
+add_compile_definitions("FULL_COMMIT_HASH=\"${CURRENT_FULL_MAIN_GIT_COMMIT}\"")
 target_compile_definitions(${projectname} PRIVATE "PROJECT_NAME=\"cppapiframework\"")
 
 # Compiler-specific compile flags

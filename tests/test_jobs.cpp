@@ -25,7 +25,7 @@ class MockJob : public job::QueueableJob {
   public:
     QUEUEABLE_SERIALIZE(jsondata, strdata, integerdata)
 
-    [[nodiscard]] auto getName() const -> std::string_view override {
+    [[nodiscard]] auto getName() const -> std::string override {
         return getTypeNameByInst(*this);
     }
 
@@ -71,7 +71,7 @@ class OtherPrintJob : public job::QueueableJob {
   public:
     QUEUEABLE_SERIALIZE(data, shouldfail)
 
-    [[nodiscard]] auto getName() const -> std::string_view override {
+    [[nodiscard]] auto getName() const -> std::string override {
         return getTypeNameByInst(*this);
     }
 

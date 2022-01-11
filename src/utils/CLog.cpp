@@ -8,6 +8,10 @@
 #define LOG_FILE_NAME_PATH "program.log"
 #endif
 
+#ifndef FULL_COMMIT_HASH
+#define FULL_COMMIT_HASH "#"
+#endif
+
 auto CLog::log(const char *filepath) -> CLog & {
     static CLog Log(filepath != nullptr ? filepath : LOG_FILE_NAME_PATH);
     return Log;
@@ -24,20 +28,20 @@ CLog::CLog(const std::string &NameOfFile) {
         throw std::runtime_error("Impossivel criar ou abrir o arquivo de log");
     }
 
-    std::string LogContents;
-    LogContents += "***********************************************************"
+    LogFile << "***********************************************************"
                    "******************\n";
-    LogContents += std::string("* Program compilation date/time: ") + __DATE__ +
+    LogFile << std::string("* Program compilation date/time: ") + __DATE__ +
                    " " + __TIME__;
-    LogContents += "\n*********************************************************"
+    LogFile << "\n*********************************************************"
                    "********************\n";
-    LogContents += "***********************************************************"
+    LogFile << "Full commit hash: " FULL_COMMIT_HASH;
+    LogFile << "\n*********************************************************"
+                   "********************\n";
+    LogFile << "***********************************************************"
                    "******************\n* Log started at: ";
-    LogContents += GetDateAndTime();
-    LogContents += "\n*********************************************************"
+    LogFile <<  GetDateAndTime();
+    LogFile << "\n*********************************************************"
                    "********************\n\n";
-    LogFile.write(LogContents.c_str(),
-                  static_cast<std::streamsize>(LogContents.size()));
 }
 
 CLog::~CLog() noexcept { FinishLog(); }
@@ -80,10 +84,9 @@ auto CLog::GetDateAndTime() -> std::string {
 
 void CLog::logjson(Poco::JSON::Object::Ptr jsonobj,
                    const std::string &extraid) {
-    std::lock_guard<std::mutex> lck(Logmtx);
 
     std::string Temp;
-    Temp.reserve(64);
+    Temp.reserve(extraid.size() + 32);
     Temp += GetDateAndTime();
     Temp += ": ";
 
@@ -91,13 +94,18 @@ void CLog::logjson(Poco::JSON::Object::Ptr jsonobj,
         Temp += extraid;
         Temp += " JSON Object is NULL";
         Temp += "\n";
+
+        std::lock_guard<std::mutex> lck(Logmtx);
         LogFile << Temp;
+        LogFile.flush();
         return;
     }
 
     Temp += extraid;
     Temp += " ";
     LogFile << Temp;
+
+    std::lock_guard<std::mutex> lck(Logmtx);
     jsonobj->stringify(LogFile);
     LogFile << "\n";
     
@@ -105,22 +113,21 @@ void CLog::logjson(Poco::JSON::Object::Ptr jsonobj,
 }
 
 void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
-    std::lock_guard<std::mutex> lck(Logmtx);
     std::string Temp;
-    Temp.reserve(64);
+    Temp.reserve(Text.size() + extraid.size() + 16);
     Temp += GetDateAndTime();
     Temp += ": ";
     Temp += extraid;
     Temp += " ";
     Temp += Text;
     Temp += "\n";
-    LogFile << Temp;
 
+    std::lock_guard<std::mutex> lck(Logmtx);
+    LogFile << Temp;
     LogFile.flush();
 }
 
 void CLog::FinishLog() {
-    std::lock_guard<std::mutex> lck(Logmtx);
     std::string LogContents;
     LogContents += "\n*********************************************************"
                    "********************\n* Log Finished at: ";
@@ -128,6 +135,9 @@ void CLog::FinishLog() {
     LogContents += "\n*********************************************************"
                    "********************\n";
     LogFile.clear();
+
+
+    std::lock_guard<std::mutex> lck(Logmtx);
     LogFile.write(LogContents.c_str(),
                   static_cast<std::streamsize>(LogContents.size()));
     LogFile.flush();

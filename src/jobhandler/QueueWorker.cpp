@@ -129,6 +129,7 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
 
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
+        LOGERR() << datamap["payload"] << std::endl;
         return errorremove;
     }
 
