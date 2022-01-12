@@ -65,7 +65,16 @@ class QueueWorker {
     pid_t fork_process();
     static pid_t waitpid(pid_t pid);
 
-    template <class T> void push(const std::string &queue, const T &job) {
+    /**
+     * @brief Adds a job to the queue
+     *
+     * @tparam T job type
+     * @param queue queue name
+     * @param job job instance
+     * @return std::string job uuid
+     */
+    template <class T>
+    auto push(const std::string &queue, const T &job) -> std::string {
         auto json = jobhandler->create_jobpayload(job);
         constexpr size_t KEYSIZE = sizeof("job_instance:") + 36;
         std::string jobuuid =
@@ -89,6 +98,8 @@ class QueueWorker {
                             {"className", std::string(job.getName())}});
 
         queueServiceInst->push(queue, persistentkey);
+
+        return jobuuid;
     }
 
     // void push(const std::string &queue, const Poco::JSON::Object::Ptr &json);
