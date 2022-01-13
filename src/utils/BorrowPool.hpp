@@ -105,7 +105,7 @@ template <class poolobject_t> class BorrowPool {
     }
 
     [[nodiscard]] auto findFreeElement() const -> size_t {
-        size_t result = ~std::size_t(0uL);
+        size_t result = ~std::size_t(0UL);
         for (size_t i = 0, size = bits.size(); i < size; ++i) {
             if (!bits[i]) {
                 return i;
@@ -116,7 +116,7 @@ template <class poolobject_t> class BorrowPool {
     }
 
     auto getValidPos() -> size_t {
-        constexpr std::size_t invalidpos = ~std::size_t(0uL);
+        constexpr std::size_t invalidpos = ~std::size_t(0UL);
         std::lock_guard<std::mutex> lck(mut);
 
         if (firstFreeElement != invalidpos) {
@@ -145,7 +145,7 @@ template <class poolobject_t> class BorrowPool {
   public:
     auto borrow(std::chrono::seconds timeout = std::chrono::hours(2))
         -> BorrowedObject<poolobject_t> {
-        constexpr std::size_t invalidpos = ~std::size_t(0uL);
+        constexpr std::size_t invalidpos = ~std::size_t(0UL);
         std::size_t pos = getValidPos();
 
         while (pos == invalidpos) {

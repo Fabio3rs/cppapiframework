@@ -137,7 +137,7 @@ class JobsHandler {
 
     static auto default_instance() -> std::shared_ptr<JobsHandler>;
 
-  private:
+  protected:
     /**
      * @brief The jobs list, pair first: class name; pair second: the function
      * that instanciates the class
