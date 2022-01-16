@@ -6,30 +6,10 @@
 
 auto job::QueueWorker::fork_process() -> pid_t {
     if (forkToHandle) {
-        return fork();
+        return getProcessHelper()->fork();
     }
 
     return 0;
-}
-
-static auto putLogInDataMap(std::fstream &joblog, const std::string &key,
-                            GenericQueue::datamap_t &datamap) {
-    std::string line;
-    std::string fullstrlog;
-    joblog.seekg(0, std::ios::end);
-
-    std::streampos printsize = joblog.tellg();
-    fullstrlog.reserve((printsize > 0 ? static_cast<size_t>(printsize) : 0) +
-                       8);
-    joblog.seekg(0, std::ios::beg);
-
-    while (std::getline(joblog, line)) {
-        std::cout << "JOB LINE " << line << std::endl;
-        fullstrlog += line;
-        fullstrlog += "\n";
-    }
-
-    datamap[key] = fullstrlog;
 }
 
 auto job::QueueWorker::allocateJobOutputStream(
@@ -58,43 +38,6 @@ auto job::QueueWorker::allocateJobOutputStream(
                                                  std::move(joblogerr));
 }
 
-auto job::QueueWorker::handle(const std::shared_ptr<QueueableJob> &newjob,
-                              std::ostream &outstream,
-                              std::ostream &errstream) {
-    jobStatus result = noerror;
-    ScopedStreamRedirect red(std::cout, outstream);
-    ScopedStreamRedirect redcerr(std::cerr, errstream);
-
-    try {
-        newjob->handle();
-    } catch (const std::exception &e) {
-        std::cerr << e.what() << '\n';
-        result = errexcept;
-    }
-
-    std::cout.flush();
-    std::cerr.flush();
-    return result;
-}
-
-auto job::QueueWorker::saveJobLog(std::fstream &outstream,
-                                  std::fstream &errstream,
-                                  GenericQueue::datamap_t &datamap) {
-    try {
-        putLogInDataMap(errstream, "JobStderr", datamap);
-    } catch (const std::exception &e) {
-        LOGERR() << e.what() << '\n';
-        datamap["LastException"] = e.what();
-    }
-
-    try {
-        putLogInDataMap(outstream, "JobStdout", datamap);
-    } catch (const std::exception &e) {
-        LOGERR() << e.what() << '\n';
-        datamap["LastException"] = e.what();
-    }
-}
-
 auto job::QueueWorker::handle_job_run(
     const std::shared_ptr<QueueableJob> &newjob,
     const Poco::JSON::Object::Ptr &json, GenericQueue::datamap_t &datamap)
@@ -119,13 +62,19 @@ auto job::QueueWorker::handle_job_run(
             throw std::runtime_error("Fork failed");
 
         case 0: {
-            result = handle(newjob, joblog, joblogerr);
+            result = jobhandler->handle(newjob, joblog, joblogerr);
         } break;
 
-        default:
-            result =
-                waitpid(pid) == 0 ? noerror : process_retry_condition(newjob);
-            break;
+        default: {
+            auto resPid = getProcessHelper()->wait(pid, 0);
+
+            if (resPid.first == ProcessHelper::waitStatuses::exited &&
+                resPid.second == 0) {
+                result = noerror;
+            } else {
+                result = process_retry_condition(newjob);
+            }
+        } break;
         }
     } catch (const std::exception &e) {
         datamap["LastException"] = e.what();
@@ -141,7 +90,7 @@ auto job::QueueWorker::handle_job_run(
         exit(result);
     }
 
-    saveJobLog(joblog, joblogerr, datamap);
+    jobhandler->saveJobLog(joblog, joblogerr, datamap);
 
     return result;
 }
@@ -215,28 +164,6 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
     }
 
     return result;
-}
-
-auto job::QueueWorker::waitpid(pid_t pid) -> pid_t {
-    int status = 0;
-    ::waitpid(pid, &status, 0);
-
-    if (WIFEXITED(status)) { // NOLINT
-                             // NOLINTNEXTLINE
-        LOGINFO() << "exited, status=" << WEXITSTATUS(status) << std::endl;
-        return WEXITSTATUS(status); // NOLINT
-    }
-    if (WIFSIGNALED(status)) { // NOLINT
-        LOGINFO() << "killed by signal %d\n"
-                  << WTERMSIG(status) << std::endl; // NOLINT
-    } else if (WIFSTOPPED(status)) {                // NOLINT
-        LOGINFO() << "stopped by signal %d\n"
-                  << WSTOPSIG(status) << std::endl; // NOLINT
-    } else if (WIFCONTINUED(status)) {              // NOLINT
-        LOGINFO() << "continued" << std::endl;
-    }
-
-    return -1;
 }
 
 auto job::QueueWorker::pop(const std::string &queue, int timeout)

@@ -3,6 +3,7 @@
 #include "../queues/GenericQueue.hpp"
 #include "../stdafx.hpp"
 #include "../utils/LogDefines.hpp"
+#include "../utils/ProcessHelper.hpp"
 #include "../utils/ScopedStreamRedirect.hpp"
 #include "JobsHandler.hpp"
 #include <fstream>
@@ -10,12 +11,11 @@
 
 namespace job {
 
-enum jobStatus { noerror, errorremove, errorretry, errexcept };
-
 class QueueWorker {
   protected:
     std::shared_ptr<JobsHandler> jobhandler;
     std::shared_ptr<GenericQueue> queueServiceInst;
+    std::shared_ptr<ProcessHelper> processHelperInst;
 
     int queueTimeout{1}, retryInTimeout{0};
     int64_t jobLogExpireSeconds{3600};
@@ -27,13 +27,19 @@ class QueueWorker {
     static auto allocateJobOutputStream(const Poco::JSON::Object::Ptr &json)
         -> std::pair<std::fstream, std::fstream>;
 
-    static auto handle(const std::shared_ptr<QueueableJob> &newjob,
-                       std::ostream &outstream, std::ostream &errstream);
-
-    static auto saveJobLog(std::fstream &outstream, std::fstream &errstream,
-                           GenericQueue::datamap_t &datamap);
-
   public:
+    void setProcessHelper(std::shared_ptr<ProcessHelper> pHelper) {
+        processHelperInst = pHelper;
+    }
+
+    auto getProcessHelper() -> std::shared_ptr<ProcessHelper> {
+        if (!processHelperInst) {
+            processHelperInst = std::make_shared<ProcessHelper>();
+        }
+
+        return processHelperInst;
+    }
+
     jobStatus
     process_retry_condition(const std::shared_ptr<QueueableJob> &job) {
         if (job->getMaxTries() == 0) {
@@ -63,7 +69,6 @@ class QueueWorker {
         -> jobStatus;
 
     pid_t fork_process();
-    static pid_t waitpid(pid_t pid);
 
     /**
      * @brief Adds a job to the queue

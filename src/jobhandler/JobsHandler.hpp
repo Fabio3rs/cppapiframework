@@ -15,8 +15,12 @@
 
 namespace job {
 
+enum jobStatus { noerror, errorremove, errorretry, errexcept };
+
 class JobsHandler {
   public:
+    using datamap_t = std::unordered_map<std::string, std::string>;
+
     /**
      * @brief Get the Type Name object. Uses typeid name to get the typename in
      * compile time
@@ -136,6 +140,20 @@ class JobsHandler {
     }
 
     static auto default_instance() -> std::shared_ptr<JobsHandler>;
+
+    /**
+     * @brief Runs a job instance handle function
+     *
+     * @param newjob the job instance
+     * @param outstream stdout stream
+     * @param errstream stderr stream
+     * @return jobStatus job status result
+     */
+    auto handle(const std::shared_ptr<QueueableJob> &newjob,
+                std::ostream &outstream, std::ostream &errstream) -> jobStatus;
+
+    void saveJobLog(std::fstream &outstream, std::fstream &errstream,
+                    datamap_t &datamap);
 
   protected:
     /**
