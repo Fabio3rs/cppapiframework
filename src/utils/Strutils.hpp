@@ -129,6 +129,25 @@ class Strutils {
 
         return result;
     }
+
+    template <class... Types>
+    static auto multi_concat(const Types &... args) -> std::string {
+        const std::array<std::string_view,
+                         std::tuple_size<std::tuple<Types...>>::value>
+            values = {std::forward<const std::string_view>(args)...};
+        std::string result;
+        size_t sizes = 0;
+        for (const auto &str : values) {
+            sizes += str.size();
+        }
+
+        result.reserve(sizes);
+
+        for (const auto &str : values) {
+            result += str;
+        }
+        return result;
+    }
 };
 
 #endif
