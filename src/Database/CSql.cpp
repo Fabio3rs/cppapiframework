@@ -57,6 +57,17 @@ auto CSql::make_connection_cfg() -> unique_conn_t {
     return con;
 }
 
+auto CSql::make_connection_cfg_noschema() -> unique_conn_t {
+    auto &conf = CConfig::config();
+    sql::mysql::MySQL_Driver *driver = get_sql_drv();
+
+    unique_conn_t con;
+    con = unique_conn_t(driver->connect(conf["MYSQL_HOST"], conf["MYSQL_USER"],
+                                        conf["MYSQL_PASSWORD"]));
+    return con;
+}
+
+
 auto CSql::get_sql_drv() -> sql::mysql::MySQL_Driver * {
     /* get_driver_instance() is not thread safe */
     std::lock_guard<std::mutex> lck(sqldrvmtx);

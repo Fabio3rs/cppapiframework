@@ -142,6 +142,9 @@ class CSql {
      */
     auto make_connection_cfg() -> unique_conn_t;
 
+    auto make_connection_cfg_noschema() -> unique_conn_t;
+
+
     /**
      *@brief Get the sql drv object. Objeto de driver do sql não é garantido
      *contra concorrência
