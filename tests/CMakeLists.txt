@@ -49,5 +49,7 @@ else()
     message(FATAL_ERROR "-- Pistache is not found in your system.")
 endif(Pistache_FOUND)
 
-gtest_discover_tests(apiframework_test)
+gtest_discover_tests(apiframework_test PROPERTIES
+ENVIRONMENT "LLVM_PROFILE_FILE=apiframework_test-%p.profraw")
+
 
