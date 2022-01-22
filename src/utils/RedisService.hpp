@@ -7,12 +7,18 @@
 #include <Poco/Redis/Command.h>
 #include <Poco/Redis/Redis.h>
 
+struct RedisServiceAddress {
+    std::string host;
+    int serverport{0};
+};
+
 class RedisService {
     using pool_t = BorrowPool<Poco::Redis::Client>;
     pool_t pool;
 
-    std::string host, password;
-    int serverport;
+    std::vector<RedisServiceAddress> replicaList;
+
+    std::string password;
 
   public:
     auto get_connection() {
@@ -21,7 +27,7 @@ class RedisService {
             return borrowed;
         }
 
-        connect(*borrowed);
+        connect(*borrowed, borrowed.getId());
         return borrowed;
     }
 
@@ -296,8 +302,8 @@ class RedisService {
     };
 
     template <class T, class... Types>
-    static inline auto cmd_inst(Poco::Redis::Client &inst, const std::string &cmd,
-                         Types &&... args) -> T {
+    static inline auto cmd_inst(Poco::Redis::Client &inst,
+                                const std::string &cmd, Types &&... args) -> T {
         Poco::Redis::Command custom_cmd = Poco::Redis::Command(cmd);
 
         std::array<argToString, std::tuple_size<std::tuple<Types...>>::value>
@@ -321,13 +327,15 @@ class RedisService {
         return cmd_inst<T>(*connection, cmd, std::forward<Types>(args)...);
     }
 
-    auto connect(Poco::Redis::Client &inst) -> bool {
+    auto connect(Poco::Redis::Client &inst, size_t chooseReplica = 0) -> bool {
         if (inst.isConnected()) {
             return true;
         }
 
         try {
-            inst.connect(host, serverport);
+            const auto &choosenHost =
+                replicaList[chooseReplica % replicaList.size()];
+            inst.connect(choosenHost.host, choosenHost.serverport);
 
             if (!password.empty()) {
                 Poco::Redis::Command authcmd("AUTH");
@@ -349,13 +357,32 @@ class RedisService {
 
     void set_credentials(std::string h = "127.0.0.1", int port = 6379,
                          std::string pwd = std::string()) {
-        host = std::move(h);
+        if (replicaList.size() == 0) {
+            replicaList.push_back({std::move(h), port});
+        } else {
+            RedisServiceAddress &raddr = replicaList[0];
+            raddr.host = std::move(h);
+            raddr.serverport = port;
+        }
+
         password = std::move(pwd);
-        serverport = port;
+    }
+
+    void add_host_replica(std::string h = "127.0.0.1", int port = 6379) {
+        replicaList.push_back({std::move(h), port});
+    }
+
+    RedisService(size_t poolsize, std::vector<RedisServiceAddress> replicas,
+                 std::string pwd = std::string())
+        : pool(poolsize), replicaList(std::move(replicas)) {
+        password = std::move(pwd);
     }
 
     RedisService(size_t poolsize = 32, std::string h = "127.0.0.1",
                  int port = 6379, std::string pwd = std::string())
-        : pool(poolsize), host(std::move(h)), password(std::move(pwd)),
-          serverport(port) {}
+        : pool(poolsize) {
+        replicaList.push_back({std::move(h), port});
+
+        password = std::move(pwd);
+    }
 };

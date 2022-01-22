@@ -49,6 +49,8 @@ template <class T> class BorrowedObject {
     [[nodiscard]] auto get() -> T * { return &bobject->a; }
     [[nodiscard]] auto get() const -> const T * { return &bobject->a; }
 
+    auto getId() const -> size_t { return pos; }
+
     explicit operator bool() const { return bobject != nullptr; }
 
     auto operator=(const BorrowedObject &) -> BorrowedObject & = delete;
