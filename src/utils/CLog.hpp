@@ -1,31 +1,21 @@
 #pragma once
 #ifndef LOGGING_SYSTEM_CLOG_H
 #define LOGGING_SYSTEM_CLOG_H
-#include <Poco/JSON/Object.h>
-#include <chrono>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
+#include <atomic>
 #include <exception>
 #include <fstream>
 #include <memory>
 #include <mutex>
 #include <string>
-#include <type_traits>
-#include <utility>
-
-#define CLOG_EXCEPTION_LOG(e)                                                  \
-    CLog::log().multiRegister("EXCEPTION (%0) AT %1:%2", e.what(), __FILE__,   \
-                              __LINE__)
-
-#define CLOG_LOG(format, ...)                                                  \
-    CLog::log().multiRegister("%1:%2 (%0) " format, __func__, __FILE__,        \
-                              __LINE__, __VA_ARGS__)
+#include <thread>
 
 class CLog {
-    std::mutex Logmtx;
-    std::string FileName;
     std::fstream LogFile;
+    std::thread writterThreadInst;
+    std::atomic<bool> running;
+
+    static auto addLinesToLog(CLog &logInst) -> bool;
+    static void threadFn(CLog &logInst);
 
     class argToString {
         const std::string str;
@@ -142,10 +132,7 @@ class CLog {
     }
 
     void FinishLog();
-    void SaveBuffer();
     void operator<<(const std::string &Text) { AddToLog(Text); }
-    void logjson(Poco::JSON::Object::Ptr jsonobj, const std::string &extraid);
-    static auto GetDateAndTime() -> std::string;
 
     static auto log(const char *filepath = nullptr) -> CLog &;
 
