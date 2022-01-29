@@ -21,18 +21,20 @@ struct LogLine {
 };
 } // namespace
 
-static CircleMTIO<256, LogLine> logLinesBuffer;
+using logCircleIo_t = CircleMTIO<512, LogLine>;
+static std::unique_ptr<logCircleIo_t> logLinesBuffer(std::make_unique<logCircleIo_t>());
 
 auto CLog::addLinesToLog(CLog &logInst) -> bool {
     bool continueRunning = true;
     bool shouldFlush = false;
     while (continueRunning) {
-        auto nextLine = logLinesBuffer.next();
+        auto nextLine = logLinesBuffer->next();
 
         if (nextLine.first != nullptr && nextLine.second) {
-            auto &line = nextLine.first->line;
+            const auto &lineInf = *nextLine.first;
+            const auto &line = nextLine.first->line;
 
-            auto tempo = ChronoUtils::GetDateAndTime();
+            auto tempo = ChronoUtils::GetDateAndTime(lineInf.when);
 
             logInst.LogFile << tempo;
             logInst.LogFile << ": ";
@@ -51,8 +53,8 @@ auto CLog::addLinesToLog(CLog &logInst) -> bool {
 void CLog::threadFn(CLog &logInst) {
     bool keepRunning = true;
     while (keepRunning) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
         if (!logInst.running) {
             keepRunning = false;
         }
@@ -102,7 +104,7 @@ CLog::CLog(const std::string &NameOfFile) {
 CLog::~CLog() noexcept { FinishLog(); }
 
 void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
-    auto logLine = logLinesBuffer.new_write();
+    auto logLine = logLinesBuffer->new_write();
 
     if (logLine.first == nullptr) {
         throw std::runtime_error("Log failed");
@@ -117,7 +119,7 @@ void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
     Temp += " ";
     Temp += Text;
 
-    logLinesBuffer.set_ready(logLine.second);
+    logLinesBuffer->set_ready(logLine.second);
 }
 
 void CLog::FinishLog() {
