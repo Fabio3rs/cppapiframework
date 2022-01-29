@@ -111,6 +111,7 @@ void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
     }
 
     std::string &Temp = logLine.first->line;
+    Temp.clear();
     Temp.reserve(Text.size() + extraid.size());
     logLine.first->when = std::chrono::high_resolution_clock::now();
     logLine.first->thrid = std::this_thread::get_id();
