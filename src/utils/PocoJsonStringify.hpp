@@ -96,11 +96,13 @@ class PocoJsonStringify {
      * https://github.com/pocoproject/poco/blob/master/JSON/include/Poco/JSON/Array.h
      *
      //
-    // Stringifier.cpp
+    // Array.h
     //
     // Library: JSON
     // Package: JSON
-    // Module:  Stringifier
+    // Module:  Array
+    //
+    // Definition of the Array class.
     //
     // Copyright (c) 2012, Applied Informatics Software Engineering GmbH.
     // and Contributors.
