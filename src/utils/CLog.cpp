@@ -67,7 +67,7 @@ void CLog::threadFn(CLog &logInst) {
                 WAIT_COUNT = 0;
             }
         } else {
-            WAIT_COUNT = std::max(5, WAIT_COUNT++);
+            WAIT_COUNT = std::max(5, ++WAIT_COUNT);
         }
 
         if (!logInst.running) {
