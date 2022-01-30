@@ -11,6 +11,7 @@ auto operator new(std::size_t n) -> void* {
     ++allocations;
     return malloc(n); // NOLINT(hicpp-no-malloc)
 }
+
 void operator delete(void *p) noexcept {
     ++deallocations;
     free(p); // NOLINT(hicpp-no-malloc)
