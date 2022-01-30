@@ -9,37 +9,49 @@ template <class T> struct __attribute__((aligned(64))) singlevarnofsh { T a; };
 
 template <size_t num, class T> class __attribute__((aligned(64))) CircleMTIO {
     std::array<T, num> elements;
-    std::array<singlevarnofsh<std::atomic<bool>>, num> elements_ready;
+    std::array<singlevarnofsh<std::atomic<int>>, num> elements_state;
 
     std::atomic<size_t> reading_point;
     std::atomic<size_t> writing_point;
+    // std::atomic<size_t> read_point;
+    std::mutex mtx;
 
   public:
     typedef T value_type;
     typedef std::pair<value_type, size_t> pair_t;
 
     std::pair<T *, size_t> new_write() {
-        size_t a = 0;
-        do {
+        size_t a = writing_point.fetch_add(1);
+
+        if (a >= num) {
+            std::lock_guard<std::mutex> lck(mtx);
             a = writing_point.fetch_add(1);
 
-            if (writing_point >= num) {
-                writing_point = 0;
+            if (a >= num)
+            {
+                a = 0;
+                writing_point = 1;
             }
-        } while (a >= num);
+        }
+
+        if (elements_state[a].a != 0) {
+            return std::pair<T *, size_t>(nullptr, 0);
+        }
+
+        elements_state[a].a = 1;
 
         return std::pair<T *, size_t>(&elements[a], a);
     }
 
-    std::pair<T *, bool> next() {
+    std::pair<T *, size_t> next() {
         size_t r = reading_point;
 
-        if (!elements_ready[r].a) {
-            return std::pair<T *, bool>(nullptr, false);
+        if (elements_state[r].a != 2) {
+            return std::pair<T *, size_t>(nullptr, ~std::size_t(0));
         }
 
         if (r == writing_point) {
-            return std::pair<T *, bool>(nullptr, false);
+            return std::pair<T *, size_t>(nullptr, ~std::size_t(0));
         }
 
         reading_point++;
@@ -48,19 +60,25 @@ template <size_t num, class T> class __attribute__((aligned(64))) CircleMTIO {
             reading_point = 0;
         }
 
-        elements_ready[r].a = false;
+        // read_point = r;
 
-        return std::pair<T *, bool>(&elements[r], true);
+        return std::pair<T *, size_t>(&elements[r], r);
     }
 
-    void set_ready(size_t a) { elements_ready[a].a = true; }
+    void set_free(size_t a) {
+        elements_state[a].a = 0;
+        // read_point = ~std::size_t(0);
+    }
+
+    void set_ready(size_t a) { elements_state[a].a = 2; }
 
     CircleMTIO() {
         reading_point = 0;
         writing_point = 0;
+        // read_point = ~std::size_t(0);
 
-        for (auto &b : elements_ready) {
-            b.a = false;
+        for (auto &b : elements_state) {
+            b.a = 0;
         }
     }
 };

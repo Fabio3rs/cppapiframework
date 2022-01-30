@@ -21,7 +21,7 @@ struct LogLine {
 };
 } // namespace
 
-using logCircleIo_t = CircleMTIO<512, LogLine>;
+using logCircleIo_t = CircleMTIO<1024, LogLine>;
 static std::unique_ptr<logCircleIo_t>
     logLinesBuffer(std::make_unique<logCircleIo_t>());
 
@@ -31,7 +31,7 @@ auto CLog::addLinesToLog(CLog &logInst) -> bool {
     while (continueRunning) {
         auto nextLine = logLinesBuffer->next();
 
-        if (nextLine.first != nullptr && nextLine.second) {
+        if (nextLine.first != nullptr) {
             const auto &lineInf = *nextLine.first;
             const auto &line = nextLine.first->line;
 
@@ -39,10 +39,14 @@ auto CLog::addLinesToLog(CLog &logInst) -> bool {
 
             logInst.LogFile << tempo;
             logInst.LogFile << ": ";
+            logInst.LogFile << lineInf.thrid;
+            logInst.LogFile << " ";
             logInst.LogFile << line;
             logInst.LogFile << "\n";
 
             shouldFlush = true;
+
+            logLinesBuffer->set_free(nextLine.second);
         } else {
             continueRunning = false;
         }
@@ -53,9 +57,18 @@ auto CLog::addLinesToLog(CLog &logInst) -> bool {
 
 void CLog::threadFn(CLog &logInst) {
     bool keepRunning = true;
+    int WAIT_COUNT = 5;
     while (keepRunning) {
-        std::unique_lock<std::mutex> lck(logInst.cmdmtx);
-        logInst.waitcmd.wait_for(lck, std::chrono::milliseconds(5));
+        if (WAIT_COUNT > 4) {
+            std::unique_lock<std::mutex> lck(logInst.cmdmtx);
+            if (logInst.waitcmd.wait_for(
+                    lck, std::chrono::milliseconds(WAIT_COUNT)) !=
+                std::cv_status::timeout) {
+                WAIT_COUNT = 0;
+            }
+        } else {
+            WAIT_COUNT = std::max(5, WAIT_COUNT++);
+        }
 
         if (!logInst.running) {
             keepRunning = false;
@@ -108,9 +121,13 @@ CLog::~CLog() noexcept { FinishLog(); }
 void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
     std::pair<LogLine *, size_t> logLine;
 
-    while ((logLine = logLinesBuffer->new_write()).first == nullptr) {
-        waitcmd.notify_one();
-    }
+    do {
+        logLine = logLinesBuffer->new_write();
+        if (logLine.first == nullptr) {
+            waitcmd.notify_one();
+            std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+        }
+    } while (logLine.first == nullptr);
 
     std::string &Temp = logLine.first->line;
     Temp.clear();
