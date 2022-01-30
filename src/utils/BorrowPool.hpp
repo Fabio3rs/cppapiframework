@@ -1,4 +1,6 @@
 #pragma once
+#include <cstddef>
+#include <stdexcept>
 #ifndef UTILS_BORROWPOOL_HPP
 #define UTILS_BORROWPOOL_HPP
 /**
@@ -83,12 +85,11 @@ template <class T> class BorrowedObject {
 
 template <class poolobject_t> class BorrowPool {
     friend BorrowedObject<poolobject_t>;
-    std::mutex mut;
+    
+    std::atomic<size_t> firstFreeElement;
+    std::atomic<size_t> borrowedElements;
 
-    size_t firstFreeElement;
-    size_t borrowedElements;
-
-    std::vector<bool> bits;
+    std::deque<std::atomic<bool>> bits;
 
     std::deque<cachelinevar<poolobject_t>> tmp;
 
@@ -96,8 +97,6 @@ template <class poolobject_t> class BorrowPool {
     std::condition_variable waitcmd;
 
     void disownBorrowed(BorrowedObject<poolobject_t> &borrowed) {
-        std::lock_guard<std::mutex> lck(mut);
-
         bits[borrowed.pos] = false;
         firstFreeElement = borrowed.pos;
 
@@ -107,7 +106,7 @@ template <class poolobject_t> class BorrowPool {
     }
 
     [[nodiscard]] auto findFreeElement() const -> size_t {
-        size_t result = ~std::size_t(0UL);
+        size_t result = INVALIDPOS;
         for (size_t i = 0, size = bits.size(); i < size; ++i) {
             if (!bits[i]) {
                 return i;
@@ -118,26 +117,35 @@ template <class poolobject_t> class BorrowPool {
     }
 
     auto getValidPos() -> size_t {
-        constexpr std::size_t invalidpos = ~std::size_t(0UL);
-        std::lock_guard<std::mutex> lck(mut);
+        size_t result = INVALIDPOS;
 
-        if (firstFreeElement != invalidpos) {
-            auto result = firstFreeElement;
-            firstFreeElement = invalidpos;
+        result = firstFreeElement.exchange(INVALIDPOS);
 
-            bits[result] = true;
-            ++borrowedElements;
-            return result;
+        if (result != INVALIDPOS) {
+            bool val = false;
+            if (!bits[result].compare_exchange_strong(val, true)) {
+                result = INVALIDPOS;
+            } else {
+                ++borrowedElements;
+                return result;
+            }
         }
 
         if (borrowedElements == bits.size()) {
-            return invalidpos;
+            return INVALIDPOS;
         }
 
-        auto result = findFreeElement();
+        result = INVALIDPOS;
 
-        if (result != invalidpos) {
-            bits[result] = true;
+        for (size_t i = 0, size = bits.size(); i < size; ++i) {
+            bool val = false;
+            if (bits[i].compare_exchange_strong(val, true)) {
+                result = i;
+                break;
+            }
+        }
+
+        if (result != INVALIDPOS) {
             ++borrowedElements;
         }
 
@@ -145,25 +153,26 @@ template <class poolobject_t> class BorrowPool {
     }
 
   public:
+    constexpr static std::size_t INVALIDPOS{~std::size_t(0UL)};
+
     auto borrow(std::chrono::seconds timeout = std::chrono::hours(2))
         -> BorrowedObject<poolobject_t> {
-        constexpr std::size_t invalidpos = ~std::size_t(0UL);
         std::size_t pos = getValidPos();
 
-        while (pos == invalidpos) {
+        while (pos == INVALIDPOS) {
             std::unique_lock<std::mutex> lck(waitmtx);
 
             if (waitcmd.wait_for(lck, timeout) == std::cv_status::no_timeout) {
 
                 pos = getValidPos();
 
-                if (pos == invalidpos) {
+                if (pos == INVALIDPOS) {
                     continue;
                 }
             } else {
                 BorrowedObject<poolobject_t> nobject;
 
-                nobject.pos = invalidpos;
+                nobject.pos = INVALIDPOS;
                 nobject.originpool = nullptr;
                 nobject.bobject = nullptr;
 
@@ -184,7 +193,9 @@ template <class poolobject_t> class BorrowPool {
         firstFreeElement = 0;
         borrowedElements = 0;
         tmp.resize(ELEMENTS);
-        bits.resize(ELEMENTS, false);
+        for (size_t i = 0; i < ELEMENTS; i++) {
+            bits.emplace_back(false);
+        }
     }
 };
 

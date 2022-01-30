@@ -12,24 +12,47 @@ TEST(TestRedisService, IsConnected) {
     EXPECT_TRUE(RedisService::default_inst().get_connection());
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
-TEST(TestRedisService, hsetReturnsOne) {
-    std::cout << "Using redis key " << test_hashset_key << std::endl;
+static void default_hset_key_data() {
     EXPECT_EQ(RedisService::default_inst().hset(
                   test_hashset_key,
                   {{"firstkey", "firstdata"}, {"secondkey", "seconddata"}}),
               2);
+}
 
+static void default_key_test_delete() {
     EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
+}
+
+static void test_eq_hset_firstkey(
+    const std::unordered_map<std::string, std::string> &hgetallresult) {
+    EXPECT_EQ(hgetallresult.at("firstkey"), "firstdata");
+}
+
+static void test_eq_hset_secondkey(
+    const std::unordered_map<std::string, std::string> &hgetallresult) {
+    EXPECT_EQ(hgetallresult.at("secondkey"), "seconddata");
+}
+
+static void test_eq_hset_default(
+    const std::unordered_map<std::string, std::string> &hgetallresult) {
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
+    EXPECT_NO_THROW(test_eq_hset_firstkey(hgetallresult));
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
+    EXPECT_NO_THROW(test_eq_hset_secondkey(hgetallresult));
+}
+
+// NOLINTNEXTLINE(hicpp-special-member-functions)
+TEST(TestRedisService, hsetReturnsOne) {
+    std::cout << "Using redis key " << test_hashset_key << std::endl;
+    default_hset_key_data();
+
+    default_key_test_delete();
 }
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, hgetReturnsOne) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
-    EXPECT_EQ(RedisService::default_inst().hset(
-                  test_hashset_key,
-                  {{"firstkey", "firstdata"}, {"secondkey", "seconddata"}}),
-              2);
+    default_hset_key_data();
 
     auto hgetallresult = RedisService::default_inst().hgetall(test_hashset_key);
 
@@ -44,16 +67,13 @@ TEST(TestRedisService, hgetReturnsOne) {
             .value(std::string()),
         "seconddata");
 
-    EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
+    default_key_test_delete();
 }
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, hdelTest) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
-    EXPECT_EQ(RedisService::default_inst().hset(
-                  test_hashset_key,
-                  {{"firstkey", "firstdata"}, {"secondkey", "seconddata"}}),
-              2);
+    default_hset_key_data();
 
     auto hgetallresult = RedisService::default_inst().hgetall(test_hashset_key);
 
@@ -83,29 +103,18 @@ TEST(TestRedisService, hdelTest) {
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, hgetallReturnsEverything) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
-    // NOLINTNEXTLINE(hicpp-avoid-goto)
-    EXPECT_EQ(RedisService::default_inst().hset(
-                  test_hashset_key,
-                  {{"firstkey", "firstdata"}, {"secondkey", "seconddata"}}),
-              2);
+    default_hset_key_data();
 
     auto hgetallresult = RedisService::default_inst().hgetall(test_hashset_key);
+    test_eq_hset_default(hgetallresult);
 
-    // NOLINTNEXTLINE(hicpp-avoid-goto)
-    EXPECT_NO_THROW(EXPECT_EQ(hgetallresult.at("firstkey"), "firstdata"));
-    // NOLINTNEXTLINE(hicpp-avoid-goto)
-    EXPECT_NO_THROW(EXPECT_EQ(hgetallresult.at("secondkey"), "seconddata"));
-
-    EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
+    default_key_test_delete();
 }
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisService, customCmdExpireTTL) {
     std::cout << "Using redis key " << test_hashset_key << std::endl;
-    EXPECT_EQ(RedisService::default_inst().hset(
-                  test_hashset_key,
-                  {{"firstkey", "firstdata"}, {"secondkey", "seconddata"}}),
-              2);
+    default_hset_key_data();
 
     EXPECT_EQ(RedisService::default_inst().cmd<int64_t>("expire",
                                                         test_hashset_key, 32),
@@ -116,5 +125,5 @@ TEST(TestRedisService, customCmdExpireTTL) {
     EXPECT_LE(
         RedisService::default_inst().cmd<int64_t>("ttl", test_hashset_key), 32);
 
-    EXPECT_EQ(RedisService::default_inst().del({test_hashset_key}), 1);
+    default_key_test_delete();
 }
