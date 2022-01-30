@@ -1,5 +1,7 @@
 #include "../src/utils/CLog.hpp"
+#include <filesystem>
 #include <gtest/gtest.h>
+#include <unistd.h>
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestLog, Open) {
@@ -10,7 +12,7 @@ TEST(TestLog, Open) {
     }
 }
 
-static void somelogadd(){
+static void somelogadd() {
     auto &log = CLog::log();
 
     for (size_t i = 0; i < 100000; i++) {
@@ -20,6 +22,7 @@ static void somelogadd(){
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestLog, SaturateLog) {
+    std::filesystem::remove("Saturate.log");
     auto &log = CLog::log("Saturate.log");
 
     for (size_t i = 0; i < 100; i++) {
@@ -31,19 +34,17 @@ TEST(TestLog, SaturateLog) {
     std::vector<std::thread> mthreads;
     mthreads.reserve(THREADS);
 
-    for (size_t i = 0; i < THREADS; i++)
-    {
+    for (size_t i = 0; i < THREADS; i++) {
         mthreads.emplace_back(std::thread(somelogadd));
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    
-    for (auto &thr : mthreads)
-    {
-        if (thr.joinable())
-        {
+
+    for (auto &thr : mthreads) {
+        if (thr.joinable()) {
             thr.join();
         }
     }
-}
 
+    log.FinishLog();
+}
