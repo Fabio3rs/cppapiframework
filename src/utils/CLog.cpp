@@ -22,7 +22,8 @@ struct LogLine {
 } // namespace
 
 using logCircleIo_t = CircleMTIO<512, LogLine>;
-static std::unique_ptr<logCircleIo_t> logLinesBuffer(std::make_unique<logCircleIo_t>());
+static std::unique_ptr<logCircleIo_t>
+    logLinesBuffer(std::make_unique<logCircleIo_t>());
 
 auto CLog::addLinesToLog(CLog &logInst) -> bool {
     bool continueRunning = true;
@@ -53,7 +54,8 @@ auto CLog::addLinesToLog(CLog &logInst) -> bool {
 void CLog::threadFn(CLog &logInst) {
     bool keepRunning = true;
     while (keepRunning) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::unique_lock<std::mutex> lck(logInst.cmdmtx);
+        logInst.waitcmd.wait_for(lck, std::chrono::milliseconds(5));
 
         if (!logInst.running) {
             keepRunning = false;
@@ -104,10 +106,10 @@ CLog::CLog(const std::string &NameOfFile) {
 CLog::~CLog() noexcept { FinishLog(); }
 
 void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
-    auto logLine = logLinesBuffer->new_write();
+    std::pair<LogLine *, size_t> logLine;
 
-    if (logLine.first == nullptr) {
-        throw std::runtime_error("Log failed");
+    while ((logLine = logLinesBuffer->new_write()).first == nullptr) {
+        waitcmd.notify_one();
     }
 
     std::string &Temp = logLine.first->line;

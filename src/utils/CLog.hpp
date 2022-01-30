@@ -2,6 +2,7 @@
 #ifndef LOGGING_SYSTEM_CLOG_H
 #define LOGGING_SYSTEM_CLOG_H
 #include <atomic>
+#include <condition_variable>
 #include <exception>
 #include <fstream>
 #include <memory>
@@ -12,6 +13,8 @@
 class CLog {
     std::fstream LogFile;
     std::thread writterThreadInst;
+    std::mutex cmdmtx;
+    std::condition_variable waitcmd;
     std::atomic<bool> running;
 
     static auto addLinesToLog(CLog &logInst) -> bool;
