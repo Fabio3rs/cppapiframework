@@ -89,7 +89,7 @@ class CLog {
                             if (!numbuf.empty()) {
                                 size_t argId = std::stoul(numbuf);
 
-                                if (argId >= 0 && argId < a.size()) {
+                                if (argId < a.size()) {
                                     printbuf += a[argId].getStr();
                                 } else {
                                     printbuf += "%";
@@ -112,7 +112,7 @@ class CLog {
                         if (!numbuf.empty()) {
                             size_t argId = std::stoul(numbuf);
 
-                            if (argId >= 0 && argId < a.size()) {
+                            if (argId < a.size()) {
                                 printbuf += a[argId].getStr();
                             } else {
                                 printbuf += "%";
