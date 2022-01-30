@@ -21,10 +21,6 @@ template <size_t num, class T> class __attribute__((aligned(64))) CircleMTIO {
     std::pair<T *, size_t> new_write() {
         size_t a = 0;
         do {
-            if (reading_point == writing_point) {
-                return {nullptr, 0};
-            }
-
             a = writing_point.fetch_add(1);
 
             if (writing_point >= num) {
