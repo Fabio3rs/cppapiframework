@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <thread>
 
 class CLog {
@@ -21,7 +22,7 @@ class CLog {
     static void threadFn(CLog &logInst);
 
     class argToString {
-        const std::string str;
+        std::string str;
 
       public:
         [[nodiscard]] auto getStr() const -> const std::string & { return str; }
@@ -46,12 +47,13 @@ class CLog {
     void AddToLog(const std::string &Text, const std::string &extraid = "");
 
     template <class... Types>
-    auto multiRegister(const std::string &format, Types &&... args)
+    auto multiRegister(std::string_view format, Types &&... args)
         -> std::string {
         const std::array<argToString,
                          std::tuple_size<std::tuple<Types...>>::value>
             a = {std::forward<Types>(args)...};
         std::string printbuf;
+        printbuf.reserve(format.size() + a.size() * 8);
 
         std::string numbuf;
 

@@ -1,4 +1,5 @@
 #include "../src/utils/CLog.hpp"
+#include "allocation_count.hpp"
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -12,10 +13,31 @@ TEST(TestLog, Open) {
     }
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
+TEST(TestLog, MultiRegisterStrEqual) {
+    auto &log = CLog::log("TestLogStrEqual.log");
+
+    EXPECT_EQ(log.multiRegister("Teste log (%0) AAAAAAAAAAAA", 10),
+              "Teste log (10) AAAAAAAAAAAA");
+    EXPECT_EQ(log.multiRegister("Teste log (%0) AAAAAAAAAAAA %1 | %2", 10,
+                                "Teste", 20),
+              "Teste log (10) AAAAAAAAAAAA Teste | 20");
+}
+
+// NOLINTNEXTLINE(hicpp-special-member-functions)
+TEST(TestLog, MultiRegisterAllocationLimit) {
+    auto &log = CLog::log("TestLogAllocations.log");
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    AllocationCount::getAllocationCount() = 0;
+    log.multiRegister("Teste log (%0) AAAAAAAAAAAA", 10);
+    EXPECT_LE(AllocationCount::getAllocationCount(), 3);
+}
+
 static void somelogadd() {
     auto &log = CLog::log();
 
-    for (size_t i = 0; i < 100000; i++) {
+    for (size_t i = 0; i < 50000; i++) {
         log.multiRegister("Teste log %0", i);
     }
 }
@@ -38,7 +60,7 @@ TEST(TestLog, SaturateLog) {
         mthreads.emplace_back(std::thread(somelogadd));
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     for (auto &thr : mthreads) {
         if (thr.joinable()) {

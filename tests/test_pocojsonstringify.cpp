@@ -1,21 +1,9 @@
 #include "../src/utils/PocoJsonStringify.hpp"
+#include "allocation_count.hpp"
 #include <atomic>
 #include <gtest/gtest.h>
 #include <new>
 #include <sstream>
-
-static std::atomic<int64_t> allocations{0};
-static std::atomic<int64_t> deallocations{0};
-
-auto operator new(std::size_t n) -> void* {
-    ++allocations;
-    return malloc(n); // NOLINT(hicpp-no-malloc)
-}
-
-void operator delete(void *p) noexcept {
-    ++deallocations;
-    free(p); // NOLINT(hicpp-no-malloc)
-}
 
 static auto setupJson() {
     Poco::JSON::Object::Ptr testeptr(new Poco::JSON::Object);
@@ -43,17 +31,17 @@ static auto setupJson() {
 TEST(PocoJSONStringify, StringifyTeste) {
     auto json = setupJson();
 
-    EXPECT_GT(allocations, 0);
-    allocations = 0;
+    EXPECT_GT(AllocationCount::getAllocationCount(), 0);
+    AllocationCount::getAllocationCount() = 0;
 
     std::string outjson;
     outjson.reserve(4096);
 
-    EXPECT_GT(allocations, 0);
-    allocations = 0;
+    EXPECT_GT(AllocationCount::getAllocationCount(), 0);
+    AllocationCount::getAllocationCount() = 0;
 
     PocoJsonStringify::stringify(json, outjson, 0);
-    EXPECT_EQ(allocations, 0);
+    EXPECT_EQ(AllocationCount::getAllocationCount(), 0);
 
     std::stringstream sstr;
     json->stringify(sstr);
