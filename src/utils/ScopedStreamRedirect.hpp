@@ -6,12 +6,12 @@ class ScopedStreamRedirect {
     std::ostream &originalStream;
     std::streambuf *originalBuffer;
 
-    ScopedStreamRedirect(const ScopedStreamRedirect &) = delete;
-    ScopedStreamRedirect &operator=(const ScopedStreamRedirect &) = delete;
-    ScopedStreamRedirect(ScopedStreamRedirect &&) = delete;
-    ScopedStreamRedirect &operator=(ScopedStreamRedirect &&) = delete;
-
   public:
+    ScopedStreamRedirect(const ScopedStreamRedirect &) = delete;
+    auto operator=(const ScopedStreamRedirect &) -> ScopedStreamRedirect & = delete;
+    ScopedStreamRedirect(ScopedStreamRedirect &&) = delete;
+    auto operator=(ScopedStreamRedirect &&) -> ScopedStreamRedirect & = delete;
+
     inline ScopedStreamRedirect(std::ostream &srcStream,
                                 std::ostream &destStream)
         : originalStream(srcStream),

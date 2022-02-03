@@ -1,7 +1,9 @@
 #include "../src/utils/CLog.hpp"
 #include "allocation_count.hpp"
 #include <filesystem>
+#include <fstream>
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <unistd.h>
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
@@ -69,4 +71,31 @@ TEST(TestLog, SaturateLog) {
     }
 
     log.FinishLog();
+}
+
+// NOLINTNEXTLINE(hicpp-special-member-functions)
+TEST(TestLog, RedirectLog) {
+    std::filesystem::remove("Redirection.log");
+    std::fstream redirectionlog("Redirection.log",
+                                std::ios::out | std::ios::trunc);
+
+    if (!redirectionlog.is_open()) {
+        throw std::runtime_error("Falha ao abrir o arquivo de log de testes");
+    }
+
+    CLog::defaultcfg.filename.clear();
+    CLog::defaultcfg.stream = &redirectionlog;
+
+    {
+        auto &log = CLog::log();
+
+        for (size_t i = 0; i < 100; i++) {
+            EXPECT_FALSE(log.multiRegister("Teste log %0", i).empty());
+        }
+
+        log.FinishLog();
+    }
+
+    redirectionlog.seekg(0, std::ios::end);
+    EXPECT_GT(redirectionlog.tellg(), 2000);
 }

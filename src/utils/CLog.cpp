@@ -1,9 +1,11 @@
 #include "CLog.hpp"
 #include "ChronoUtils.hpp"
 #include "CircleMTIO.hpp"
+#include "ScopedStreamRedirect.hpp"
 #include <ctime>
 #include <exception>
 #include <iostream>
+#include <memory>
 
 #ifndef LOG_FILE_NAME_PATH
 #define LOG_FILE_NAME_PATH "program.log"
@@ -83,19 +85,41 @@ void CLog::threadFn(CLog &logInst) {
     logInst.LogFile.flush();
 }
 
-auto CLog::log(const char *filepath) -> CLog & {
-    static CLog Log(filepath != nullptr ? filepath : LOG_FILE_NAME_PATH);
+logOutputInfo CLog::defaultcfg{LOG_FILE_NAME_PATH, nullptr};
+
+static auto determineCfg(std::string_view filepath) {
+    logOutputInfo cfg;
+
+    if (filepath.empty()) {
+        cfg = CLog::defaultcfg;
+    } else {
+        cfg.filename = filepath;
+    }
+
+    return cfg;
+}
+
+auto CLog::log(std::string_view filepath) -> CLog & {
+
+    static CLog Log(determineCfg(filepath));
     return Log;
 }
 
-CLog::CLog(const std::string &NameOfFile) {
+CLog::CLog(const logOutputInfo &logcfg) : running(true) {
     Finished = false;
     running = true;
-    std::cout << "Iniciando log em " << NameOfFile << std::endl;
-    LogFile.open(NameOfFile, std::ios::out | std::ios::app);
 
-    if (!LogFile.good()) {
-        throw std::runtime_error("Impossivel criar ou abrir o arquivo de log");
+    if (logcfg.stream != nullptr) {
+        streamRedirect =
+            std::make_unique<ScopedStreamRedirect>(LogFile, *logcfg.stream);
+    } else {
+        std::cout << "Iniciando log em " << logcfg.filename << std::endl;
+        LogFile.open(logcfg.filename, std::ios::out | std::ios::app);
+
+        if (!LogFile.good()) {
+            throw std::runtime_error(
+                "Impossivel criar ou abrir o arquivo de log");
+        }
     }
 
     LogFile << "***********************************************************"
@@ -163,4 +187,5 @@ void CLog::FinishLog() {
                   static_cast<std::streamsize>(LogContents.size()));
     LogFile.flush();
     Finished = true;
+    streamRedirect.reset();
 }

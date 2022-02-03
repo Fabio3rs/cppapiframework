@@ -91,12 +91,12 @@ class Strutils {
         };
 
         int chrsize = 0;
-        int tempchchr = 0;
+        unsigned int tempchchr = 0;
         bool inchr = false;
 
-        for (auto &c : str) {
+        for (const auto &c : str) {
             if (chrsize == 2) {
-                result.append(1u, static_cast<char>(tempchchr));
+                result.append(1U, static_cast<char>(tempchchr));
                 inchr = false;
                 chrsize = 0;
                 tempchchr = 0;
@@ -112,19 +112,19 @@ class Strutils {
             if (inchr) {
                 if (chrsize == 0) {
                     tempchchr = 0;
-                    tempchchr |= arrmap[c] << 4;
+                    tempchchr |= static_cast<unsigned>(arrmap[c]) << 4U;
                     ++chrsize;
                 } else {
-                    tempchchr |= arrmap[c];
+                    tempchchr |= static_cast<unsigned>(arrmap[c]);
                     ++chrsize;
                 }
             } else {
-                result.append(1u, c);
+                result.append(1U, c);
             }
         }
 
         if (chrsize == 2) {
-            result.append(1u, static_cast<char>(tempchchr));
+            result.append(1U, static_cast<char>(tempchchr));
         }
 
         return result;
