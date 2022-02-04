@@ -11,16 +11,16 @@ template <size_t num, class T> class __attribute__((aligned(64))) CircleMTIO {
     std::array<T, num> elements;
     std::array<singlevarnofsh<std::atomic<int>>, num> elements_state;
 
-    std::atomic<size_t> reading_point;
-    std::atomic<size_t> writing_point;
+    std::atomic<size_t> reading_point{};
+    std::atomic<size_t> writing_point{};
     // std::atomic<size_t> read_point;
     std::mutex mtx;
 
   public:
-    typedef T value_type;
-    typedef std::pair<value_type, size_t> pair_t;
+    using value_type = T;
+    using pair_t = std::pair<value_type, size_t>;
 
-    std::pair<T *, size_t> new_write() {
+    auto new_write() -> std::pair<T *, size_t> {
         size_t a = writing_point.fetch_add(1);
 
         if (a >= num) {
@@ -43,7 +43,7 @@ template <size_t num, class T> class __attribute__((aligned(64))) CircleMTIO {
         return std::pair<T *, size_t>(&elements[a], a);
     }
 
-    std::pair<T *, size_t> next() {
+    auto next() -> std::pair<T *, size_t> {
         size_t r = reading_point;
 
         if (elements_state[r].a != 2) {

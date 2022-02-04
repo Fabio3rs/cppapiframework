@@ -46,6 +46,7 @@
 #pragma once
 #include <Poco/JSON/Array.h>
 #include <Poco/JSON/Object.h>
+#include <array>
 #include <ostream>
 
 class PocoJsonStringify {
@@ -151,34 +152,36 @@ class PocoJsonStringify {
         using Object = Poco::JSON::Object;
         using Array = Poco::JSON::Array;
 
-        if (step == -1)
+        if (step == -1) {
             step = indent;
+        }
 
         if (any.type() == typeid(Object)) {
-            const Object &o = any.extract<Object>();
+            const auto &o = any.extract<Object>();
             stringify(o, str, indent == 0 ? 0 : indent, step);
         } else if (any.type() == typeid(Array)) {
-            const Array &a = any.extract<Array>();
+            const auto &a = any.extract<Array>();
             stringify(a, str, indent == 0 ? 0 : indent, step);
         } else if (any.type() == typeid(Object::Ptr)) {
-            const Object::Ptr &o = any.extract<Object::Ptr>();
+            const auto &o = any.extract<Object::Ptr>();
             stringify(*o, str, indent == 0 ? 0 : indent, step);
         } else if (any.type() == typeid(Array::Ptr)) {
-            const Array::Ptr &a = any.extract<Array::Ptr>();
+            const auto &a = any.extract<Array::Ptr>();
             stringify(*a, str, indent == 0 ? 0 : indent, step);
         } else if (any.isEmpty()) {
             append(str, "null");
         } else if (any.isNumeric() || any.isBoolean()) {
-            std::string value = any.convert<std::string>();
-            if (any.type() == typeid(char))
+            auto value = any.convert<std::string>();
+            if (any.type() == typeid(char)) {
                 formatString(value, str, options);
-            else
+            } else {
                 append(str, value);
+            }
         } else if (any.isString()) {
             formatString(any.extract<std::string>(), str, options);
         } else if (any.isString() || any.isDateTime() || any.isDate() ||
                    any.isTime()) {
-            std::string value = any.convert<std::string>();
+            auto value = any.convert<std::string>();
             formatString(value, str, options);
         } else {
             append(str, any.convert<std::string>());
@@ -228,9 +231,9 @@ class PocoJsonStringify {
     static void escapeJSONUTF8(const std::string::const_iterator &begin,
                                const std::string::const_iterator &end,
                                bool strictJSON, std::string &str) {
-        static uint32_t offsetsFromUTF8[6] = {0x00000000UL, 0x00003080UL,
-                                              0x000E2080UL, 0x03C82080UL,
-                                              0xFA082080UL, 0x82082080UL};
+        static std::array<uint32_t, 6> offsetsFromUTF8{
+            0x00000000UL, 0x00003080UL, 0x000E2080UL,
+            0x03C82080UL, 0xFA082080UL, 0x82082080UL};
 
         std::string::const_iterator it = begin;
 
@@ -245,29 +248,29 @@ class PocoJsonStringify {
             } while (it != end && (*it & 0xC0) == 0x80 && sz < 6);
             ch -= offsetsFromUTF8[sz - 1];
 
-            if (ch == '\n')
+            if (ch == '\n') {
                 append(str, "\\n");
-            else if (ch == '\t')
+            } else if (ch == '\t') {
                 append(str, "\\t");
-            else if (ch == '\r')
+            } else if (ch == '\r') {
                 append(str, "\\r");
-            else if (ch == '\b')
+            } else if (ch == '\b') {
                 append(str, "\\b");
-            else if (ch == '\f')
+            } else if (ch == '\f') {
                 append(str, "\\f");
-            else if (ch == '\v')
+            } else if (ch == '\v') {
                 append(str, (strictJSON ? "\\u000B" : "\\v"));
-            else if (ch == '\a')
+            } else if (ch == '\a') {
                 append(str, (strictJSON ? "\\u0007" : "\\a"));
-            else if (ch == '\\')
+            } else if (ch == '\\') {
                 append(str, "\\\\");
-            else if (ch == '\"')
+            } else if (ch == '\"') {
                 append(str, "\\\"");
-            else if (ch == '/')
+            } else if (ch == '/') {
                 append(str, "\\/");
-            else if (ch == '\0')
+            } else if (ch == '\0') {
                 append(str, "\\u0000");
-            else if (ch < 32 || ch == 0x7f) {
+            } else if (ch < 32 || ch == 0x7f) {
                 append(str, "\\u");
                 std::string tmp;
                 Poco::NumberFormatter::appendHex(

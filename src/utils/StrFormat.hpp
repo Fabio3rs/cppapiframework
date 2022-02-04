@@ -1,8 +1,10 @@
 #pragma once
 
+#include <Poco/JSON/Object.h>
 #include <array>
 #include <string>
 #include <tuple>
+#include "PocoJsonStringify.hpp"
 
 namespace StrFormat {
 class argToString {
@@ -23,11 +25,29 @@ class argToString {
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
     argToString(std::string s) : str(std::move(s)) {}
 
+    // NOLINTNEXTLINE(hicpp-explicit-conversions)
+    argToString(const Poco::JSON::Object::Ptr &s) {
+        PocoJsonStringify::stringify(s, str, 0);
+    }
+
     template <class T,
               typename = std::enable_if_t<std::is_arithmetic<T>::value>>
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
     argToString(T value) : str(std::to_string(value)) {}
 };
+
+inline auto getNumericFromString(std::string_view str) -> std::string {
+    std::string numbuf;
+    for (const auto &chr : str) {
+        if (chr < '0' || chr > '9') {
+            break;
+        }
+
+        numbuf.insert(numbuf.end(), 1, chr);
+    }
+
+    return numbuf;
+}
 
 template <class... Types>
 inline auto multiRegister(std::string_view format, Types &&... args)
@@ -37,13 +57,10 @@ inline auto multiRegister(std::string_view format, Types &&... args)
     std::string printbuf;
     printbuf.reserve(format.size() + a.size() * 8);
 
-    std::string numbuf;
-
     bool ignoreNext = false;
 
     for (size_t i = 0, size = format.size(); i < size; i++) {
         auto ch = format[i];
-        size_t ti = i + 1;
 
         switch (ch) {
         case '\\':
@@ -63,45 +80,19 @@ inline auto multiRegister(std::string_view format, Types &&... args)
                 break;
             }
 
-            numbuf = "";
-
             {
-                bool stringEnd = true;
-                while (ti < size) {
-                    if (format[ti] < '0' || format[ti] > '9') {
-                        i = ti - 1;
-                        if (!numbuf.empty()) {
-                            size_t argId = std::stoul(numbuf);
+                std::string numbuf = getNumericFromString(format.substr(i + 1));
 
-                            if (argId < a.size()) {
-                                printbuf += a[argId].getStr();
-                            } else {
-                                printbuf += "%";
-                                printbuf += numbuf;
-                            }
+                i += numbuf.size();
 
-                            stringEnd = false;
+                if (!numbuf.empty()) {
+                    size_t argId = std::stoul(numbuf);
 
-                            break;
-                        }
+                    if (argId < a.size()) {
+                        printbuf += a[argId].getStr();
                     } else {
-                        numbuf.insert(numbuf.end(), 1, format[ti]);
-                    }
-
-                    ti++;
-                }
-
-                if (stringEnd) {
-                    i = size;
-                    if (!numbuf.empty()) {
-                        size_t argId = std::stoul(numbuf);
-
-                        if (argId < a.size()) {
-                            printbuf += a[argId].getStr();
-                        } else {
-                            printbuf += "%";
-                            printbuf += numbuf;
-                        }
+                        printbuf += "%";
+                        printbuf += numbuf;
                     }
                 }
             }

@@ -1,4 +1,5 @@
 #include "../src/utils/CLog.hpp"
+#include "../src/utils/LogUtils.hpp"
 #include "allocation_count.hpp"
 #include <filesystem>
 #include <fstream>

@@ -5,6 +5,7 @@
 #define LOGGING_SYSTEM_CLOG_H
 #include "ScopedStreamRedirect.hpp"
 #include "StrFormat.hpp"
+#include "Strutils.hpp"
 #include <atomic>
 #include <condition_variable>
 #include <exception>
@@ -31,6 +32,18 @@ class CLog {
         -> std::string {
         std::string printbuf =
             StrFormat::multiRegister(format, std::forward<Types>(args)...);
+
+        AddToLog(printbuf);
+        return printbuf;
+    }
+
+    template <class... Types>
+    auto multiRegisterLN(std::string_view file, unsigned int line,
+                         std::string_view level, std::string_view format,
+                         Types &&... args) -> std::string {
+        std::string printbuf = Strutils::multi_concat(
+            file, ":", std::to_string(line), " ", level, " ",
+            StrFormat::multiRegister(format, std::forward<Types>(args)...));
 
         AddToLog(printbuf);
         return printbuf;

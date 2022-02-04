@@ -16,7 +16,7 @@
 #endif
 
 namespace {
-struct LogLine {
+struct __attribute__((aligned(64))) LogLine {
     std::string line;
     std::thread::id thrid;
     std::chrono::high_resolution_clock::time_point when;
