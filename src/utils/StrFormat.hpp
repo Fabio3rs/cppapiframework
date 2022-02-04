@@ -1,10 +1,10 @@
 #pragma once
 
+#include "PocoJsonStringify.hpp"
 #include <Poco/JSON/Object.h>
 #include <array>
 #include <string>
 #include <tuple>
-#include "PocoJsonStringify.hpp"
 
 namespace StrFormat {
 class argToString {
@@ -27,7 +27,11 @@ class argToString {
 
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
     argToString(const Poco::JSON::Object::Ptr &s) {
-        PocoJsonStringify::stringify(s, str, 0);
+        if (s.isNull()) {
+            str = "{NULL JSON}";
+        } else {
+            PocoJsonStringify::stringify(s, str, 0);
+        }
     }
 
     template <class T,
