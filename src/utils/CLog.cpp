@@ -6,6 +6,7 @@
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <thread>
 
 #ifndef LOG_FILE_NAME_PATH
 #define LOG_FILE_NAME_PATH "program.log"
@@ -167,10 +168,24 @@ void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
     logLinesBuffer->set_ready(logLine.second);
 }
 
+void CLog::PrepareToFork() {
+    running = false;
+
+    if (writterThreadInst.joinable()) {
+        writterThreadInst.join();
+    }
+
+    writterThreadInst = std::thread();
+    running = true;
+}
+
 void CLog::SignalFork() {
     logLinesBuffer.reset();
     logLinesBuffer = std::make_unique<logCircleIo_t>();
-    writterThreadInst.detach();
+    writterThreadInst = std::thread(threadFn, std::ref(*this));
+}
+
+void CLog::ParentPostFork() {
     writterThreadInst = std::thread(threadFn, std::ref(*this));
 }
 

@@ -23,10 +23,15 @@ auto ProcessHelper::wait(pid_t pid, int flags) -> std::pair<waitStatuses, int> {
 }
 
 auto ProcessHelper::fork() -> pid_t {
+    CLog::log().PrepareToFork();
+
     auto result = ::fork();
     if (result == 0) {
         CLog::log().SignalFork();
+    }else {
+        CLog::log().ParentPostFork();
     }
+    
     return result;
 }
 

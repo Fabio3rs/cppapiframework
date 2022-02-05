@@ -49,7 +49,10 @@ class CLog {
         return printbuf;
     }
 
+    void PrepareToFork();
     void SignalFork();
+    void ParentPostFork();
+
     void FinishLog();
     void operator<<(const std::string &Text) { AddToLog(Text); }
 
