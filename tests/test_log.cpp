@@ -122,9 +122,10 @@ static void logDebugInsertFork() {
         CLog::log().FinishLog();
         exit(0);
     } else if (forked > 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
         CLog::log().multiRegister("Inside parent");
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        phelper.wait(forked, 0);
     } else {
         throw std::runtime_error("Error fork");
     }
@@ -153,6 +154,7 @@ static auto findLineOnStream(std::fstream &toSearch, const std::string &val)
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestLog, ForkAndLog) {
+    signal(SIGCHLD, SIG_IGN);
     std::fstream fsout("ForkAndLog.log",
                        std::ios::trunc | std::ios::out | std::ios::in);
 
