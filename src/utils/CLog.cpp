@@ -167,6 +167,12 @@ void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
     logLinesBuffer->set_ready(logLine.second);
 }
 
+void CLog::SignalFork() {
+    logLinesBuffer.reset();
+    logLinesBuffer = std::make_unique<logCircleIo_t>();
+    writterThreadInst = std::thread(threadFn, std::ref(*this));
+}
+
 void CLog::FinishLog() {
     std::this_thread::yield();
     running = false;

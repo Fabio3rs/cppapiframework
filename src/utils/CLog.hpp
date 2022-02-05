@@ -49,6 +49,7 @@ class CLog {
         return printbuf;
     }
 
+    void SignalFork();
     void FinishLog();
     void operator<<(const std::string &Text) { AddToLog(Text); }
 

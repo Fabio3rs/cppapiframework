@@ -63,3 +63,5 @@ void job::JobsHandler::saveJobLog(std::fstream &outstream,
         datamap["LastException"] = e.what();
     }
 }
+
+job::JobsHandler::~JobsHandler() = default;

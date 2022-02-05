@@ -1,10 +1,14 @@
 #include "../src/utils/CLog.hpp"
 #include "../src/utils/LogUtils.hpp"
+#include "../src/utils/ProcessHelper.hpp"
 #include "allocation_count.hpp"
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <ratio>
 #include <stdexcept>
+#include <thread>
 #include <unistd.h>
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
@@ -99,4 +103,31 @@ TEST(TestLog, RedirectLog) {
 
     redirectionlog.seekg(0, std::ios::end);
     EXPECT_GT(redirectionlog.tellg(), 2000);
+}
+
+// NOLINTNEXTLINE(hicpp-special-member-functions)
+TEST(TestLog, ForkAndLog) {
+    CLog::defaultcfg.filename.clear();
+    CLog::defaultcfg.stream = &std::cout;
+
+    CLog::log().multiRegister("Before fork");
+
+    ProcessHelper phelper;
+
+    auto forked = phelper.fork();
+
+    if (forked == 0) {
+        std::cout << "Inside fork" << std::endl;
+        CLog::log().multiRegister("Inside fork");
+    } else if (forked > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        CLog::log().multiRegister("Inside parent");
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    } else {
+        throw std::runtime_error("Error fork");
+    }
+
+    CLog::log().multiRegister("After fork");
+
+    EXPECT_TRUE(true);
 }

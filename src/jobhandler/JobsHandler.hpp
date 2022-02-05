@@ -28,12 +28,12 @@ class JobsHandler {
      * @tparam T the type
      * @return constexpr std::string_view the name of the type
      */
-    template <class T> static std::string getTypeName() {
+    template <class T> static auto getTypeName() -> std::string {
         return QueueableJob::concatJobSystemVersion(typeid(T).name());
     }
 
     template <class T>
-    static std::string getTypeNameByInst(const T & /*ununsed*/) {
+    static auto getTypeNameByInst(const T & /*ununsed*/) -> std::string {
         return QueueableJob::concatJobSystemVersion(typeid(T).name());
     }
 
@@ -149,11 +149,21 @@ class JobsHandler {
      * @param errstream stderr stream
      * @return jobStatus job status result
      */
-    auto handle(const std::shared_ptr<QueueableJob> &newjob,
-                std::ostream &outstream, std::ostream &errstream) -> jobStatus;
+    virtual auto handle(const std::shared_ptr<QueueableJob> &newjob,
+                        std::ostream &outstream, std::ostream &errstream)
+        -> jobStatus;
 
-    void saveJobLog(std::fstream &outstream, std::fstream &errstream,
-                    datamap_t &datamap);
+    virtual void saveJobLog(std::fstream &outstream, std::fstream &errstream,
+                            datamap_t &datamap);
+
+    virtual auto operator=(const JobsHandler &) -> JobsHandler & = default;
+    virtual auto operator=(JobsHandler &&) -> JobsHandler & = default;
+
+    JobsHandler() = default;
+    JobsHandler(const JobsHandler &) = default;
+    JobsHandler(JobsHandler &&) = default;
+
+    virtual ~JobsHandler();
 
   protected:
     /**

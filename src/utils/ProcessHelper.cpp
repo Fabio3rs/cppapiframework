@@ -1,4 +1,5 @@
 #include "ProcessHelper.hpp"
+#include "../utils/CLog.hpp"
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -21,8 +22,14 @@ auto ProcessHelper::wait(pid_t pid, int flags) -> std::pair<waitStatuses, int> {
     return {unknown, waitpidres};
 }
 
-auto ProcessHelper::fork() -> pid_t { return ::fork(); }
+auto ProcessHelper::fork() -> pid_t {
+    auto result = ::fork();
+    if (result == 0) {
+        CLog::log().SignalFork();
+    }
+    return result;
+}
 
-ProcessHelper::ProcessHelper(/* args */) {}
+ProcessHelper::ProcessHelper(/* args */) = default;
 
-ProcessHelper::~ProcessHelper() {}
+ProcessHelper::~ProcessHelper() = default;

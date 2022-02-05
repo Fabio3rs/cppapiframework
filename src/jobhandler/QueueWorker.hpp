@@ -8,6 +8,7 @@
 #include "JobsHandler.hpp"
 #include <fstream>
 #include <unistd.h>
+#include <utility>
 
 namespace job {
 
@@ -29,7 +30,7 @@ class QueueWorker {
 
   public:
     void setProcessHelper(std::shared_ptr<ProcessHelper> pHelper) {
-        processHelperInst = pHelper;
+        processHelperInst = std::move(pHelper);
     }
 
     auto getProcessHelper() -> std::shared_ptr<ProcessHelper> {
@@ -40,18 +41,9 @@ class QueueWorker {
         return processHelperInst;
     }
 
-    jobStatus
-    process_retry_condition(const std::shared_ptr<QueueableJob> &job) {
-        if (job->getMaxTries() == 0) {
-            return errorretry;
-        }
-
-        if (job->getTries() < job->getMaxTries()) {
-            return errorretry;
-        }
-
-        return errorremove;
-    }
+    virtual auto
+    process_retry_condition(const std::shared_ptr<QueueableJob> &job)
+        -> jobStatus;
 
     auto handle_job_run(const std::shared_ptr<QueueableJob> &newjob,
                         const Poco::JSON::Object::Ptr &json,
@@ -68,7 +60,7 @@ class QueueWorker {
     auto work(const std::string & /*queue*/, GenericQueue::datamap_t &datamap)
         -> jobStatus;
 
-    pid_t fork_process();
+    auto fork_process() -> pid_t;
 
     /**
      * @brief Adds a job to the queue
@@ -144,20 +136,7 @@ class QueueWorker {
         }
     }
 
-    bool do_one(const std::string &queue, std::string &jobname) {
-        if (jobname.empty()) {
-            return false;
-        }
-
-        LOGINFO() << "Job UUID name " << jobname << std::endl;
-        auto jobdata = queueServiceInst->getPersistentData(jobname);
-
-        jobStatus workresult = work(queue, jobdata);
-
-        process_job_result(queue, jobname, jobdata, workresult);
-
-        return true;
-    }
+    auto do_one(const std::string &queue, std::string &jobname) -> bool;
 
     /**
      * @brief Pop job from the queue and run it
@@ -166,15 +145,7 @@ class QueueWorker {
      * @return true has job in the queue and runned it
      * @return false queue empty
      */
-    bool do_one(const std::string &queue) {
-        auto jobpayload = pop(queue, queueTimeout);
-
-        if (jobpayload.empty()) {
-            return false;
-        }
-
-        return do_one(queue, jobpayload);
-    }
+    auto do_one(const std::string &queue) -> bool;
 
     /**
      * @brief Run jobs in loop until running is false
@@ -208,10 +179,15 @@ class QueueWorker {
         jobLogExpireSeconds = value;
     }
 
+    virtual auto operator=(const QueueWorker &) -> QueueWorker & = delete;
+    virtual auto operator=(QueueWorker &&) -> QueueWorker & = delete;
+
+    QueueWorker(const QueueWorker &) = delete;
+    QueueWorker(QueueWorker &&) = delete;
+
     QueueWorker(std::shared_ptr<JobsHandler> jobh,
-                std::shared_ptr<GenericQueue> queueService)
-        : jobhandler(jobh), queueServiceInst(queueService) {}
-    ~QueueWorker();
+                std::shared_ptr<GenericQueue> queueService);
+    virtual ~QueueWorker();
 };
 
 } // namespace job

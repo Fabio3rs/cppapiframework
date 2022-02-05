@@ -58,14 +58,7 @@ class QueueableJob {
         return concatJobSystemVersion(typeid(T).name());
     }
 
-    virtual auto dump_json() const -> Poco::JSON::Object::Ptr {
-        Poco::JSON::Object::Ptr json(new Poco::JSON::Object);
-
-        json->set("tries", tries);
-        json->set("maxtries", maxtries);
-
-        return json;
-    }
+    [[nodiscard]] virtual auto dump_json() const -> Poco::JSON::Object::Ptr;
 
     virtual auto from_json(const Poco::JSON::Object::Ptr &json) -> bool {
         if (json->has("tries")) {
@@ -78,8 +71,8 @@ class QueueableJob {
         return true;
     }
 
-    auto getTries() const noexcept { return tries; }
-    auto getMaxTries() const noexcept { return maxtries; }
+    [[nodiscard]] auto getTries() const noexcept { return tries; }
+    [[nodiscard]] auto getMaxTries() const noexcept { return maxtries; }
     void setMaxTries(size_t n) noexcept { maxtries = n; }
 
     /**
@@ -88,14 +81,14 @@ class QueueableJob {
      * @return true should retry
      * @return false don't retry
      */
-    virtual auto retryIfError() const noexcept -> bool { return true; }
+    [[nodiscard]] virtual auto retryIfError() const noexcept -> bool { return true; }
 
     /**
      * @brief Get the job class name
      *
      * @return std::string_view the string name
      */
-    virtual auto getName() const -> std::string = 0;
+    [[nodiscard]] virtual auto getName() const -> std::string = 0;
 
     /**
      * @brief the job has failed
@@ -103,7 +96,7 @@ class QueueableJob {
      * @return true failed
      * @return false not failed
      */
-    virtual auto hasFailed() const -> bool { return failed; }
+    [[nodiscard]] virtual auto hasFailed() const -> bool { return failed; }
 
     virtual void handle() = 0;
 
@@ -166,6 +159,7 @@ class QueueableJob {
 
 } // namespace job
 
+#ifndef JSON_OBJ_SET
 #define JSON_OBJ_SET(x) job::QueueableJob::json_obj_set(json, #x, x);
 #define JSON_OBJ_GET(x) job::QueueableJob::json_obj_get(json, #x, x);
 #define SERIALIZE_JSON_OBJ(...) MAP(JSON_OBJ_SET, __VA_ARGS__)
@@ -186,3 +180,4 @@ class QueueableJob {
         UNSERIALIZE_JSON_OBJ(__VA_ARGS__)                                      \
         return true;                                                           \
     }
+#endif

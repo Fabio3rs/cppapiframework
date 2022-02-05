@@ -173,3 +173,46 @@ auto job::QueueWorker::pop(const std::string &queue, int timeout)
 }
 
 job::QueueWorker::~QueueWorker() = default;
+
+job::QueueWorker::QueueWorker(std::shared_ptr<JobsHandler> jobh,
+                              std::shared_ptr<GenericQueue> queueService)
+    : jobhandler(std::move(jobh)), queueServiceInst(std::move(queueService)) {}
+
+auto job::QueueWorker::process_retry_condition(
+    const std::shared_ptr<QueueableJob> &job) -> jobStatus {
+    if (job->getMaxTries() == 0) {
+        return errorretry;
+    }
+
+    if (job->getTries() < job->getMaxTries()) {
+        return errorretry;
+    }
+
+    return errorremove;
+}
+
+auto job::QueueWorker::do_one(const std::string &queue) -> bool {
+    auto jobpayload = pop(queue, queueTimeout);
+
+    if (jobpayload.empty()) {
+        return false;
+    }
+
+    return do_one(queue, jobpayload);
+}
+
+auto job::QueueWorker::do_one(const std::string &queue, std::string &jobname)
+    -> bool {
+    if (jobname.empty()) {
+        return false;
+    }
+
+    LOGINFO() << "Job UUID name " << jobname << std::endl;
+    auto jobdata = queueServiceInst->getPersistentData(jobname);
+
+    jobStatus workresult = work(queue, jobdata);
+
+    process_job_result(queue, jobname, jobdata, workresult);
+
+    return true;
+}
