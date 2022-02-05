@@ -80,6 +80,7 @@ TEST(TestLog, SaturateLog) {
     }
 
     log.FinishLog();
+    std::filesystem::remove("Saturate.log");
 }
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
