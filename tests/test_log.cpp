@@ -3,13 +3,17 @@
 #include "../src/utils/ProcessHelper.hpp"
 #include "allocation_count.hpp"
 #include <chrono>
+#include <cstddef>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <ratio>
 #include <stdexcept>
+#include <string>
 #include <thread>
 #include <unistd.h>
+#include <utility>
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestLog, Open) {
@@ -105,11 +109,7 @@ TEST(TestLog, RedirectLog) {
     EXPECT_GT(redirectionlog.tellg(), 2000);
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
-TEST(TestLog, ForkAndLog) {
-    CLog::defaultcfg.filename.clear();
-    CLog::defaultcfg.stream = &std::cout;
-
+static void logDebugInsertFork() {
     CLog::log().multiRegister("Before fork");
 
     ProcessHelper phelper;
@@ -117,8 +117,10 @@ TEST(TestLog, ForkAndLog) {
     auto forked = phelper.fork();
 
     if (forked == 0) {
-        std::cout << "Inside fork" << std::endl;
         CLog::log().multiRegister("Inside fork");
+        CLog::log().multiRegister("Will exit fork");
+        CLog::log().FinishLog();
+        exit(0);
     } else if (forked > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
         CLog::log().multiRegister("Inside parent");
@@ -128,6 +130,40 @@ TEST(TestLog, ForkAndLog) {
     }
 
     CLog::log().multiRegister("After fork");
+    CLog::log().FinishLog();
+}
 
-    EXPECT_TRUE(true);
+static auto findLineOnStream(std::fstream &toSearch, const std::string &val)
+    -> bool {
+    toSearch.seekg(0);
+
+    std::string line;
+
+    while (std::getline(toSearch, line)) {
+        std::cout << line << std::endl;
+        std::size_t posFound = line.find(val);
+
+        if (posFound != std::string::npos) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// NOLINTNEXTLINE(hicpp-special-member-functions)
+TEST(TestLog, ForkAndLog) {
+    std::fstream fsout("ForkAndLog.log",
+                       std::ios::trunc | std::ios::out | std::ios::in);
+
+    CLog::defaultcfg.filename.clear();
+    CLog::defaultcfg.stream = &fsout;
+    CLog::log().multiRegister("Before test");
+    logDebugInsertFork();
+
+    fsout.flush();
+
+    EXPECT_TRUE(findLineOnStream(fsout, "Inside fork"));
+    EXPECT_TRUE(findLineOnStream(fsout, "Will exit fork"));
+    EXPECT_TRUE(findLineOnStream(fsout, "Inside fork"));
 }

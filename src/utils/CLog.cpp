@@ -170,6 +170,7 @@ void CLog::AddToLog(const std::string &Text, const std::string &extraid) {
 void CLog::SignalFork() {
     logLinesBuffer.reset();
     logLinesBuffer = std::make_unique<logCircleIo_t>();
+    writterThreadInst.detach();
     writterThreadInst = std::thread(threadFn, std::ref(*this));
 }
 
