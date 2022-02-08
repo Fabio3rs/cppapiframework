@@ -1,5 +1,5 @@
 #include "QueueWorker.hpp"
-
+#include "../utils/LogDefines.hpp"
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -25,13 +25,14 @@ auto job::QueueWorker::allocateJobOutputStream(
                            std::ios::in | std::ios::out | std::ios::trunc);
 
     if (!joblog.is_open()) {
-        LOGERR() << "fail to open " << (tmpdir / tmpfilename).string()
-                 << std::endl;
+        STDLOGERR() << "fail to open " << (tmpdir / tmpfilename).string()
+                    << std::endl;
     }
 
     if (!joblogerr.is_open()) {
-        LOGERR() << "fail to open "
-                 << (tmpdir / (tmpfilename + ".stderr")).string() << std::endl;
+        STDLOGERR() << "fail to open "
+                    << (tmpdir / (tmpfilename + ".stderr")).string()
+                    << std::endl;
     }
 
     return std::pair<std::fstream, std::fstream>(std::move(joblog),
@@ -43,8 +44,8 @@ auto job::QueueWorker::handle_job_run(
     const Poco::JSON::Object::Ptr &json, GenericQueue::datamap_t &datamap)
     -> jobStatus {
     jobStatus result = noerror;
-    LOGINFO() << "Job " << newjob->getName() << " tries " << newjob->tries
-              << std::endl;
+    STDLOGINFO() << "Job " << newjob->getName() << " tries " << newjob->tries
+                 << std::endl;
 
     newjob->tries++;
 
@@ -107,7 +108,8 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
     Poco::JSON::Object::Ptr json;
 
     try {
-        LOGINFO() << "Instancing job " << datamap.at("className") << std::endl;
+        STDLOGINFO() << "Instancing job " << datamap.at("className")
+                     << std::endl;
 
         Poco::JSON::Parser parser;
         json =
@@ -115,7 +117,7 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
 
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
-        LOGERR() << datamap["payload"] << std::endl;
+        STDLOGERR() << datamap["payload"] << std::endl;
         return errorremove;
     }
 
@@ -150,8 +152,8 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
 
     if (result != noerror) {
         result = process_retry_condition(newjob);
-        LOGINFO() << "Job " << newjob->getName() << " error " << result
-                  << std::endl;
+        STDLOGINFO() << "Job " << newjob->getName() << " error " << result
+                     << std::endl;
     }
 
     /**
@@ -207,7 +209,7 @@ auto job::QueueWorker::do_one(const std::string &queue, std::string &jobname)
         return false;
     }
 
-    LOGINFO() << "Job UUID name " << jobname << std::endl;
+    STDLOGINFO() << "Job UUID name " << jobname << std::endl;
     auto jobdata = queueServiceInst->getPersistentData(jobname);
 
     jobStatus workresult = work(queue, jobdata);

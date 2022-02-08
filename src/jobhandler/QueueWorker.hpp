@@ -2,7 +2,6 @@
 
 #include "../queues/GenericQueue.hpp"
 #include "../stdafx.hpp"
-#include "../utils/LogDefines.hpp"
 #include "../utils/ProcessHelper.hpp"
 #include "../utils/ScopedStreamRedirect.hpp"
 #include "JobsHandler.hpp"
