@@ -10,6 +10,8 @@ set(CXX17 ON)
 set(CMAKE_CXX_EXTENSIONS Off)
 set(CMAKE_C_EXTENSIONS Off)
 
+option(CompileTestsApiFramework "CompileTestsApiFramework" ON)
+
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -104,4 +106,6 @@ endif(Pistache_FOUND)
 
 target_link_libraries(${projectname} mysqlcppconn)
 
+if ("${CompileTestsApiFramework}" STREQUAL "ON")
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+endif()
