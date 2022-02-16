@@ -68,7 +68,7 @@ class InputValidator {
 
     InputValidator(const InputValidator &) = default;
 
-    inline InputValidator() {}
+    inline InputValidator() = default;
     virtual ~InputValidator();
 };
 
@@ -80,19 +80,7 @@ class EmailValidator : public InputValidator {
 
   public:
     auto validate(std::string_view fieldname, const Poco::Dynamic::Var &s)
-        -> Poco::Dynamic::Var override {
-        if (s.isEmpty()) {
-            return Poco::Dynamic::Var();
-        }
-
-        const std::regex pattern(R"((\w+)(\.|_)?(\w*)@(\w+)(\.(\w+))+)");
-
-        if (!regex_match(s.toString(), pattern)) {
-            return fail_message(fieldname);
-        }
-
-        return Poco::Dynamic::Var();
-    }
+        -> Poco::Dynamic::Var override;
 
     auto validate_and_modify(Poco::JSON::Object::Ptr /*jsondata*/,
                              std::string_view fieldname,
@@ -149,7 +137,7 @@ class IntegerValidator : public InputValidator {
 
     IntegerValidator(const IntegerValidator &) = default;
 
-    IntegerValidator() {}
+    IntegerValidator() = default;
 
     ~IntegerValidator() override;
 };
@@ -184,7 +172,7 @@ class RequiredValidator : public InputValidator {
 
     RequiredValidator(const RequiredValidator &) = default;
 
-    RequiredValidator() {}
+    RequiredValidator() = default;
 
     ~RequiredValidator() override;
 };
@@ -214,8 +202,7 @@ class ObjectValidator : public InputValidator {
 
     ObjectValidator(const ObjectValidator &) = default;
 
-    ObjectValidator(std::function<callback_t> cb)
-        : InputValidator(), validatefn(cb) {}
+    explicit ObjectValidator(std::function<callback_t> cb);
 
     ~ObjectValidator() override;
 };
@@ -226,8 +213,8 @@ class ObjectValidator : public InputValidator {
  */
 class ArrayValidator : public InputValidator {
 
-    typedef Poco::Dynamic::Var(callback_t)(std::string_view, size_t,
-                                           Poco::Dynamic::Var);
+    using callback_t = Poco::Dynamic::Var(std::string_view, size_t,
+                                          Poco::Dynamic::Var);
     std::function<callback_t> validatefn;
 
   public:
@@ -249,7 +236,7 @@ class ArrayValidator : public InputValidator {
     ArrayValidator(const ArrayValidator &) = default;
 
     ArrayValidator(std::function<callback_t> cb)
-        : InputValidator(), validatefn(cb) {}
+        : InputValidator(), validatefn(std::move(cb)) {}
 
     ~ArrayValidator() override;
 };
@@ -319,11 +306,10 @@ template <class... Types> class OrValidator : public InputValidator {
     OrValidator(Types &&... args)
         : InputValidator(), rules(std::forward<Types>(args)...) {}
 
-    ~OrValidator() override {}
+    ~OrValidator() override = default;
 };
 
-template<class... Types>
-static inline auto make_orvalidator(Types &&... args){
+template <class... Types> inline auto make_orvalidator(Types &&... args) {
     return OrValidator<Types...>(std::forward<Types>(args)...);
 }
 
@@ -340,7 +326,7 @@ class StringLengthValidator : public InputValidator {
         }
 
         std::string str = s.toString();
-        if (str.size() == 0) {
+        if (str.empty()) {
             return fail_message_empty(fieldname);
         }
         if (str.size() >= min && str.size() <= max) {
@@ -463,7 +449,7 @@ template <class T> class InArrayValidator : public InputValidator {
         : InputValidator(), dataarray(std::move(allowed_values)),
           empty_pass(allow_empty) {}
 
-    ~InArrayValidator() override {}
+    ~InArrayValidator() override = default;
 };
 
 /**

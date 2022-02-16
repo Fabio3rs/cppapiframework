@@ -28,6 +28,8 @@ TEST(InputValidatorTest, CheckEmail) {
     EXPECT_TRUE(emailval.validate(mockfname, "aaaaa@bbbb.com").isEmpty());
     EXPECT_TRUE(emailval.validate(mockfname, "aaa.aa@bbbb.com").isEmpty());
     EXPECT_TRUE(emailval.validate(mockfname, "aaa_aa@bbbb.com").isEmpty());
+    EXPECT_TRUE(emailval.validate(mockfname, "a-aa@aaaaaa.com").isEmpty());
+    EXPECT_TRUE(emailval.validate(mockfname, "a-a-a@aaaaaa.com").isEmpty());
 }
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
