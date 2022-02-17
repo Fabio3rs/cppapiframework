@@ -102,12 +102,12 @@ else()
     message(FATAL_ERROR "-- Biblioteca poco não encontrada")
 endif(Poco_FOUND)
 
-if(Pistache_FOUND)
+if(DEFINED PISTACHE_LIBRARY OR Pistache_FOUND)
     message("-- Pistache encontrado!")
     target_link_libraries(${projectname} ${PISTACHE_LIBRARY})
 else()
     message(FATAL_ERROR "-- Pistache is not found in your system.")
-endif(Pistache_FOUND)
+endif()
 
 target_link_libraries(${projectname} mysqlcppconn)
 
