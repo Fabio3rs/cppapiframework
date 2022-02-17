@@ -44,7 +44,7 @@ endif(Poco_FOUND)
 
 if(Pistache_FOUND)
     message("-- Pistache encontrado!")
-    target_link_libraries(apiframework_test PkgConfig::Pistache)
+    target_link_libraries(apiframework_test ${PISTACHE_LIBRARY})
 else()
     message(FATAL_ERROR "-- Pistache is not found in your system.")
 endif(Pistache_FOUND)

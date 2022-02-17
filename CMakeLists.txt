@@ -25,7 +25,12 @@ find_package(Git)
 find_package(Poco REQUIRED COMPONENTS Crypto JSON Net NetSSL Redis)
 find_package(OpenSSL REQUIRED)
 find_package(PkgConfig)
-pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+
+if(NOT DEFINED PISTACHE_LIBRARY)
+    message("Finding pistache")
+    pkg_check_modules(Pistache REQUIRED IMPORTED_TARGET libpistache)
+    set(PISTACHE_LIBRARY PkgConfig::Pistache)
+endif()
 
 if (NOT DEFINED CURRENT_SHORT_MAIN_GIT_COMMIT)
     execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
@@ -99,7 +104,7 @@ endif(Poco_FOUND)
 
 if(Pistache_FOUND)
     message("-- Pistache encontrado!")
-    target_link_libraries(${projectname} PkgConfig::Pistache)
+    target_link_libraries(${projectname} ${PISTACHE_LIBRARY})
 else()
     message(FATAL_ERROR "-- Pistache is not found in your system.")
 endif(Pistache_FOUND)
