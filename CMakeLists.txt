@@ -67,7 +67,7 @@ file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/jobhandler/*.cpp"
 )
 
-add_library(${projectname} ${SOURCES})
+add_library(${projectname} STATIC ${SOURCES})
 
 add_compile_definitions("CUR_JOB_FRAMEWORK_VERSION=\"${CURRENT_JOB_VERSION}\"")
 add_compile_definitions("FULL_COMMIT_HASH=\"${CURRENT_FULL_MAIN_GIT_COMMIT}\"")
