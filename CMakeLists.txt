@@ -22,7 +22,11 @@ find_package(GTest REQUIRED)
 include(GoogleTest)
 find_package(Git)
 
-find_package(Poco REQUIRED COMPONENTS Crypto JSON Net NetSSL Redis)
+if(NOT DEFINED Poco_LIBRARIES)
+    message("Finding poco")
+    find_package(Poco REQUIRED COMPONENTS Crypto JSON Net NetSSL Redis)
+endif()
+
 find_package(OpenSSL REQUIRED)
 find_package(PkgConfig)
 
@@ -114,3 +118,4 @@ target_link_libraries(${projectname} mysqlcppconn)
 if ("${CompileTestsApiFramework}" STREQUAL "ON")
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
+

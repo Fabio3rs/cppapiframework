@@ -34,10 +34,11 @@ class ControllerInputValidator {
             return strtocmp == str;
         }
 
+        // NOLINTNEXTLINE(hicpp-explicit-conversions)
         template <class P> pair_first(const P &pair) : str(pair.first) {}
     };
 
-    static void push_validation_msg(Poco::Dynamic::Var var,
+    static void push_validation_msg(const Poco::Dynamic::Var& var,
                                     Poco::JSON::Array &data) {
         if (var.isEmpty()) {
             return;
@@ -96,7 +97,7 @@ class ControllerInputValidator {
         ((push_validation_msg(args.validate(fieldname, data), result)), ...);
 
         bool failed = result.size() > 0;
-        push_val_list(fieldname, std::move(result));
+        push_val_list(fieldname, result);
 
         return failed;
     }

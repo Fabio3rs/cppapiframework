@@ -20,8 +20,8 @@
 #include <mysql_connection.h>
 #include <mysql_driver.h>
 
-typedef std::unique_ptr<sql::Connection> unique_conn_t;
-typedef std::shared_ptr<GenericDBConnection> shared_conn_t;
+using unique_conn_t = std::unique_ptr<sql::Connection>;
+using shared_conn_t = std::shared_ptr<GenericDBConnection>;
 using unique_prepstatement_t = std::unique_ptr<sql::PreparedStatement>;
 using unique_statement_t = std::unique_ptr<sql::Statement>;
 using unique_resultset_t = std::unique_ptr<sql::ResultSet>;
@@ -30,9 +30,15 @@ class CSql {
     std::mutex sqldrvmtx;
 
     CSql() = default;
-    CSql(const CSql &) = delete;
+    ~CSql() = default;
 
   public:
+    CSql(CSql &&) = delete;
+    auto operator=(CSql &&) -> CSql & = delete;
+    auto operator=(const CSql &) -> CSql & = delete;
+
+    CSql(const CSql &) = delete;
+
     static inline auto
     high_precision_time_to_str(std::chrono::high_resolution_clock::time_point t)
         -> std::string {
@@ -61,9 +67,7 @@ class CSql {
             size_t mksecsz = mksecstr.size();
 
             if (mksecsz < 6) {
-                {
-                    str.append(6 - mksecsz, '0');
-                }
+                { str.append(6 - mksecsz, '0'); }
             }
 
             str += mksecstr;
@@ -76,7 +80,7 @@ class CSql {
     system_time_to_str(std::optional<std::chrono::system_clock::time_point> t)
         -> std::string {
         if (!t.has_value()) {
-            return std::string();
+            return {};
         }
 
         std::time_t tt = std::chrono::system_clock::to_time_t(t.value());
@@ -144,7 +148,6 @@ class CSql {
 
     auto make_connection_cfg_noschema() -> unique_conn_t;
 
-
     /**
      *@brief Get the sql drv object. Objeto de driver do sql não é garantido
      *contra concorrência
@@ -155,8 +158,7 @@ class CSql {
 
     static inline auto mysql_cast(sql::Connection *conn)
         -> sql::mysql::MySQL_Connection * {
-        sql::mysql::MySQL_Connection *mconn =
-            dynamic_cast<sql::mysql::MySQL_Connection *>(conn);
+        auto *mconn = dynamic_cast<sql::mysql::MySQL_Connection *>(conn);
 
         if (mconn == nullptr) {
             throw std::bad_cast();
@@ -178,16 +180,14 @@ class CSql {
                               const std::string &val,
                               bool null_if_empty = false) -> std::string {
         if (conn == nullptr) {
-            {
-                throw std::invalid_argument("Resource is null");
-            }
+            { throw std::invalid_argument("Resource is null"); }
         }
 
         if (null_if_empty && val.empty()) {
             return "NULL";
         }
 
-        return conn->escapeString(val);
+        return {conn->escapeString(val)};
     }
 
     /**
@@ -203,9 +203,7 @@ class CSql {
                                  const std::string &val,
                                  bool null_if_empty = false) -> std::string {
         if (conn == nullptr) {
-            {
-                throw std::invalid_argument("Resource is null");
-            }
+            { throw std::invalid_argument("Resource is null"); }
         }
 
         if (null_if_empty && val.empty()) {
@@ -235,9 +233,7 @@ class CSql {
                            const std::string &val, bool null_if_empty = false)
         -> std::string {
         if (conn == nullptr) {
-            {
-                throw std::invalid_argument("Resource is null");
-            }
+            { throw std::invalid_argument("Resource is null"); }
         }
 
         if (null_if_empty && val.empty()) {

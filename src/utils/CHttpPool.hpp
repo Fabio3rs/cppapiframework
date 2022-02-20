@@ -20,9 +20,9 @@ class CHttpPool {
     std::unordered_map<sessionid_t, pool_t, primitivepairhash> sessions;
 
   public:
-    BorrowedObject<inst_t> setupSession(const Poco::URI &uri);
+    auto setupSession(const Poco::URI &uri) -> BorrowedObject<inst_t>;
 
-    static CHttpPool &default_inst();
+    static auto default_inst() -> CHttpPool &;
 
     CHttpPool() = default;
 };

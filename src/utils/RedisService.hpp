@@ -82,34 +82,12 @@ class RedisService {
         return rpush(*connection, data);
     }
 
-    static std::optional<std::pair<std::string, std::string>>
-    blpop(Poco::Redis::Client &cli, const std::vector<std::string> &lista,
-          int64_t timeout) {
-        std::optional<std::pair<std::string, std::string>> redisElement;
+    static auto blpop(Poco::Redis::Client &cli,
+                      const std::vector<std::string> &lista, int64_t timeout)
+        -> std::optional<std::pair<std::string, std::string>>;
 
-        Poco::Redis::Array result = cli.execute<Poco::Redis::Array>(
-            Poco::Redis::Command::blpop(lista, timeout));
-
-        if (result.isNull()) {
-            return redisElement;
-        }
-
-        redisElement = {result.get<Poco::Redis::BulkString>(0).value(),
-                        result.get<Poco::Redis::BulkString>(1).value()};
-
-        return redisElement;
-    }
-
-    std::optional<std::pair<std::string, std::string>>
-    blpop(const std::vector<std::string> &lista, int64_t timeout) {
-        auto connection = get_connection();
-
-        if (!connection) {
-            return std::nullopt;
-        }
-
-        return blpop(*connection, lista, timeout);
-    }
+    auto blpop(const std::vector<std::string> &lista, int64_t timeout)
+        -> std::optional<std::pair<std::string, std::string>>;
 
     template <class T>
     static auto set_cache(Poco::Redis::Client &inst,
@@ -279,26 +257,26 @@ class RedisService {
       public:
         [[nodiscard]] inline auto getStr() const -> const std::string & {
             return str;
-        } // NOLINT(google-explicit-constructor)
+        }
 
-        inline argToString(bool value)
-            : str(value ? "true" : "false") {
-        } // NOLINT(google-explicit-constructor)
+        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+        inline argToString(bool value) : str(value ? "true" : "false") {}
 
-        inline argToString(const char *s)
-            : str(s) {} // NOLINT(google-explicit-constructor)
+        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+        inline argToString(const char *s) : str(s) {}
 
-        inline argToString(const std::exception &e)
-            : str(e.what()) {} // NOLINT(google-explicit-constructor)
+        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+        inline argToString(const std::exception &e) : str(e.what()) {}
 
-        inline argToString(std::string s)
-            : str(std::move(s)) {} // NOLINT(google-explicit-constructor)
+        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
+        inline argToString(std::string s) : str(std::move(s)) {}
 
         template <class T,
                   typename = std::enable_if_t<std::is_arithmetic<T>::value>>
+        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
         inline argToString(T value)
             : str(std::to_string(value)) {
-        } // NOLINT(google-explicit-constructor)
+        }
     };
 
     template <class T, class... Types>
@@ -357,7 +335,7 @@ class RedisService {
 
     void set_credentials(std::string h = "127.0.0.1", int port = 6379,
                          std::string pwd = std::string()) {
-        if (replicaList.size() == 0) {
+        if (replicaList.empty()) {
             replicaList.push_back({std::move(h), port});
         } else {
             RedisServiceAddress &raddr = replicaList[0];
@@ -373,16 +351,8 @@ class RedisService {
     }
 
     RedisService(size_t poolsize, std::vector<RedisServiceAddress> replicas,
-                 std::string pwd = std::string())
-        : pool(poolsize), replicaList(std::move(replicas)) {
-        password = std::move(pwd);
-    }
+                 std::string pwd = std::string());
 
-    RedisService(size_t poolsize = 32, std::string h = "127.0.0.1",
-                 int port = 6379, std::string pwd = std::string())
-        : pool(poolsize) {
-        replicaList.push_back({std::move(h), port});
-
-        password = std::move(pwd);
-    }
+    explicit RedisService(size_t poolsize = 32, std::string h = "127.0.0.1",
+                          int port = 6379, std::string pwd = std::string());
 };

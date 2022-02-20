@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #ifndef Valdiator_hpp
 #define Valdiator_hpp
 
@@ -67,24 +68,20 @@ class Validator {
         auto key = custom_array<std::string_view>("%", "/", "union", "|", "&",
                                                   "^", "#", "/*", "*/");
 
-        for (const auto &str : key) {
-            if (sql.find(str) != std::string::npos) {
-                return false;
-            }
-        }
-        return true;
+        return std::all_of(key.begin(), key.end(),
+                           [&sql](const std::string_view &str) {
+                               return sql.find(str) == std::string::npos;
+                           });
     }
 
     static auto CheckParameter(const std::string &Parameter) -> bool {
         auto key = custom_array<std::string_view>("and", "*", "=", " ", "%0a",
                                                   "%", "/", "union", "|", "&",
                                                   "^", "#", "/*", "*/");
-        for (const auto &str : key) {
-            if (Parameter.find(str) != std::string::npos) {
-                return false;
-            }
-        }
-        return true;
+        return std::all_of(key.begin(), key.end(),
+                           [&Parameter](const std::string_view &str) {
+                               return Parameter.find(str) == std::string::npos;
+                           });
     }
 };
 

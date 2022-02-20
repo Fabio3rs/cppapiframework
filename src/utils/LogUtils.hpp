@@ -13,8 +13,7 @@
                               __LINE__, __VA_ARGS__)
 
 #define LOG_LN(level, format, ...)                                             \
-    CLog::log().multiRegisterLN(__FILE__, __LINE__, level, format, __func__,   \
-                                __VA_ARGS__)
+    CLog::log().multiRegisterLN(__FILE__, __LINE__, level, format, __VA_ARGS__)
 
 #define LOGERR(format, ...) LOG_LN("E", format, __VA_ARGS__)
 #define LOGWRN(format, ...) LOG_LN("W", format, __VA_ARGS__)

@@ -67,7 +67,6 @@ auto CSql::make_connection_cfg_noschema() -> unique_conn_t {
     return con;
 }
 
-
 auto CSql::get_sql_drv() -> sql::mysql::MySQL_Driver * {
     /* get_driver_instance() is not thread safe */
     std::lock_guard<std::mutex> lck(sqldrvmtx);

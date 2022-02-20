@@ -51,7 +51,7 @@ template <class T> class BorrowedObject {
     [[nodiscard]] auto get() -> T * { return &bobject->a; }
     [[nodiscard]] auto get() const -> const T * { return &bobject->a; }
 
-    auto getId() const -> size_t { return pos; }
+    [[nodiscard]] auto getId() const -> size_t { return pos; }
 
     explicit operator bool() const { return bobject != nullptr; }
 
@@ -86,8 +86,8 @@ template <class T> class BorrowedObject {
 template <class poolobject_t> class BorrowPool {
     friend BorrowedObject<poolobject_t>;
     
-    std::atomic<size_t> firstFreeElement;
-    std::atomic<size_t> borrowedElements;
+    std::atomic<size_t> firstFreeElement{};
+    std::atomic<size_t> borrowedElements{};
 
     std::deque<std::atomic<bool>> bits;
 
