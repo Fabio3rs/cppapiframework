@@ -1,5 +1,7 @@
-#include "../src//WebInterface/WebApp.hpp"
+#include "WebInterface/JsonResponse.hpp"
+#include "WebInterface/WebApp.hpp"
 #include "WebInterface/httpwrappers.hpp"
+#include <Poco/JSON/Object.h>
 #include <chrono>
 #include <gtest/gtest.h>
 #include <memory>
@@ -22,6 +24,23 @@ TEST(WebAppTest, Startup) {
     app.startAsync();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    EXPECT_TRUE(true);
+}
+
+TEST(WebAppTest, JsonResult) {
+    WebApp app({Ipv4::any(), 3001}, 2);
+
+    app.get("/",
+            [](Req /*ununsed*/,
+               Resp /*ununsed*/) -> std::shared_ptr<ResponseViaReturn> {
+                Poco::JSON::Object::Ptr aaaa(new Poco::JSON::Object);
+                aaaa->set("teste", true);
+                return std::make_shared<JsonResponse>(aaaa);
+            });
+
+    app.startAsync();
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
     EXPECT_TRUE(true);
 }
 
