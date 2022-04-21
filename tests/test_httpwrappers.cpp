@@ -12,8 +12,8 @@ using namespace webapp;
 // NOLINTBEGIN(hicpp-special-member-functions)
 
 static auto somefn(Req /*ununsed*/, Resp /*ununsed*/)
-    -> std::shared_ptr<ResponseViaReturn> {
-    return std::make_shared<RawStringResponse>("pato voa");
+    -> std::unique_ptr<ResponseViaReturn> {
+    return std::make_unique<RawStringResponse>("pato voa");
 }
 
 TEST(WebAppTest, Startup) {
@@ -32,10 +32,10 @@ TEST(WebAppTest, JsonResult) {
 
     app.get("/",
             [](Req /*ununsed*/,
-               Resp /*ununsed*/) -> std::shared_ptr<ResponseViaReturn> {
+               Resp /*ununsed*/) -> std::unique_ptr<ResponseViaReturn> {
                 Poco::JSON::Object::Ptr aaaa(new Poco::JSON::Object);
                 aaaa->set("teste", true);
-                return std::make_shared<JsonResponse>(aaaa);
+                return std::make_unique<JsonResponse>(aaaa);
             });
 
     app.startAsync();

@@ -100,6 +100,7 @@ class WebApp {
 
     WebApp() = default;
     WebApp(Address addr, size_t thr) { init(addr, thr); }
+    WebApp(uint16_t port, size_t thr) { init({Ipv4::any(), port}, thr); }
     ~WebApp();
 
   private:

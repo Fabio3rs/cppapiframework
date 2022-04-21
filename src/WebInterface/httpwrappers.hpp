@@ -68,7 +68,7 @@ class Resp {
 class ResponseViaReturn {
 
   public:
-    virtual void sendResponse(Req, Resp resp) = 0;
+    virtual void sendResponse(Req req, Resp resp) = 0;
 
     ResponseViaReturn(const ResponseViaReturn &) = default;
     ResponseViaReturn(ResponseViaReturn &&) = default;
@@ -140,7 +140,7 @@ class RawStringResponse : public ResponseViaReturn {
 class RouterWrapper {
 
   public:
-    using callbackDecl_t = std::shared_ptr<ResponseViaReturn>(Req, Resp);
+    using callbackDecl_t = std::unique_ptr<ResponseViaReturn>(Req, Resp);
 
     auto operator()(const Pistache::Rest::Request &request,
                     Pistache::Http::ResponseWriter response)
@@ -150,15 +150,15 @@ class RouterWrapper {
 
         prepareReqResp(req, resp);
 
-        std::shared_ptr<ResponseViaReturn> responseWrapper;
+        std::unique_ptr<ResponseViaReturn> responseWrapper;
 
         try {
             responseWrapper = func(req, resp);
+            responseWrapper->sendResponse(req, resp);
         } catch (const std::exception &e) {
-            responseWrapper = std::make_shared<ExceptionResponseViaReturn>(e);
+            ExceptionResponseViaReturn except(e);
+            except.sendResponse(req, resp);
         }
-
-        responseWrapper->sendResponse(req, resp);
 
         return Pistache::Rest::Route::Result::Ok;
     }
