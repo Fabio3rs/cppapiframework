@@ -28,7 +28,7 @@ class CLog {
     void AddToLog(const std::string &Text, const std::string &extraid = "");
 
     template <class... Types>
-    auto multiRegister(std::string_view format, Types &&... args)
+    auto multiRegister(std::string_view format, Types &&...args)
         -> std::string {
         std::string printbuf =
             StrFormat::multiRegister(format, std::forward<Types>(args)...);
@@ -40,7 +40,7 @@ class CLog {
     template <class... Types>
     auto multiRegisterLN(std::string_view file, unsigned int line,
                          std::string_view level, std::string_view format,
-                         Types &&... args) -> std::string {
+                         Types &&...args) -> std::string {
         std::string printbuf = Strutils::multi_concat(
             file, ":", std::to_string(line), " ", level, " ",
             StrFormat::multiRegister(format, std::forward<Types>(args)...));
@@ -56,7 +56,9 @@ class CLog {
     void FinishLog();
     void operator<<(const std::string &Text) { AddToLog(Text); }
 
-    static auto log(std::string_view filepath = {}) -> CLog &;
+    static auto log() -> CLog &;
+    static auto initSingleton(const logOutputInfo &logcfg = {}) -> CLog &;
+    static auto initSingleton(std::string_view filepath) -> CLog &;
 
     CLog(const CLog &) = delete;
     CLog(CLog &&) = delete;
@@ -65,6 +67,8 @@ class CLog {
     auto operator=(CLog &&) -> CLog & = delete;
 
     static logOutputInfo defaultcfg;
+
+    explicit CLog(const logOutputInfo &logcfg = {});
 
   private:
     static auto addLinesToLog(CLog &logInst) -> bool;
@@ -79,6 +83,6 @@ class CLog {
     std::unique_ptr<ScopedStreamRedirect> streamRedirect;
     bool Finished;
 
-    explicit CLog(const logOutputInfo &logcfg = {});
+    void insertLogHeader();
 };
 #endif

@@ -17,7 +17,7 @@
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestLog, Open) {
-    auto &log = CLog::log("TestLog.log");
+    auto &log = CLog::initSingleton("TestLog.log");
 
     for (size_t i = 0; i < 100; i++) {
         EXPECT_FALSE(log.multiRegister("Teste log %0", i).empty());
@@ -26,7 +26,7 @@ TEST(TestLog, Open) {
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestLog, MultiRegisterStrEqual) {
-    auto &log = CLog::log("TestLogStrEqual.log");
+    auto &log = CLog::initSingleton("TestLogStrEqual.log");
 
     EXPECT_EQ(log.multiRegister("Teste log (%0) AAAAAAAAAAAA", 10),
               "Teste log (10) AAAAAAAAAAAA");
@@ -37,7 +37,7 @@ TEST(TestLog, MultiRegisterStrEqual) {
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestLog, MultiRegisterAllocationLimit) {
-    auto &log = CLog::log("TestLogAllocations.log");
+    auto &log = CLog::initSingleton("TestLogAllocations.log");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     AllocationCount::getAllocationCount() = 0;
@@ -46,7 +46,7 @@ TEST(TestLog, MultiRegisterAllocationLimit) {
 }
 
 static void somelogadd() {
-    auto &log = CLog::log();
+    auto &log = CLog::initSingleton();
 
     for (size_t i = 0; i < 50000; i++) {
         log.multiRegister("Teste log %0", i);
@@ -56,7 +56,7 @@ static void somelogadd() {
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestLog, SaturateLog) {
     std::filesystem::remove("Saturate.log");
-    auto &log = CLog::log("Saturate.log");
+    auto &log = CLog::initSingleton("Saturate.log");
 
     for (size_t i = 0; i < 100; i++) {
         EXPECT_FALSE(log.multiRegister("Teste log %0", i).empty());
@@ -97,7 +97,7 @@ TEST(TestLog, RedirectLog) {
     CLog::defaultcfg.stream = &redirectionlog;
 
     {
-        auto &log = CLog::log();
+        auto &log = CLog::initSingleton(CLog::defaultcfg);
 
         for (size_t i = 0; i < 100; i++) {
             EXPECT_FALSE(log.multiRegister("Teste log %0", i).empty());
@@ -111,28 +111,29 @@ TEST(TestLog, RedirectLog) {
 }
 
 static void logDebugInsertFork() {
-    CLog::log().multiRegister("Before fork");
+    auto &log = CLog::log();
+    log.multiRegister("Before fork");
 
     ProcessHelper phelper;
 
     auto forked = phelper.fork();
 
     if (forked == 0) {
-        CLog::log().multiRegister("Inside fork");
-        CLog::log().multiRegister("Will exit fork");
-        CLog::log().FinishLog();
+        log.multiRegister("Inside fork");
+        log.multiRegister("Will exit fork");
+        log.FinishLog();
         exit(0);
     } else if (forked > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        CLog::log().multiRegister("Inside parent");
+        log.multiRegister("Inside parent");
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         phelper.wait(forked, 0);
     } else {
         throw std::runtime_error("Error fork");
     }
 
-    CLog::log().multiRegister("After fork");
-    CLog::log().FinishLog();
+    log.multiRegister("After fork");
+    log.FinishLog();
 }
 
 static auto findLineOnStream(std::fstream &toSearch, const std::string &val)
@@ -161,7 +162,7 @@ TEST(TestLog, ForkAndLog) {
 
     CLog::defaultcfg.filename.clear();
     CLog::defaultcfg.stream = &fsout;
-    CLog::log().multiRegister("Before test");
+    CLog::initSingleton(CLog::defaultcfg).multiRegister("Before test");
     logDebugInsertFork();
 
     fsout.flush();

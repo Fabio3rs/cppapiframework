@@ -2,6 +2,7 @@
 #include "ChronoUtils.hpp"
 #include "CircleMTIO.hpp"
 #include "ScopedStreamRedirect.hpp"
+#include <cstddef>
 #include <ctime>
 #include <exception>
 #include <iostream>
@@ -27,6 +28,8 @@ struct __attribute__((aligned(64))) LogLine {
 using logCircleIo_t = CircleMTIO<1024, LogLine>;
 static std::unique_ptr<logCircleIo_t>
     logLinesBuffer(std::make_unique<logCircleIo_t>());
+
+static std::unique_ptr<CLog> logInstance;
 
 auto CLog::addLinesToLog(CLog &logInst) -> bool {
     bool continueRunning = true;
@@ -88,22 +91,42 @@ void CLog::threadFn(CLog &logInst) {
 
 logOutputInfo CLog::defaultcfg{LOG_FILE_NAME_PATH, nullptr};
 
-static auto determineCfg(std::string_view filepath) {
-    logOutputInfo cfg;
+auto CLog::log() -> CLog & { return *logInstance; }
 
-    if (filepath.empty()) {
-        cfg = CLog::defaultcfg;
-    } else {
-        cfg.filename = filepath;
+auto CLog::initSingleton(const logOutputInfo &logcfg) -> CLog & {
+    if (!logInstance) {
+        logInstance = std::make_unique<CLog>(logcfg);
     }
 
-    return cfg;
+    return *logInstance;
 }
 
-auto CLog::log(std::string_view filepath) -> CLog & {
+auto CLog::initSingleton(std::string_view filepath) -> CLog & {
+    if (!logInstance) {
+        defaultcfg.filename = filepath;
+        defaultcfg.stream = nullptr;
+        logInstance = std::make_unique<CLog>(defaultcfg);
+    }
 
-    static CLog Log(determineCfg(filepath));
-    return Log;
+    return *logInstance;
+}
+
+void CLog::insertLogHeader() {
+    LogFile << "***********************************************************"
+               "******************\n";
+    LogFile << std::string("* Program compilation date/time: ") + __DATE__ +
+                   " " + __TIME__;
+    LogFile << "\n*********************************************************"
+               "********************\n";
+    LogFile << "* Full commit hash: " FULL_COMMIT_HASH;
+    LogFile << "\n*********************************************************"
+               "********************\n";
+    LogFile << "***********************************************************"
+               "******************\n* Log started at: ";
+    LogFile << ChronoUtils::GetDateAndTime();
+    LogFile << "\n*********************************************************"
+               "********************\n\n";
+    LogFile.flush();
 }
 
 CLog::CLog(const logOutputInfo &logcfg) : running(true) {
@@ -123,21 +146,7 @@ CLog::CLog(const logOutputInfo &logcfg) : running(true) {
         }
     }
 
-    LogFile << "***********************************************************"
-               "******************\n";
-    LogFile << std::string("* Program compilation date/time: ") + __DATE__ +
-                   " " + __TIME__;
-    LogFile << "\n*********************************************************"
-               "********************\n";
-    LogFile << "* Full commit hash: " FULL_COMMIT_HASH;
-    LogFile << "\n*********************************************************"
-               "********************\n";
-    LogFile << "***********************************************************"
-               "******************\n* Log started at: ";
-    LogFile << ChronoUtils::GetDateAndTime();
-    LogFile << "\n*********************************************************"
-               "********************\n\n";
-    LogFile.flush();
+    insertLogHeader();
 
     writterThreadInst = std::thread(threadFn, std::ref(*this));
 }
