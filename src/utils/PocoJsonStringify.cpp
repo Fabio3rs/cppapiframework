@@ -1,4 +1,5 @@
 #include "PocoJsonStringify.hpp"
+#include <string>
 
 void PocoJsonStringify::escapeJSONUTF8(const std::string::const_iterator &begin,
                                        const std::string::const_iterator &end,

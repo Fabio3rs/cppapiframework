@@ -206,9 +206,24 @@ class PocoJsonStringify {
     //
      */
     static void formatString(const std::string &value, std::string &str,
-                             int /**/) {
+                             int options) {
         append(str, "\"");
-        escapeJSONUTF8(value.begin(), value.end(), true, str);
+        bool escapeAllUnicode = ((options & Poco::JSON_ESCAPE_UNICODE) != 0);
+
+        if (escapeAllUnicode) {
+            escapeJSONUTF8(value.begin(), value.end(), true, str);
+        } else {
+            for (std::string::const_iterator it = value.begin(),
+                                             end = value.end();
+                 it != end; ++it) {
+                if ((*it >= 0 && *it <= 31) || (*it == '"') || (*it == '\\')) {
+                    escapeJSONUTF8(it, it + 1, true, str);
+                } else {
+                    append(str, *it);
+                }
+            }
+        }
+
         append(str, "\"");
     }
 

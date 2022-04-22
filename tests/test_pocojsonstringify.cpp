@@ -18,6 +18,7 @@ static auto setupJson() {
         usr->set("id", "2562255184661247200000000000000");
         usr->set("username", "252255184661247");
         usr->set("name", "aaa\n");
+        usr->set("test", "çã\n\"");
 
         JsonObjectARR->add(usr);
     }
