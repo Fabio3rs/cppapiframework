@@ -31,7 +31,7 @@ class argToString {
             str = "{NULL JSON}";
         } else {
             PocoJsonStringify stringifier;
-            stringifier.stringify(jsonobj, 0);
+            stringifier.stringify(jsonobj);
 
             str = std::move(stringifier.str);
         }

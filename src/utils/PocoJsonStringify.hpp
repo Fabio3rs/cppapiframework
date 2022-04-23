@@ -54,6 +54,7 @@ class PocoJsonStringify {
 
   public:
     std::string str;
+    int indent = 0, step = -1;
     bool strictJSON = true;
     bool escapeAllUnicode = false;
 
@@ -76,7 +77,7 @@ class PocoJsonStringify {
     // SPDX-License-Identifier:	BSL-1.0
     //
      */
-    void stringify(const Poco::JSON::Object &obj, int indent, int step = -1) {
+    void stringify(const Poco::JSON::Object &obj) {
         append('{');
         bool first = true;
         for (const auto &item : obj) {
@@ -86,15 +87,12 @@ class PocoJsonStringify {
             first = false;
             formatString(item.first);
             append(":");
-            stringify(item.second, indent, step);
+            stringify(item.second);
         }
         append('}');
     }
 
-    void stringify(const Poco::JSON::Object::Ptr &arr, int indent,
-                   int step = -1) {
-        stringify(*arr, indent, step);
-    }
+    void stringify(const Poco::JSON::Object::Ptr &arr) { stringify(*arr); }
 
     /**
      * @brief função de stringify baseada em Poco::JSON::Array
@@ -115,7 +113,7 @@ class PocoJsonStringify {
     // SPDX-License-Identifier:	BSL-1.0
     //
      */
-    void stringify(const Poco::JSON::Array &arr, int indent, int step = -1) {
+    void stringify(const Poco::JSON::Array &arr) {
         append('[');
         bool first = true;
         for (const auto &item : arr) {
@@ -123,15 +121,12 @@ class PocoJsonStringify {
                 append(',');
             }
             first = false;
-            stringify(item, indent, step);
+            stringify(item);
         }
         append(']');
     }
 
-    void stringify(const Poco::JSON::Array::Ptr &arr, int indent,
-                   int step = -1) {
-        stringify(*arr, indent, step);
-    }
+    void stringify(const Poco::JSON::Array::Ptr &arr) { stringify(*arr); }
 
     /**
      * @brief função de stringify baseada em Poco::Dynamic::Var
@@ -150,27 +145,19 @@ class PocoJsonStringify {
     // SPDX-License-Identifier:	BSL-1.0
     //
      */
-    void stringify(const Poco::Dynamic::Var &any, int indent, int step = -1) {
+    void stringify(const Poco::Dynamic::Var &any) {
         using Object = Poco::JSON::Object;
         using Array = Poco::JSON::Array;
 
-        if (step == -1) {
-            step = indent;
-        }
-
         const auto &type = any.type();
         if (type == typeid(Object)) {
-            const auto &o = any.extract<Object>();
-            stringify(o, indent == 0 ? 0 : indent, step);
+            stringify(any.extract<Object>());
         } else if (type == typeid(Array)) {
-            const auto &a = any.extract<Array>();
-            stringify(a, indent == 0 ? 0 : indent, step);
+            stringify(any.extract<Array>());
         } else if (type == typeid(Object::Ptr)) {
-            const auto &o = any.extract<Object::Ptr>();
-            stringify(*o, indent == 0 ? 0 : indent, step);
+            stringify(*any.extract<Object::Ptr>());
         } else if (type == typeid(Array::Ptr)) {
-            const auto &a = any.extract<Array::Ptr>();
-            stringify(*a, indent == 0 ? 0 : indent, step);
+            stringify(*any.extract<Array::Ptr>());
         } else if (any.isEmpty()) {
             append("null");
         } else if (any.isNumeric() || any.isBoolean()) {
@@ -184,8 +171,7 @@ class PocoJsonStringify {
             formatString(any.extract<std::string>());
         } else if (any.isString() || any.isDateTime() || any.isDate() ||
                    any.isTime()) {
-            auto value = any.convert<std::string>();
-            formatString(value);
+            formatString(any.convert<std::string>());
         } else {
             formatString(any.convert<std::string>());
         }
