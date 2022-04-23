@@ -35,17 +35,17 @@ TEST(PocoJSONStringify, StringifyTeste) {
     EXPECT_GT(AllocationCount::getAllocationCount(), 0);
     AllocationCount::getAllocationCount() = 0;
 
-    std::string outjson;
-    outjson.reserve(4096);
+    PocoJsonStringify stringifier;
+    stringifier.str.reserve(4096);
 
     EXPECT_GT(AllocationCount::getAllocationCount(), 0);
     AllocationCount::getAllocationCount() = 0;
 
-    PocoJsonStringify::stringify(json, outjson, 0);
+    stringifier.stringify(json, 0);
     EXPECT_EQ(AllocationCount::getAllocationCount(), 0);
 
     std::stringstream sstr;
     json->stringify(sstr);
 
-    EXPECT_EQ(outjson, sstr.str());
+    EXPECT_EQ(stringifier.str, sstr.str());
 }

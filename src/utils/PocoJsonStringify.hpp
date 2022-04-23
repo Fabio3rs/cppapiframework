@@ -53,6 +53,10 @@
 class PocoJsonStringify {
 
   public:
+    std::string str;
+    bool strictJSON = true;
+    bool escapeAllUnicode = false;
+
     /**
      * @brief função de stringify Poco::JSON::Object
      * https://github.com/pocoproject/poco/blob/master/JSON/include/Poco/JSON/Object.h
@@ -72,25 +76,24 @@ class PocoJsonStringify {
     // SPDX-License-Identifier:	BSL-1.0
     //
      */
-    static void stringify(const Poco::JSON::Object &obj, std::string &str,
-                          int indent, int step = -1, int options = 0) {
-        append(str, '{');
+    void stringify(const Poco::JSON::Object &obj, int indent, int step = -1) {
+        append('{');
         bool first = true;
         for (const auto &item : obj) {
             if (!first) {
-                append(str, ',');
+                append(',');
             }
             first = false;
-            formatString(item.first, str, options);
-            append(str, ":");
-            stringify(item.second, str, indent, step, options);
+            formatString(item.first);
+            append(":");
+            stringify(item.second, indent, step);
         }
-        append(str, '}');
+        append('}');
     }
 
-    static void stringify(const Poco::JSON::Object::Ptr &arr, std::string &str,
-                          int indent, int step = -1, int options = 0) {
-        stringify(*arr, str, indent, step, options);
+    void stringify(const Poco::JSON::Object::Ptr &arr, int indent,
+                   int step = -1) {
+        stringify(*arr, indent, step);
     }
 
     /**
@@ -112,23 +115,22 @@ class PocoJsonStringify {
     // SPDX-License-Identifier:	BSL-1.0
     //
      */
-    static void stringify(const Poco::JSON::Array &arr, std::string &str,
-                          int indent, int step = -1, int options = 0) {
-        append(str, '[');
+    void stringify(const Poco::JSON::Array &arr, int indent, int step = -1) {
+        append('[');
         bool first = true;
         for (const auto &item : arr) {
             if (!first) {
-                append(str, ',');
+                append(',');
             }
             first = false;
-            stringify(item, str, indent, step, options);
+            stringify(item, indent, step);
         }
-        append(str, ']');
+        append(']');
     }
 
-    static void stringify(const Poco::JSON::Array::Ptr &arr, std::string &str,
-                          int indent, int step = -1, int options = 0) {
-        stringify(*arr, str, indent, step, options);
+    void stringify(const Poco::JSON::Array::Ptr &arr, int indent,
+                   int step = -1) {
+        stringify(*arr, indent, step);
     }
 
     /**
@@ -148,8 +150,7 @@ class PocoJsonStringify {
     // SPDX-License-Identifier:	BSL-1.0
     //
      */
-    static void stringify(const Poco::Dynamic::Var &any, std::string &str,
-                          int indent, int step = -1, int options = 0) {
+    void stringify(const Poco::Dynamic::Var &any, int indent, int step = -1) {
         using Object = Poco::JSON::Object;
         using Array = Poco::JSON::Array;
 
@@ -157,35 +158,36 @@ class PocoJsonStringify {
             step = indent;
         }
 
-        if (any.type() == typeid(Object)) {
+        const auto &type = any.type();
+        if (type == typeid(Object)) {
             const auto &o = any.extract<Object>();
-            stringify(o, str, indent == 0 ? 0 : indent, step);
-        } else if (any.type() == typeid(Array)) {
+            stringify(o, indent == 0 ? 0 : indent, step);
+        } else if (type == typeid(Array)) {
             const auto &a = any.extract<Array>();
-            stringify(a, str, indent == 0 ? 0 : indent, step);
-        } else if (any.type() == typeid(Object::Ptr)) {
+            stringify(a, indent == 0 ? 0 : indent, step);
+        } else if (type == typeid(Object::Ptr)) {
             const auto &o = any.extract<Object::Ptr>();
-            stringify(*o, str, indent == 0 ? 0 : indent, step);
-        } else if (any.type() == typeid(Array::Ptr)) {
+            stringify(*o, indent == 0 ? 0 : indent, step);
+        } else if (type == typeid(Array::Ptr)) {
             const auto &a = any.extract<Array::Ptr>();
-            stringify(*a, str, indent == 0 ? 0 : indent, step);
+            stringify(*a, indent == 0 ? 0 : indent, step);
         } else if (any.isEmpty()) {
-            append(str, "null");
+            append("null");
         } else if (any.isNumeric() || any.isBoolean()) {
             auto value = any.convert<std::string>();
-            if (any.type() == typeid(char)) {
-                formatString(value, str, options);
+            if (type == typeid(char)) {
+                formatString(value);
             } else {
-                append(str, value);
+                append(value);
             }
         } else if (any.isString()) {
-            formatString(any.extract<std::string>(), str, options);
+            formatString(any.extract<std::string>());
         } else if (any.isString() || any.isDateTime() || any.isDate() ||
                    any.isTime()) {
             auto value = any.convert<std::string>();
-            formatString(value, str, options);
+            formatString(value);
         } else {
-            append(str, any.convert<std::string>());
+            formatString(any.convert<std::string>());
         }
     }
 
@@ -205,26 +207,24 @@ class PocoJsonStringify {
     // SPDX-License-Identifier:	BSL-1.0
     //
      */
-    static void formatString(const std::string &value, std::string &str,
-                             int options) {
-        append(str, "\"");
-        bool escapeAllUnicode = ((options & Poco::JSON_ESCAPE_UNICODE) != 0);
+    void formatString(const std::string &value) noexcept {
+        append("\"");
 
         if (escapeAllUnicode) {
-            escapeJSONUTF8(value.begin(), value.end(), true, str);
+            escapeJSONUTF8(value.begin(), value.end());
         } else {
             for (std::string::const_iterator it = value.begin(),
                                              end = value.end();
                  it != end; ++it) {
                 if ((*it >= 0 && *it <= 31) || (*it == '"') || (*it == '\\')) {
-                    escapeJSONUTF8(it, it + 1, true, str);
+                    escapeJSONUTF8(it, it + 1);
                 } else {
-                    append(str, *it);
+                    append(*it);
                 }
             }
         }
 
-        append(str, "\"");
+        append("\"");
     }
 
     /**
@@ -244,20 +244,89 @@ class PocoJsonStringify {
     // SPDX-License-Identifier:	BSL-1.0
     //
      */
-    static void escapeJSONUTF8(const std::string::const_iterator &begin,
-                               const std::string::const_iterator &end,
-                               bool strictJSON, std::string &str);
+    void escapeJSONUTF8(const std::string::const_iterator &begin,
+                        const std::string::const_iterator &end) noexcept {
+        constexpr std::array<uint32_t, 6> offsetsFromUTF8{
+            0x00000000UL, 0x00003080UL, 0x000E2080UL,
+            0x03C82080UL, 0xFA082080UL, 0x82082080UL};
 
-    static void append(std::string &out, unsigned char in) {
-        out += static_cast<char>(in);
+        std::string::const_iterator it = begin;
+
+        while (it != end) {
+            uint32_t ch = 0;
+            unsigned int sz = 0;
+
+            do {
+                ch <<= 6U;
+                ch += static_cast<unsigned char>(*it++);
+                sz++;
+            } while (it != end &&
+                     (static_cast<unsigned char>(*it) & 0xC0U) == 0x80U &&
+                     sz < 6);
+            ch -= offsetsFromUTF8[sz - 1];
+
+            if (ch == '\n') {
+                append("\\n");
+            } else if (ch == '\t') {
+                append("\\t");
+            } else if (ch == '\r') {
+                append("\\r");
+            } else if (ch == '\b') {
+                append("\\b");
+            } else if (ch == '\f') {
+                append("\\f");
+            } else if (ch == '\v') {
+                append((strictJSON ? "\\u000B" : "\\v"));
+            } else if (ch == '\a') {
+                append((strictJSON ? "\\u0007" : "\\a"));
+            } else if (ch == '\\') {
+                append("\\\\");
+            } else if (ch == '\"') {
+                append("\\\"");
+            } else if (ch == '/') {
+                append("\\/");
+            } else if (ch == '\0') {
+                append("\\u0000");
+            } else if (ch < 32 || ch == 0x7f) {
+                append("\\u");
+                std::string tmp;
+                Poco::NumberFormatter::appendHex(
+                    tmp, static_cast<unsigned char>(ch), 4);
+                append(tmp);
+            } else if (ch > 0xFFFF) {
+                ch -= 0x10000;
+                append("\\u");
+                std::string tmp;
+                Poco::NumberFormatter::appendHex(
+                    tmp,
+                    static_cast<unsigned char>((ch >> 10U) & 0x03ffU) + 0xd800U,
+                    4);
+                append(tmp);
+                append("\\u");
+                tmp.clear();
+                Poco::NumberFormatter::appendHex(
+                    tmp, static_cast<unsigned char>(ch & 0x03ffU) + 0xdc00, 4);
+                append(tmp);
+            } else if (ch >= 0x80 && ch <= 0xFFFF) {
+                append("\\u");
+                std::string tmp;
+                Poco::NumberFormatter::appendHex(
+                    tmp, static_cast<unsigned char>(ch), 4);
+                append(tmp);
+            } else {
+                append(static_cast<char>(ch));
+            }
+        }
     }
 
-    static void append(std::string &out, char in) { out += in; }
+    void append(unsigned char in) noexcept { str += static_cast<char>(in); }
 
-    static void append(std::string &out, std::string_view in) { out += in; }
+    void append(char in) noexcept { str += in; }
+
+    void append(std::string_view in) noexcept { str += in; }
 
     template <class input_t>
-    static void append(std::ostream &out, const input_t &in) {
+    void append(std::ostream &out, const input_t &in) noexcept {
         out << in;
     }
 };

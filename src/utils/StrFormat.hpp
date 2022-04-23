@@ -26,11 +26,14 @@ class argToString {
     argToString(std::string s) : str(std::move(s)) {}
 
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    argToString(const Poco::JSON::Object::Ptr &s) {
-        if (s.isNull()) {
+    argToString(const Poco::JSON::Object::Ptr &jsonobj) {
+        if (jsonobj.isNull()) {
             str = "{NULL JSON}";
         } else {
-            PocoJsonStringify::stringify(s, str, 0);
+            PocoJsonStringify stringifier;
+            stringifier.stringify(jsonobj, 0);
+
+            str = std::move(stringifier.str);
         }
     }
 
