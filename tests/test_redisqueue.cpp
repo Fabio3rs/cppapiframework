@@ -28,9 +28,6 @@ TEST(TestRedisQueue, PushPops) {
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisQueue, ExpireTTLQueue) {
-    EXPECT_TRUE(redisq);
-    EXPECT_TRUE(redisq->isConnected());
-
     std::string data = "0123456789 qwertyuiop";
 
     redisq->push(queue_name, data);
