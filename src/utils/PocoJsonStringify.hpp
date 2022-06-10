@@ -230,89 +230,94 @@ class PocoJsonStringify {
     // SPDX-License-Identifier:	BSL-1.0
     //
      */
+    // NOLINTNEXTLINE
     void escapeJSONUTF8(const std::string::const_iterator &begin,
                         const std::string::const_iterator &end) noexcept {
         constexpr std::array<uint32_t, 6> offsetsFromUTF8{
             0x00000000UL, 0x00003080UL, 0x000E2080UL,
             0x03C82080UL, 0xFA082080UL, 0x82082080UL};
 
-        std::string::const_iterator it = begin;
+        std::string::const_iterator itstr = begin;
 
-        while (it != end) {
-            uint32_t ch = 0;
-            unsigned int sz = 0;
+        while (itstr != end) {
+            uint32_t curCh = 0;
+            unsigned int sizeutf = 0;
 
             do {
-                ch <<= 6U;
-                ch += static_cast<unsigned char>(*it++);
-                sz++;
-            } while (it != end &&
-                     (static_cast<unsigned char>(*it) & 0xC0U) == 0x80U &&
-                     sz < 6);
-            ch -= offsetsFromUTF8[sz - 1];
+                curCh <<= 6U;
+                curCh += static_cast<unsigned char>(*itstr++);
+                sizeutf++;
+            } while (itstr != end &&
+                     (static_cast<unsigned char>(*itstr) & 0xC0U) == 0x80U &&
+                     sizeutf < 6);
+            curCh -= offsetsFromUTF8[sizeutf - 1];
 
-            if (ch == '\n') {
+            if (curCh == '\n') {
                 append("\\n");
-            } else if (ch == '\t') {
+            } else if (curCh == '\t') {
                 append("\\t");
-            } else if (ch == '\r') {
+            } else if (curCh == '\r') {
                 append("\\r");
-            } else if (ch == '\b') {
+            } else if (curCh == '\b') {
                 append("\\b");
-            } else if (ch == '\f') {
+            } else if (curCh == '\f') {
                 append("\\f");
-            } else if (ch == '\v') {
+            } else if (curCh == '\v') {
                 append((strictJSON ? "\\u000B" : "\\v"));
-            } else if (ch == '\a') {
+            } else if (curCh == '\a') {
                 append((strictJSON ? "\\u0007" : "\\a"));
-            } else if (ch == '\\') {
+            } else if (curCh == '\\') {
                 append("\\\\");
-            } else if (ch == '\"') {
+            } else if (curCh == '\"') {
                 append("\\\"");
-            } else if (ch == '/') {
+            } else if (curCh == '/') {
                 append("\\/");
-            } else if (ch == '\0') {
+            } else if (curCh == '\0') {
                 append("\\u0000");
-            } else if (ch < 32 || ch == 0x7f) {
+            } else if (curCh < 32 || curCh == 0x7f) {
                 append("\\u");
                 std::string tmp;
                 Poco::NumberFormatter::appendHex(
-                    tmp, static_cast<unsigned char>(ch), 4);
+                    tmp, static_cast<unsigned char>(curCh), 4);
                 append(tmp);
-            } else if (ch > 0xFFFF) {
-                ch -= 0x10000;
+            } else if (curCh > 0xFFFF) {
+                curCh -= 0x10000;
                 append("\\u");
                 std::string tmp;
                 Poco::NumberFormatter::appendHex(
                     tmp,
-                    static_cast<unsigned char>((ch >> 10U) & 0x03ffU) + 0xd800U,
+                    static_cast<unsigned char>((curCh >> 10U) & 0x03ffU) +
+                        0xd800U,
                     4);
                 append(tmp);
                 append("\\u");
                 tmp.clear();
                 Poco::NumberFormatter::appendHex(
-                    tmp, static_cast<unsigned char>(ch & 0x03ffU) + 0xdc00, 4);
+                    tmp, static_cast<unsigned char>(curCh & 0x03ffU) + 0xdc00,
+                    4);
                 append(tmp);
-            } else if (ch >= 0x80 && ch <= 0xFFFF) {
+            } else if (curCh >= 0x80 && curCh <= 0xFFFF) {
                 append("\\u");
                 std::string tmp;
                 Poco::NumberFormatter::appendHex(
-                    tmp, static_cast<unsigned char>(ch), 4);
+                    tmp, static_cast<unsigned char>(curCh), 4);
                 append(tmp);
             } else {
-                append(static_cast<char>(ch));
+                append(static_cast<char>(curCh));
             }
         }
     }
 
-    void append(unsigned char in) noexcept { str += static_cast<char>(in); }
+    void append(unsigned char inval) noexcept {
+        str += static_cast<char>(inval);
+    }
 
-    void append(char in) noexcept { str += in; }
+    void append(char inval) noexcept { str += inval; }
 
-    void append(std::string_view in) noexcept { str += in; }
+    void append(std::string_view inval) noexcept { str += inval; }
 
     template <class input_t>
-    void append(std::ostream &out, const input_t &in) noexcept {
-        out << in;
+    void append(std::ostream &out, const input_t &inval) noexcept {
+        out << inval;
     }
 };

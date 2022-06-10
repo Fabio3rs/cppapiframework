@@ -55,7 +55,13 @@ class CConfig {
      */
     void load_from_envp(const char *const *envp);
 
+    auto operator=(const CConfig &) -> CConfig& = delete;
     CConfig(const CConfig &) = delete;
+
+    auto operator=(CConfig &&) -> CConfig& = default;
+    CConfig(CConfig &&) = default;
+
+    ~CConfig() = default;
 
   private:
     CConfig() noexcept = default;

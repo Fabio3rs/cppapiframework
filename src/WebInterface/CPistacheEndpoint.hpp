@@ -69,6 +69,18 @@ class CPistacheEndpoint {
 
     auto get_router() -> Pistache::Rest::Router& { return router; }
 
+    /**
+     *@brief Disable de construction of CPistacheEndpoint
+     *
+     */
+    auto operator=(const CPistacheEndpoint &) -> CPistacheEndpoint& = delete;
+    CPistacheEndpoint(const CPistacheEndpoint &) = delete;
+
+    auto operator=(CPistacheEndpoint &&) -> CPistacheEndpoint& = default;
+    CPistacheEndpoint(CPistacheEndpoint &&) = default;
+
+    ~CPistacheEndpoint() = default;
+
   private:
     /**
      *@brief Internal setup routes functions
@@ -84,12 +96,6 @@ class CPistacheEndpoint {
      */
     void staticfile(const Pistache::Rest::Request &request,
                     const Pistache::Http::ResponseWriter &response);
-
-    /**
-     *@brief Disable de construction of CPistacheEndpoint
-     *
-     */
-    CPistacheEndpoint(const CPistacheEndpoint &) = delete;
 
     std::shared_ptr<Pistache::Http::Endpoint> httpEndpoint;
     Pistache::Rest::Router router;

@@ -53,8 +53,7 @@ class QueueableJob {
      * @tparam T type
      */
     template <class T>
-    static auto getTypeNameByInst(const T & /*ununsed*/)
-        -> std::string {
+    static auto getTypeNameByInst(const T & /*ununsed*/) -> std::string {
         return concatJobSystemVersion(typeid(T).name());
     }
 
@@ -81,7 +80,9 @@ class QueueableJob {
      * @return true should retry
      * @return false don't retry
      */
-    [[nodiscard]] virtual auto retryIfError() const noexcept -> bool { return true; }
+    [[nodiscard]] virtual auto retryIfError() const noexcept -> bool {
+        return true;
+    }
 
     /**
      * @brief Get the job class name

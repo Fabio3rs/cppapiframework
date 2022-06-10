@@ -17,7 +17,7 @@ auto RedisQueue::pop(const std::string &queue, int timeout)
     if (!ret) {
         return std::nullopt;
     }
-    return std::optional<std::string>(ret.value().second);
+    return {ret.value().second};
 }
 
 auto RedisQueue::getName() const -> std::string { return "redis"; }

@@ -18,7 +18,7 @@ const std::string_view mockfname = "teste";
  *@todo Usar mais tipos de emails
  *
  */
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(InputValidatorTest, CheckEmail) {
     EmailValidator emailval;
 
@@ -34,7 +34,7 @@ TEST(InputValidatorTest, CheckEmail) {
     EXPECT_TRUE(emailval.validate(mockfname, "aBcdE@bbbb.com").isEmpty());
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(InputValidatorTest, CheckIntegerValidator) {
     IntegerValidator intval;
 
@@ -46,7 +46,7 @@ TEST(InputValidatorTest, CheckIntegerValidator) {
     EXPECT_TRUE(intval.validate(mockfname, "123456789101112").isEmpty());
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(InputValidatorTest, CheckRequiredValidator) {
     RequiredValidator reqval;
 
@@ -60,7 +60,7 @@ TEST(InputValidatorTest, CheckRequiredValidator) {
     EXPECT_TRUE(reqval.validate(mockfname, "aaa_aa@bbbb.com").isEmpty());
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(InputValidatorTest, CheckObjectValidator) {
     ObjectValidator objval(
         [](std::string_view /*unused*/, ControllerInputValidator &validator) {
@@ -86,7 +86,7 @@ TEST(InputValidatorTest, CheckObjectValidator) {
     EXPECT_TRUE(objval.validate(mockfname, mockobj).isEmpty());
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(InputValidatorTest, CheckArrayValidator) {
     ArrayValidator arrval(
         [](std::string_view /*unused*/, size_t pos, const Poco::Dynamic::Var& value) {
@@ -124,7 +124,7 @@ TEST(InputValidatorTest, CheckArrayValidator) {
     EXPECT_FALSE(arrval.validate(mockfname, mockarr).isEmpty());
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(InputValidatorTest, CheckOrValidator) {
     auto orval = make_orvalidator(IntegerValidator(), EmailValidator());
 

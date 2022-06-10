@@ -66,7 +66,7 @@ class JobsHandler {
      * @return true handler registered
      * @return false handler not registered
      */
-    template <class T> auto is_job_registered() const -> bool {
+    template <class T> [[nodiscard]] auto is_job_registered() const -> bool {
         return is_job_registered_name(std::string(getTypeName<T>()));
     }
 
@@ -77,7 +77,8 @@ class JobsHandler {
      * @return true handler registered
      * @return false handler not registered
      */
-    auto is_job_registered_name(const std::string &jobname) const -> bool {
+    [[nodiscard]] auto is_job_registered_name(const std::string &jobname) const
+        -> bool {
         return joblist.find(jobname) != joblist.end();
     }
 
@@ -87,7 +88,7 @@ class JobsHandler {
      * @param jobname the job class name
      * @return job_instance_fn_t function
      */
-    auto instance_job_fn(const std::string &jobname) const
+    [[nodiscard]] auto instance_job_fn(const std::string &jobname) const
         -> job_instance_fn_t {
         return joblist.at(jobname);
     }
@@ -98,12 +99,14 @@ class JobsHandler {
      * @param payload json payload
      * @return std::shared_ptr<QueueableJob> job class instance ptr
      */
-    auto instance_from_payload(const Poco::JSON::Object::Ptr &payload) const
+    [[nodiscard]] auto
+    // NOLINTNEXTLINE(readability-make-member-function-const)
+    instance_from_payload(const Poco::JSON::Object::Ptr &payload)
         -> std::shared_ptr<QueueableJob> {
-        job_instance_fn_t fn =
+        job_instance_fn_t jobfn =
             instance_job_fn(payload->getValue<std::string>("className"));
 
-        auto job = fn();
+        auto job = jobfn();
         job->from_json(payload->getObject("data"));
         return job;
     }
@@ -171,7 +174,7 @@ class JobsHandler {
      * that instanciates the class
      *
      */
-    std::unordered_map<std::string, job_instance_fn_t> joblist;
+    std::unordered_map<std::string, job_instance_fn_t> joblist{};
 };
 
 } // namespace job

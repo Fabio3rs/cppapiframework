@@ -127,7 +127,7 @@ TEST(TestJobHandler, AddRepeatedJobThrows) {
     EXPECT_ANY_THROW(handler.register_job_handler<MockJob>());
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestJobHandler, AddDifferentJobNoThrows) {
     job::JobsHandler handler;
     EXPECT_FALSE(handler.is_job_registered<MockJob>());
@@ -142,7 +142,7 @@ TEST(TestJobHandler, AddDifferentJobNoThrows) {
     EXPECT_TRUE(handler.is_job_registered<OtherPrintJob>());
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestJobHandler, JobPayloadHasItClassName) {
     job::JobsHandler handler;
     EXPECT_FALSE(handler.is_job_registered<MockJob>());
@@ -157,7 +157,7 @@ TEST(TestJobHandler, JobPayloadHasItClassName) {
     EXPECT_NE(className, job::JobsHandler::getTypeName<OtherPrintJob>());
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestJobHandler, JobPayloadReinstanceCorrectDynCast) {
     job::JobsHandler handler;
 
@@ -181,7 +181,7 @@ TEST(TestJobHandler, JobPayloadReinstanceCorrectDynCast) {
     }
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestJobHandler, TestJobDataIntegrity) {
     job::JobsHandler handler;
 
@@ -229,7 +229,7 @@ TEST(TestJobHandler, TestJobDataIntegrity) {
     }
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestJobQueues, NewQueueIsEmptyDoOneIsFalse) {
     std::shared_ptr<job::JobsHandler> handler(
         std::make_shared<job::JobsHandler>());
@@ -249,7 +249,7 @@ TEST(TestJobQueues, NewQueueIsEmptyDoOneIsFalse) {
     EXPECT_EQ(nqueue->getQueueSize(queue_name), 0);
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestJobQueues, AddToTheQueueProcessRunOne) {
     std::shared_ptr<job::JobsHandler> handler(
         std::make_shared<job::JobsHandler>());
@@ -281,7 +281,7 @@ TEST(TestJobQueues, AddToTheQueueProcessRunOne) {
     }
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestJobQueues, AddToTheQueueProcessRunOneAndFail) {
     std::shared_ptr<job::JobsHandler> handler(
         std::make_shared<job::JobsHandler>());
@@ -316,7 +316,7 @@ TEST(TestJobQueues, AddToTheQueueProcessRunOneAndFail) {
     }
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestJobQueues, AddToTheQueueProcessRunMultipleAllFail) {
     std::shared_ptr<job::JobsHandler> handler(
         std::make_shared<job::JobsHandler>());

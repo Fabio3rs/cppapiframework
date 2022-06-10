@@ -48,12 +48,12 @@ class RedisService {
         cmd << luascript.data();
         cmd << std::to_string(keys.size());
 
-        for (const auto &k : keys) {
-            cmd << k;
+        for (const auto &key : keys) {
+            cmd << key;
         }
 
-        for (const auto &a : args) {
-            cmd << a.toString();
+        for (const auto &arg : args) {
+            cmd << arg.toString();
         }
 
         return inst.execute<T>(cmd);
@@ -252,50 +252,41 @@ class RedisService {
     }
 
     class argToString {
-        const std::string str;
+        std::string str;
 
       public:
         [[nodiscard]] inline auto getStr() const -> const std::string & {
             return str;
         }
 
-        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-        inline argToString(bool value) : str(value ? "true" : "false") {}
+        inline explicit argToString(bool value)
+            : str(value ? "true" : "false") {}
 
-        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-        inline argToString(const char *s) : str(s) {}
+        inline explicit argToString(const char *cstr) : str(cstr) {}
 
-        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-        inline argToString(const std::exception &e) : str(e.what()) {}
+        inline explicit argToString(const std::exception &excp)
+            : str(excp.what()) {}
 
-        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-        inline argToString(std::string s) : str(std::move(s)) {}
+        inline explicit argToString(std::string cppsstr)
+            : str(std::move(cppsstr)) {}
 
         template <class T,
                   typename = std::enable_if_t<std::is_arithmetic<T>::value>>
-        // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
-        inline argToString(T value)
-            : str(std::to_string(value)) {
-        }
+        inline explicit argToString(T value) : str(std::to_string(value)) {}
     };
 
     template <class T, class... Types>
     static inline auto cmd_inst(Poco::Redis::Client &inst,
-                                const std::string &cmd, Types &&... args) -> T {
+                                const std::string &cmd, Types &&...args) -> T {
         Poco::Redis::Command custom_cmd = Poco::Redis::Command(cmd);
 
-        std::array<argToString, std::tuple_size<std::tuple<Types...>>::value>
-            argslist = {std::forward<Types>(args)...};
-
-        for (auto &a : argslist) {
-            custom_cmd.add(a.getStr());
-        }
+        ((custom_cmd.add(argToString(args).getStr())), ...);
 
         return inst.execute<T>(custom_cmd);
     }
 
     template <class T, class... Types>
-    inline auto cmd(const std::string &cmd, Types &&... args) -> T {
+    inline auto cmd(const std::string &cmd, Types &&...args) -> T {
         auto connection = get_connection();
 
         if (!connection) {
@@ -333,26 +324,27 @@ class RedisService {
 
     static auto default_inst() -> RedisService &;
 
-    void set_credentials(std::string h = "127.0.0.1", int port = 6379,
+    void set_credentials(std::string HostAddr = "127.0.0.1", int port = 6379,
                          std::string pwd = std::string()) {
         if (replicaList.empty()) {
-            replicaList.push_back({std::move(h), port});
+            replicaList.push_back({std::move(HostAddr), port});
         } else {
             RedisServiceAddress &raddr = replicaList[0];
-            raddr.host = std::move(h);
+            raddr.host = std::move(HostAddr);
             raddr.serverport = port;
         }
 
         password = std::move(pwd);
     }
 
-    void add_host_replica(std::string h = "127.0.0.1", int port = 6379) {
-        replicaList.push_back({std::move(h), port});
+    void add_host_replica(std::string HostAddr = "127.0.0.1", int port = 6379) {
+        replicaList.push_back({std::move(HostAddr), port});
     }
 
     RedisService(size_t poolsize, std::vector<RedisServiceAddress> replicas,
                  std::string pwd = std::string());
 
-    explicit RedisService(size_t poolsize = 32, std::string h = "127.0.0.1",
-                          int port = 6379, std::string pwd = std::string());
+    explicit RedisService(size_t poolsize = 32,
+                          std::string HostAddr = "127.0.0.1", int port = 6379,
+                          std::string pwd = std::string());
 };

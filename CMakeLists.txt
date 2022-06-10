@@ -40,22 +40,26 @@ if (NOT DEFINED CURRENT_SHORT_MAIN_GIT_COMMIT)
     execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         RESULTS_VARIABLE GIT_REV_PARSE_SHORT_HEAD_RES
-        OUTPUT_VARIABLE CURRENT_SHORT_MAIN_GIT_COMMIT
+        OUTPUT_VARIABLE CURRENT_SHORT_MAIN_GIT_COMMIT_TMP
         OUTPUT_STRIP_TRAILING_WHITESPACE)
     message("Commit short ${CURRENT_SHORT_MAIN_GIT_COMMIT}")
+    set(CURRENT_SHORT_MAIN_GIT_COMMIT ${CURRENT_SHORT_MAIN_GIT_COMMIT_TMP}
+        CACHE STRING "CURRENT_SHORT_MAIN_GIT_COMMIT")
 endif()
 
 if (NOT DEFINED CURRENT_FULL_MAIN_GIT_COMMIT)
     execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         RESULTS_VARIABLE GIT_REV_PARSE_FULL_HEAD_RES
-        OUTPUT_VARIABLE CURRENT_FULL_MAIN_GIT_COMMIT
+        OUTPUT_VARIABLE CURRENT_FULL_MAIN_GIT_COMMIT_TMP
         OUTPUT_STRIP_TRAILING_WHITESPACE)
     message("Commit full ${CURRENT_FULL_MAIN_GIT_COMMIT}")
+    set(CURRENT_FULL_MAIN_GIT_COMMIT ${CURRENT_FULL_MAIN_GIT_COMMIT_TMP}
+        CACHE STRING "CURRENT_FULL_MAIN_GIT_COMMIT")
 endif()
 
 if (NOT DEFINED CURRENT_JOB_VERSION)
-    set(CURRENT_JOB_VERSION "@${CURRENT_SHORT_MAIN_GIT_COMMIT}")
+    set(CURRENT_JOB_VERSION "@${CURRENT_SHORT_MAIN_GIT_COMMIT}" CACHE STRING "CURRENT_JOB_VERSION")
 endif()
 
 # setando todos arquivos fontes que serão compilados
@@ -88,7 +92,8 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
     target_compile_options(${projectname} PRIVATE /EHsc /W2 /c)
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     message(STATUS "Setting Clang flags")
-    target_compile_options(${PROJECT_NAME} PRIVATE -Weverything -Werror -std=c++17 -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors)
+    set(USING_COMPILER_FLAGS -Weverything -Werror -Wno-unused-macros -std=c++17 -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors)
+    target_compile_options(${PROJECT_NAME} PRIVATE ${USING_COMPILER_FLAGS})
     # Clang-tidy
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         message(STATUS "Setting clang-tidy flags")

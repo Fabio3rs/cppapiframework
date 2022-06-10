@@ -33,9 +33,11 @@ class ControllerInputModifier {
         data.add(str.value());
     }
 
-    void push_val_list(std::string_view fieldname, Poco::JSON::Array arr) {
-        if (arr.size() == 0)
+    void push_val_list(std::string_view fieldname,
+                       const Poco::JSON::Array &arr) {
+        if (arr.size() == 0) {
             return;
+        }
 
         /**
          *@brief "Lazy pointer", alocando apenas se houver necessidade
@@ -76,7 +78,7 @@ class ControllerInputModifier {
          ...);
 
         bool failed = result.size() > 0;
-        push_val_list(fieldname, std::move(result));
+        push_val_list(fieldname, result);
 
         return failed;
     }
@@ -93,7 +95,9 @@ class ControllerInputModifier {
         return resultadofinal;
     }
 
-    ControllerInputModifier(Poco::JSON::Object::Ptr p) : parameters(p) {
+    // NOLINTNEXTLINE(hicpp-explicit-conversions)
+    ControllerInputModifier(const Poco::JSON::Object::Ptr &inputvalues)
+        : parameters(inputvalues) {
         validation_failed = false;
     }
 };

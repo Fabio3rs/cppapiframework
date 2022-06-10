@@ -5,10 +5,10 @@ auto RedisService::default_inst() -> RedisService & {
     return instance;
 }
 
-RedisService::RedisService(size_t poolsize, std::string h, int port,
+RedisService::RedisService(size_t poolsize, std::string HostAddr, int port,
                            std::string pwd)
     : pool(poolsize) {
-    replicaList.push_back({std::move(h), port});
+    replicaList.push_back({std::move(HostAddr), port});
 
     password = std::move(pwd);
 }

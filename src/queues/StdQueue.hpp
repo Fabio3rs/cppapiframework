@@ -12,7 +12,7 @@ class StdQueue : public GenericQueue {
   public:
     void push(const std::string &queue, const std::string &data) override;
     void pushToLater(const std::string &queue, const std::string &data,
-                     std::chrono::system_clock::time_point tp) override;
+                     std::chrono::system_clock::time_point timep) override;
 
     auto pop(const std::string &queue, int timeout)
         -> std::optional<std::string> override;
@@ -34,8 +34,8 @@ class StdQueue : public GenericQueue {
         const std::string &name,
         const std::unordered_map<std::string, std::string> &data) override {
         auto &map = persistentdata[name];
-        for (auto &d : data) {
-            map.insert_or_assign(d.first, d.second);
+        for (const auto &dinst : data) {
+            map.insert_or_assign(dinst.first, dinst.second);
         }
     }
 
@@ -44,6 +44,12 @@ class StdQueue : public GenericQueue {
     }
 
     auto isConnected() const -> bool override { return true; }
+
+    StdQueue(const StdQueue &) = default;
+    auto operator=(const StdQueue &) -> StdQueue & = default;
+
+    StdQueue(StdQueue &&) = default;
+    auto operator=(StdQueue &&) -> StdQueue & = default;
 
     StdQueue();
     ~StdQueue() override;

@@ -148,13 +148,13 @@ auto DocAPI::json_to_swagger(const Poco::Dynamic::Var &obj)
 }
 
 void DocAPI::register_route_in(const Pistache::Rest::Request &request) {
-    std::stringstream ss;
-    ss << request.method();
+    std::stringstream sstr;
+    sstr << request.method();
     std::cout << request.query().as_str() << std::endl;
     std::cout << request.resource() << std::endl;
 
     lastroute = request.resource();
-    lastmethod = Poco::UTF8::toLower(ss.str());
+    lastmethod = Poco::UTF8::toLower(sstr.str());
 
     Poco::JSON::Object::Ptr lastroutejs;
     Poco::JSON::Object::Ptr routedata;

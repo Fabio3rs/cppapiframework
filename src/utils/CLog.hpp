@@ -1,6 +1,4 @@
 #pragma once
-#include <ostream>
-#include <utility>
 #ifndef LOGGING_SYSTEM_CLOG_H
 #define LOGGING_SYSTEM_CLOG_H
 #include "ScopedStreamRedirect.hpp"
@@ -12,9 +10,11 @@
 #include <fstream>
 #include <memory>
 #include <mutex>
+#include <ostream>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
 
 struct logOutputInfo {
     std::string filename;

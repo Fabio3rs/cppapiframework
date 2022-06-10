@@ -38,7 +38,7 @@ class ControllerInputValidator {
         template <class P> pair_first(const P &pair) : str(pair.first) {}
     };
 
-    static void push_validation_msg(const Poco::Dynamic::Var& var,
+    static void push_validation_msg(const Poco::Dynamic::Var &var,
                                     Poco::JSON::Array &data) {
         if (var.isEmpty()) {
             return;
@@ -105,7 +105,7 @@ class ControllerInputValidator {
     template <class N, class T>
     auto validate_input_custom(N name, T data) -> bool {
         return std::apply(
-            [&](auto &&... validation_list) {
+            [&](auto &&...validation_list) {
                 return validate_input(name, validation_list...);
             },
             data);
@@ -121,12 +121,12 @@ class ControllerInputValidator {
     template <class... Types> auto find_values_not_in_list(Types... args) {
         const std::array<pair_first,
                          std::tuple_size<std::tuple<Types...>>::value>
-            a = {std::forward<Types>(args)...};
+            valid = {std::forward<Types>(args)...};
 
         for (const auto &item : *parameters) {
-            auto it = std::find(a.begin(), a.end(), item.first);
+            auto itval = std::find(valid.begin(), valid.end(), item.first);
 
-            if (it == a.end()) {
+            if (itval == valid.end()) {
                 Poco::JSON::Array resultmsg;
                 resultmsg.add("Não é um parâmetro reconhecido");
 
@@ -171,10 +171,11 @@ class ControllerInputValidator {
     /**
      *@brief Construct a new Controller Input Validator object
      *
-     * @param p json com os dados para serem validados
+     * @param inputvalues json com os dados para serem validados
      */
-    explicit ControllerInputValidator(const Poco::JSON::Object::Ptr &p)
-        : parameters(p) {
+    explicit ControllerInputValidator(
+        const Poco::JSON::Object::Ptr &inputvalues)
+        : parameters(inputvalues) {
         validation_failed = false;
     }
 };

@@ -35,8 +35,7 @@ auto job::QueueWorker::allocateJobOutputStream(
                     << std::endl;
     }
 
-    return std::pair<std::fstream, std::fstream>(std::move(joblog),
-                                                 std::move(joblogerr));
+    return std::make_pair(std::move(joblog), std::move(joblogerr));
 }
 
 auto job::QueueWorker::handle_job_run(

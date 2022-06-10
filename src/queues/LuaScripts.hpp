@@ -42,7 +42,7 @@ class LuaScripts {
      *
      * @return string
      */
-    static std::string_view size() {
+    static auto size() -> std::string_view {
         return R"(
 return redis.call('llen', KEYS[1]) + redis.call('zcard', KEYS[2]) + redis.call('zcard', KEYS[3])
 )";
@@ -57,7 +57,7 @@ return redis.call('llen', KEYS[1]) + redis.call('zcard', KEYS[2]) + redis.call('
      *
      * @return string
      */
-    static std::string_view push() {
+    static auto push() -> std::string_view {
         return R"(
 -- Push the job onto the queue...
 redis.call('rpush', KEYS[1], ARGV[1])
@@ -76,7 +76,7 @@ redis.call('rpush', KEYS[2], 1)
      *
      * @return string
      */
-    static std::string_view pop() {
+    static auto pop() -> std::string_view {
         return R"(
 -- Pop the first job off of the queue...
 local job = redis.call('lpop', KEYS[1])
@@ -106,7 +106,7 @@ return {job, reserved}
      *
      * @return string
      */
-    static std::string_view release() {
+    static auto release() -> std::string_view {
         return R"(
 -- Remove the job from the current queue...
 redis.call('zrem', KEYS[2], ARGV[1])
@@ -129,7 +129,7 @@ return true
      *
      * @return string
      */
-    static std::string_view migrateExpiredJobs() {
+    static auto migrateExpiredJobs() -> std::string_view {
         return R"(
 -- Get all of the jobs with an expired "score"...
 local val = redis.call('zrangebyscore', KEYS[1], '-inf', ARGV[1])
@@ -163,7 +163,7 @@ return val
      *
      * @return string
      */
-    static std::string_view clear() {
+    static auto clear() -> std::string_view {
         return R"(
 local size = redis.call('llen', KEYS[1]) + redis.call('zcard', KEYS[2]) + redis.call('zcard', KEYS[3])
 redis.call('del', KEYS[1], KEYS[2], KEYS[3], KEYS[4])

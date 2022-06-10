@@ -19,7 +19,7 @@ auto StdQueue::pop(const std::string &queue, int /**/)
 
     auto front = queueInst.front();
     queueInst.pop();
-    return std::optional<std::string>(front);
+    return {front};
 }
 
 auto StdQueue::getName() const -> std::string { return "in_memory"; }

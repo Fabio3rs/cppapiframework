@@ -10,6 +10,7 @@
  */
 #include "CSql.hpp"
 #include <iomanip>
+#include <utility>
 
 auto CSql::instance() -> CSql & {
     static CSql sql;
@@ -29,7 +30,7 @@ auto CSql::string_to_system_clock(const std::string &str)
     return std::chrono::system_clock::from_time_t(std::mktime(&tm));
 }
 
-auto CSql::make_shr_connection_cfg() -> shared_conn_t {
+auto CSql::make_shr_connection_cfg() -> RAIIConnectionWrapper<shared_conn_t> {
     auto &conf = CConfig::config();
 
     // std::lock_guard<std::mutex> lck(sqldrvmtx);
@@ -41,10 +42,11 @@ auto CSql::make_shr_connection_cfg() -> shared_conn_t {
         conf["MYSQL_HOST"], conf["MYSQL_USER"], conf["MYSQL_PASSWORD"]));
     con->setSchema(conf["MYSQL_DATABASE"]);
 
-    return std::reinterpret_pointer_cast<GenericDBConnection>(con);
+    return RAIIConnectionWrapper<shared_conn_t>(
+        std::reinterpret_pointer_cast<GenericDBConnection>(con));
 }
 
-auto CSql::make_connection_cfg() -> unique_conn_t {
+auto CSql::make_connection_cfg() -> RAIIConnectionWrapper<unique_conn_t> {
     auto &conf = CConfig::config();
     sql::mysql::MySQL_Driver *driver = get_sql_drv();
 
@@ -54,17 +56,18 @@ auto CSql::make_connection_cfg() -> unique_conn_t {
                                         conf["MYSQL_PASSWORD"]));
     con->setSchema(conf["MYSQL_DATABASE"]);
 
-    return con;
+    return RAIIConnectionWrapper<unique_conn_t>(std::move(con));
 }
 
-auto CSql::make_connection_cfg_noschema() -> unique_conn_t {
+auto CSql::make_connection_cfg_noschema()
+    -> RAIIConnectionWrapper<unique_conn_t> {
     auto &conf = CConfig::config();
     sql::mysql::MySQL_Driver *driver = get_sql_drv();
 
     unique_conn_t con;
     con = unique_conn_t(driver->connect(conf["MYSQL_HOST"], conf["MYSQL_USER"],
                                         conf["MYSQL_PASSWORD"]));
-    return con;
+    return RAIIConnectionWrapper<unique_conn_t>(std::move(con));
 }
 
 auto CSql::get_sql_drv() -> sql::mysql::MySQL_Driver * {

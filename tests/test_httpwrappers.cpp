@@ -16,6 +16,7 @@ static auto somefn(Req /*ununsed*/, Resp /*ununsed*/)
     return std::make_unique<RawStringResponse>("pato voa");
 }
 
+// NOLINTNEXTLINE
 TEST(WebAppTest, Startup) {
     WebApp app({Ipv4::any(), 3000}, 2);
 
@@ -27,6 +28,7 @@ TEST(WebAppTest, Startup) {
     EXPECT_TRUE(true);
 }
 
+// NOLINTNEXTLINE
 TEST(WebAppTest, JsonResult) {
     WebApp app({Ipv4::any(), 3001}, 2);
 

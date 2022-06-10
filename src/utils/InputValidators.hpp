@@ -30,12 +30,12 @@ class InputValidator {
      *@brief Retorna uma mensagem em caso de falha de validação
      *
      * @param fieldname nome do campo
-     * @param s valor do campo
+     * @param valchk valor do campo
      * @return std::optional<std::string> retorno, std::nullopt se estiver tudo
      *certo, std::string para mensagem de erro
      */
     virtual auto validate(std::string_view fieldname,
-                          const Poco::Dynamic::Var &s)
+                          const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var = 0;
 
     /**
@@ -43,12 +43,12 @@ class InputValidator {
      *conteúdo do campo com um versão do valor corrigida
      *
      * @param fieldname nome do campo
-     * @param s valor do campo
+     * @param valchk valor do campo
      * @return std::optional<std::string>
      */
     virtual auto validate_and_modify(Poco::JSON::Object::Ptr jsondata,
                                      std::string_view fieldname,
-                                     const Poco::Dynamic::Var &s)
+                                     const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var = 0;
 
     /**
@@ -62,11 +62,16 @@ class InputValidator {
 
     // callback for array
     virtual auto operator()(std::string_view fieldname, size_t /*ununsed*/,
-                            Poco::Dynamic::Var s) -> Poco::Dynamic::Var {
-        return validate(fieldname, s);
+                            const Poco::Dynamic::Var &valchk)
+        -> Poco::Dynamic::Var {
+        return validate(fieldname, valchk);
     }
 
     InputValidator(const InputValidator &) = default;
+    auto operator=(const InputValidator &) -> InputValidator & = default;
+
+    InputValidator(InputValidator &&) = default;
+    auto operator=(InputValidator &&) -> InputValidator & = default;
 
     inline InputValidator() = default;
     virtual ~InputValidator();
@@ -79,14 +84,14 @@ class InputValidator {
 class EmailValidator : public InputValidator {
 
   public:
-    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &s)
+    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override;
 
     auto validate_and_modify(Poco::JSON::Object::Ptr /*jsondata*/,
                              std::string_view fieldname,
-                             const Poco::Dynamic::Var &s)
+                             const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        return validate(fieldname, s);
+        return validate(fieldname, valchk);
     }
 
     [[nodiscard]] auto fail_message(std::string_view fieldname) const
@@ -95,6 +100,10 @@ class EmailValidator : public InputValidator {
     }
 
     EmailValidator(const EmailValidator &) = default;
+    auto operator=(const EmailValidator &) -> EmailValidator & = default;
+
+    EmailValidator(EmailValidator &&) = default;
+    auto operator=(EmailValidator &&) -> EmailValidator & = default;
 
     EmailValidator();
 
@@ -108,26 +117,26 @@ class EmailValidator : public InputValidator {
 class IntegerValidator : public InputValidator {
 
   public:
-    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &s)
+    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        if (s.isEmpty()) {
-            return Poco::Dynamic::Var();
+        if (valchk.isEmpty()) {
+            return {};
         }
 
         try {
-            std::stoll(s.toString());
+            std::stoll(valchk.toString());
         } catch (const std::exception &) {
             return fail_message(fieldname);
         }
 
-        return Poco::Dynamic::Var();
+        return {};
     }
 
     auto validate_and_modify(Poco::JSON::Object::Ptr /*jsondata*/,
                              std::string_view fieldname,
-                             const Poco::Dynamic::Var &s)
+                             const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        return validate(fieldname, s);
+        return validate(fieldname, valchk);
     }
 
     [[nodiscard]] auto fail_message(std::string_view fieldname) const
@@ -136,6 +145,10 @@ class IntegerValidator : public InputValidator {
     }
 
     IntegerValidator(const IntegerValidator &) = default;
+    auto operator=(const IntegerValidator &) -> IntegerValidator & = default;
+
+    IntegerValidator(IntegerValidator &&) = default;
+    auto operator=(IntegerValidator &&) -> IntegerValidator & = default;
 
     IntegerValidator() = default;
 
@@ -149,20 +162,20 @@ class IntegerValidator : public InputValidator {
 class RequiredValidator : public InputValidator {
 
   public:
-    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &s)
+    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        if (s.isEmpty()) {
+        if (valchk.isEmpty()) {
             return fail_message(fieldname);
         }
 
-        return Poco::Dynamic::Var();
+        return {};
     }
 
     auto validate_and_modify(Poco::JSON::Object::Ptr /*jsondata*/,
                              std::string_view fieldname,
-                             const Poco::Dynamic::Var &s)
+                             const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        return validate(fieldname, s);
+        return validate(fieldname, valchk);
     }
 
     [[nodiscard]] auto fail_message(std::string_view fieldname) const
@@ -171,6 +184,10 @@ class RequiredValidator : public InputValidator {
     }
 
     RequiredValidator(const RequiredValidator &) = default;
+    auto operator=(const RequiredValidator &) -> RequiredValidator & = default;
+
+    RequiredValidator(RequiredValidator &&) = default;
+    auto operator=(RequiredValidator &&) -> RequiredValidator & = default;
 
     RequiredValidator() = default;
 
@@ -180,19 +197,19 @@ class RequiredValidator : public InputValidator {
 class ControllerInputValidator;
 
 class ObjectValidator : public InputValidator {
-    typedef void(callback_t)(std::string_view, ControllerInputValidator &);
+    using callback_t = void(std::string_view, ControllerInputValidator &);
 
     std::function<callback_t> validatefn;
 
   public:
-    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &s)
+    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override;
 
     auto validate_and_modify(Poco::JSON::Object::Ptr /*jsondata*/,
                              std::string_view fieldname,
-                             const Poco::Dynamic::Var &s)
+                             const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        return validate(fieldname, s);
+        return validate(fieldname, valchk);
     }
 
     [[nodiscard]] auto fail_message(std::string_view fieldname) const
@@ -201,8 +218,12 @@ class ObjectValidator : public InputValidator {
     }
 
     ObjectValidator(const ObjectValidator &) = default;
+    auto operator=(const ObjectValidator &) -> ObjectValidator & = default;
 
-    explicit ObjectValidator(std::function<callback_t> cb);
+    ObjectValidator(ObjectValidator &&) = default;
+    auto operator=(ObjectValidator &&) -> ObjectValidator & = default;
+
+    explicit ObjectValidator(std::function<callback_t> cbfn);
 
     ~ObjectValidator() override;
 };
@@ -218,14 +239,14 @@ class ArrayValidator : public InputValidator {
     std::function<callback_t> validatefn;
 
   public:
-    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &s)
+    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override;
 
     auto validate_and_modify(Poco::JSON::Object::Ptr /*jsondata*/,
                              std::string_view fieldname,
-                             const Poco::Dynamic::Var &s)
+                             const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        return validate(fieldname, s);
+        return validate(fieldname, valchk);
     }
 
     [[nodiscard]] auto fail_message(std::string_view fieldname) const
@@ -234,9 +255,13 @@ class ArrayValidator : public InputValidator {
     }
 
     ArrayValidator(const ArrayValidator &) = default;
+    auto operator=(const ArrayValidator &) -> ArrayValidator & = default;
 
-    ArrayValidator(std::function<callback_t> cb)
-        : InputValidator(), validatefn(std::move(cb)) {}
+    ArrayValidator(ArrayValidator &&) = default;
+    auto operator=(ArrayValidator &&) -> ArrayValidator & = default;
+
+    explicit ArrayValidator(std::function<callback_t> cbfn)
+        : validatefn(std::move(cbfn)) {}
 
     ~ArrayValidator() override;
 };
@@ -245,13 +270,13 @@ template <class... Types> class OrValidator : public InputValidator {
     std::tuple<Types...> rules;
 
     static void validate_or(InputValidator &val, std::string_view fieldname,
-                            const Poco::Dynamic::Var &s, bool &success,
+                            const Poco::Dynamic::Var &valchk, bool &success,
                             Poco::JSON::Array::Ptr &resultInfo) {
         if (success) {
             return; // sucesso já, não precisa dar push
         }
 
-        auto valres = val.validate(fieldname, s);
+        auto valres = val.validate(fieldname, valchk);
         if (valres.isEmpty()) {
             success = true;
         } else {
@@ -264,14 +289,15 @@ template <class... Types> class OrValidator : public InputValidator {
     }
 
   public:
-    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &s)
+    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
         bool success = false;
         Poco::JSON::Array::Ptr resultInfo;
 
         std::apply(
-            [fieldname, &s, &resultInfo, &success](auto &&... args) {
-                ((validate_or(args, fieldname, s, success, resultInfo)), ...);
+            [fieldname, &valchk, &resultInfo, &success](auto &&...args) {
+                ((validate_or(args, fieldname, valchk, success, resultInfo)),
+                 ...);
             },
             rules);
 
@@ -286,14 +312,14 @@ template <class... Types> class OrValidator : public InputValidator {
             return result;
         }
 
-        return Poco::Dynamic::Var();
+        return {};
     }
 
     auto validate_and_modify(Poco::JSON::Object::Ptr /*jsondata*/,
                              std::string_view fieldname,
-                             const Poco::Dynamic::Var &s)
+                             const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        return validate(fieldname, s);
+        return validate(fieldname, valchk);
     }
 
     [[nodiscard]] auto fail_message(std::string_view fieldname) const
@@ -302,44 +328,48 @@ template <class... Types> class OrValidator : public InputValidator {
     }
 
     OrValidator(const OrValidator &) = default;
+    auto operator=(const OrValidator &) -> OrValidator & = default;
 
-    OrValidator(Types &&... args)
+    OrValidator(OrValidator &&) noexcept = default;
+    auto operator=(OrValidator &&) noexcept -> OrValidator & = default;
+
+    explicit OrValidator(Types &&...args)
         : InputValidator(), rules(std::forward<Types>(args)...) {}
 
     ~OrValidator() override = default;
 };
 
-template <class... Types> inline auto make_orvalidator(Types &&... args) {
+template <class... Types> inline auto make_orvalidator(Types &&...args) {
     return OrValidator<Types...>(std::forward<Types>(args)...);
 }
 
 class StringLengthValidator : public InputValidator {
-    size_t min;
+    size_t min{1};
     size_t max;
 
   public:
-    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &s)
+    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
 
-        if (s.isEmpty()) {
+        if (valchk.isEmpty()) {
             return fail_message(fieldname);
         }
 
-        std::string str = s.toString();
+        std::string str = valchk.toString();
         if (str.empty()) {
             return fail_message_empty(fieldname);
         }
         if (str.size() >= min && str.size() <= max) {
-            return Poco::Dynamic::Var();
+            return {};
         }
         return fail_message(fieldname);
     }
 
     auto validate_and_modify(Poco::JSON::Object::Ptr /*jsondata*/,
                              std::string_view fieldname,
-                             const Poco::Dynamic::Var &s)
+                             const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        return validate(fieldname, s);
+        return validate(fieldname, valchk);
     }
 
     [[nodiscard]] auto fail_message(std::string_view fieldname) const
@@ -357,7 +387,8 @@ class StringLengthValidator : public InputValidator {
         return fail_message;
     }
 
-    auto fail_message_empty(std::string_view fieldname) const -> std::string {
+    [[nodiscard]] static auto fail_message_empty(std::string_view fieldname)
+        -> std::string {
         std::string fail_message;
         fail_message.reserve(16);
 
@@ -368,12 +399,18 @@ class StringLengthValidator : public InputValidator {
     }
 
     StringLengthValidator(const StringLengthValidator &) = default;
+    auto operator=(const StringLengthValidator &)
+        -> StringLengthValidator & = default;
 
-    explicit StringLengthValidator(size_t minimum, size_t maximum)
-        : InputValidator(), min(minimum), max(maximum) {}
+    StringLengthValidator(StringLengthValidator &&) = default;
+    auto operator=(StringLengthValidator &&)
+        -> StringLengthValidator & = default;
+
+    StringLengthValidator(size_t minimum, size_t maximum)
+        : min(minimum), max(maximum) {}
 
     explicit StringLengthValidator()
-        : InputValidator(), min(1), max(std::numeric_limits<size_t>::max()) {}
+        : max(std::numeric_limits<size_t>::max()) {}
 
     ~StringLengthValidator() override;
 };
@@ -383,16 +420,16 @@ template <class T> class InArrayValidator : public InputValidator {
     bool empty_pass;
 
   public:
-    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &s)
+    auto validate(std::string_view fieldname, const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        if (empty_pass && s.isEmpty()) {
+        if (empty_pass && valchk.isEmpty()) {
             return fail_message(fieldname);
         }
 
         try {
-            auto it = std::find(dataarray.begin(), dataarray.end(), s);
+            auto itinst = std::find(dataarray.begin(), dataarray.end(), valchk);
 
-            if (it == dataarray.end()) {
+            if (itinst == dataarray.end()) {
                 return fail_message(fieldname);
             }
         } catch (const std::exception &e) {
@@ -400,14 +437,14 @@ template <class T> class InArrayValidator : public InputValidator {
             return fail_message(fieldname);
         }
 
-        return Poco::Dynamic::Var();
+        return {};
     }
 
     auto validate_and_modify(Poco::JSON::Object::Ptr /*jsondata*/,
                              std::string_view fieldname,
-                             const Poco::Dynamic::Var &s)
+                             const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        return validate(fieldname, s);
+        return validate(fieldname, valchk);
     }
 
     template <class C,
@@ -444,6 +481,11 @@ template <class T> class InArrayValidator : public InputValidator {
     }
 
     InArrayValidator(const InArrayValidator &) = default;
+    auto operator=(const InArrayValidator &) -> InArrayValidator & = default;
+
+    InArrayValidator(InArrayValidator &&) noexcept = default;
+    auto operator=(InArrayValidator &&) noexcept
+        -> InArrayValidator & = default;
 
     explicit InArrayValidator(T allowed_values, bool allow_empty = false)
         : InputValidator(), dataarray(std::move(allowed_values)),
@@ -467,7 +509,7 @@ class DefaultIfNotPresentValidator : public InputValidator {
      */
     auto validate(std::string_view /*fieldname*/, const Poco::Dynamic::Var &
                   /*s*/) -> Poco::Dynamic::Var override {
-        return Poco::Dynamic::Var();
+        return {};
     }
 
     /**
@@ -475,17 +517,17 @@ class DefaultIfNotPresentValidator : public InputValidator {
      *
      * @param jsondata json da requisição
      * @param fieldname nome do campo
-     * @param s valor do campo
+     * @param valchk valor do campo
      * @return std::optional<std::string> sempre retorna std::nullopt
      */
     auto validate_and_modify(Poco::JSON::Object::Ptr jsondata,
                              std::string_view fieldname,
-                             const Poco::Dynamic::Var &s)
+                             const Poco::Dynamic::Var &valchk)
         -> Poco::Dynamic::Var override {
-        if (s.isEmpty()) {
+        if (valchk.isEmpty()) {
             jsondata->set(fieldname.data(), default_value);
         }
-        return Poco::Dynamic::Var();
+        return {};
     }
 
     [[nodiscard]] auto fail_message(std::string_view fieldname) const
@@ -495,9 +537,15 @@ class DefaultIfNotPresentValidator : public InputValidator {
 
     DefaultIfNotPresentValidator(const DefaultIfNotPresentValidator &) =
         default;
+    auto operator=(const DefaultIfNotPresentValidator &)
+        -> DefaultIfNotPresentValidator & = delete;
 
-    explicit DefaultIfNotPresentValidator(const Poco::Dynamic::Var &dv)
-        : default_value(dv) {}
+    DefaultIfNotPresentValidator(DefaultIfNotPresentValidator &&) = default;
+    auto operator=(DefaultIfNotPresentValidator &&)
+        -> DefaultIfNotPresentValidator & = delete;
+
+    explicit DefaultIfNotPresentValidator(const Poco::Dynamic::Var &dval)
+        : default_value(dval) {}
 
     ~DefaultIfNotPresentValidator() override;
 };
