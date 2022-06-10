@@ -17,13 +17,13 @@ class argToString {
     argToString(bool value) : str(value ? "true" : "false") {}
 
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    argToString(const char *s) : str(s) {}
+    argToString(const char *istr) : str(istr) {}
 
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    argToString(const std::exception &e) : str(e.what()) {}
+    argToString(const std::exception &excp) : str(excp.what()) {}
 
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    argToString(std::string s) : str(std::move(s)) {}
+    argToString(std::string istr) : str(std::move(istr)) {}
 
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
     argToString(const Poco::JSON::Object::Ptr &jsonobj) {
@@ -57,22 +57,23 @@ inline auto getNumericFromString(std::string_view str) -> std::string {
 }
 
 template <class... Types>
-inline auto multiRegister(std::string_view format, Types &&... args)
+inline auto multiRegister(std::string_view format, Types &&...args)
     -> std::string {
     const std::array<argToString, std::tuple_size<std::tuple<Types...>>::value>
-        a = {std::forward<Types>(args)...};
+        // NOLINTNEXTLINE(hicpp-no-array-decay)
+        argl = {std::forward<argToString>(args)...};
     std::string printbuf;
-    printbuf.reserve(format.size() + a.size() * 8);
+    printbuf.reserve(format.size() + argl.size() * 8);
 
     bool ignoreNext = false;
 
     for (size_t i = 0, size = format.size(); i < size; i++) {
-        auto ch = format[i];
+        auto curCh = format[i];
 
-        switch (ch) {
+        switch (curCh) {
         case '\\':
             if (ignoreNext) {
-                printbuf.insert(printbuf.end(), 1, ch);
+                printbuf.insert(printbuf.end(), 1, curCh);
                 ignoreNext = false;
                 break;
             }
@@ -82,7 +83,7 @@ inline auto multiRegister(std::string_view format, Types &&... args)
 
         case '%':
             if (ignoreNext) {
-                printbuf.insert(printbuf.end(), 1, ch);
+                printbuf.insert(printbuf.end(), 1, curCh);
                 ignoreNext = false;
                 break;
             }
@@ -95,8 +96,8 @@ inline auto multiRegister(std::string_view format, Types &&... args)
                 if (!numbuf.empty()) {
                     size_t argId = std::stoul(numbuf);
 
-                    if (argId < a.size()) {
-                        printbuf += a[argId].getStr();
+                    if (argId < argl.size()) {
+                        printbuf += argl[argId].getStr();
                     } else {
                         printbuf += "%";
                         printbuf += numbuf;
@@ -107,7 +108,7 @@ inline auto multiRegister(std::string_view format, Types &&... args)
 
         default:
             ignoreNext = false;
-            printbuf.insert(printbuf.end(), 1, ch);
+            printbuf.insert(printbuf.end(), 1, curCh);
             break;
         }
     }

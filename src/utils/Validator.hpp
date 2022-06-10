@@ -20,10 +20,17 @@ class ValidatorException : public std::exception {
   public:
     [[nodiscard]] auto what() const noexcept -> const char * override;
 
-    inline ValidatorException(std::string w, std::string fname) noexcept
-        : msg(std::move(w)), fieldname(std::move(fname)) {}
+    inline ValidatorException(std::string textmsg, std::string fname) noexcept
+        : msg(std::move(textmsg)), fieldname(std::move(fname)) {}
 
     [[nodiscard]] auto to_json() const -> Poco::JSON::Object::Ptr;
+
+    ValidatorException(const ValidatorException &) = default;
+    auto operator=(const ValidatorException &)
+        -> ValidatorException & = default;
+
+    ValidatorException(ValidatorException &&) = default;
+    auto operator=(ValidatorException &&) -> ValidatorException & = default;
 
     ~ValidatorException() override = default;
 };
@@ -54,14 +61,16 @@ class Validator {
         return parse_json_from_string(request.body());
     }
 
-    static inline auto is_alphanum(int ch) -> bool { return isalnum(ch) != 0; }
+    static inline auto is_alphanum(int chval) -> bool {
+        return isalnum(chval) != 0;
+    }
 
     template <class T, class... Types>
     static inline constexpr auto custom_array(Types... args) {
-        std::array<T, std::tuple_size<std::tuple<Types...>>::value> a = {
+        std::array<T, std::tuple_size<std::tuple<Types...>>::value> newarray = {
             std::forward<Types>(args)...};
 
-        return a;
+        return newarray;
     }
 
     static auto CheckSQL(const std::string &sql) -> bool {

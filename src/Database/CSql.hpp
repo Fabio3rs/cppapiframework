@@ -165,11 +165,14 @@ template <class conn_t = unique_conn_t> class RAIIConnectionWrapper {
             sql, resultSetType, resultSetConcurrency, resultSetHoldability));
     }
 
+    template <size_t Narray>
     // NOLINTBEGIN(hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
-    [[nodiscard]] auto prepareStatement(const sql::SQLString &sql,
-                                        sql::SQLString columnNames[]) const
+    [[nodiscard]] auto
+    prepareStatement(const sql::SQLString &sql,
+                     std::array<sql::SQLString, Narray> columnNames) const
         -> StatementWrapper<unique_prepstatement_t> {
-        return unique_prepstatement_t(conn->prepareStatement(sql, columnNames));
+        return unique_prepstatement_t(
+            conn->prepareStatement(sql, columnNames.data()));
     }
     // NOLINTEND(hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
 

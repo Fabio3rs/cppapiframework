@@ -28,7 +28,7 @@ class QueueableJob {
 #ifdef CUR_JOB_FRAMEWORK_VERSION
         {CUR_JOB_FRAMEWORK_VERSION};
 #else
-        {""};
+        {};
 #endif
 
     static auto getJobSystemVersion() -> std::string {
@@ -101,6 +101,12 @@ class QueueableJob {
 
     virtual void handle() = 0;
 
+    QueueableJob(const QueueableJob &) = default;
+    auto operator=(const QueueableJob &) -> QueueableJob & = default;
+
+    QueueableJob(QueueableJob &&) = default;
+    auto operator=(QueueableJob &&) -> QueueableJob & = default;
+
     QueueableJob();
     virtual ~QueueableJob();
 
@@ -139,22 +145,23 @@ class QueueableJob {
     template <class T>
     static void json_obj_set(Poco::JSON::Object::Ptr &json,
                              const std::string &key,
-                             const Poco::SharedPtr<T> &in) {
-        json->set(key, in ? Poco::Dynamic::Var(in) : Poco::Dynamic::Var());
+                             const Poco::SharedPtr<T> &inval) {
+        json->set(key,
+                  inval ? Poco::Dynamic::Var(inval) : Poco::Dynamic::Var());
     }
 
     template <class T>
     static void json_obj_set(Poco::JSON::Object::Ptr &json,
                              const std::string &key,
-                             const std::optional<T> &in) {
-        json->set(key,
-                  in ? Poco::Dynamic::Var(in.value()) : Poco::Dynamic::Var());
+                             const std::optional<T> &inval) {
+        json->set(key, inval ? Poco::Dynamic::Var(inval.value())
+                             : Poco::Dynamic::Var());
     }
 
     template <class T>
     static void json_obj_set(Poco::JSON::Object::Ptr &json,
-                             const std::string &key, const T &in) {
-        json->set(key, static_cast<Poco::Dynamic::Var>(in));
+                             const std::string &key, const T &inval) {
+        json->set(key, static_cast<Poco::Dynamic::Var>(inval));
     }
 };
 

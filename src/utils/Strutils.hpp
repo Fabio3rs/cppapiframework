@@ -131,9 +131,10 @@ class Strutils {
     }
 
     template <class... Types>
-    static auto multi_concat(const Types &... args) -> std::string {
+    static auto multi_concat(const Types &...args) -> std::string {
         const std::array<std::string_view,
                          std::tuple_size<std::tuple<Types...>>::value>
+            // NOLINTNEXTLINE(hicpp-no-array-decay)
             values = {std::forward<const std::string_view>(args)...};
         std::string result;
         size_t sizes = 0;
