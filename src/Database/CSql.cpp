@@ -24,13 +24,52 @@ auto CSql::string_to_system_clock(const std::string &str)
         return std::nullopt;
     }
 
-    std::tm tm = {};
-    std::stringstream ss(str);
-    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
-    return std::chrono::system_clock::from_time_t(std::mktime(&tm));
+    std::tm timestruct = {};
+    std::stringstream sstr(str);
+    sstr >> std::get_time(&timestruct, "%Y-%m-%d %H:%M:%S");
+    return std::chrono::system_clock::from_time_t(std::mktime(&timestruct));
 }
 
-auto CSql::make_shr_connection_cfg() -> RAIIConnectionWrapper<shared_conn_t> {
+auto CSql::make_shr_connection_cfg() -> shared_conn_t {
+    auto &conf = CConfig::config();
+
+    // std::lock_guard<std::mutex> lck(sqldrvmtx);
+    sql::mysql::MySQL_Driver *driver = get_sql_drv();
+
+    std::shared_ptr<sql::Connection> con;
+
+    con = std::shared_ptr<sql::Connection>(driver->connect(
+        conf["MYSQL_HOST"], conf["MYSQL_USER"], conf["MYSQL_PASSWORD"]));
+    con->setSchema(conf["MYSQL_DATABASE"]);
+
+    return std::reinterpret_pointer_cast<GenericDBConnection>(con);
+}
+
+auto CSql::make_connection_cfg() -> unique_conn_t {
+    auto &conf = CConfig::config();
+    sql::mysql::MySQL_Driver *driver = get_sql_drv();
+
+    unique_conn_t con;
+
+    con = unique_conn_t(driver->connect(conf["MYSQL_HOST"], conf["MYSQL_USER"],
+                                        conf["MYSQL_PASSWORD"]));
+    con->setSchema(conf["MYSQL_DATABASE"]);
+
+    return con;
+}
+
+auto CSql::make_connection_cfg_noschema() -> unique_conn_t {
+    auto &conf = CConfig::config();
+    sql::mysql::MySQL_Driver *driver = get_sql_drv();
+
+    unique_conn_t con;
+    con = unique_conn_t(driver->connect(conf["MYSQL_HOST"], conf["MYSQL_USER"],
+                                        conf["MYSQL_PASSWORD"]));
+    return con;
+}
+
+auto CSql::make_shr_connection_cfg_raii()
+    -> RAIIConnectionWrapper<shared_conn_t> {
     auto &conf = CConfig::config();
 
     // std::lock_guard<std::mutex> lck(sqldrvmtx);
@@ -46,7 +85,7 @@ auto CSql::make_shr_connection_cfg() -> RAIIConnectionWrapper<shared_conn_t> {
         std::reinterpret_pointer_cast<GenericDBConnection>(con));
 }
 
-auto CSql::make_connection_cfg() -> RAIIConnectionWrapper<unique_conn_t> {
+auto CSql::make_connection_cfg_raii() -> RAIIConnectionWrapper<unique_conn_t> {
     auto &conf = CConfig::config();
     sql::mysql::MySQL_Driver *driver = get_sql_drv();
 
@@ -59,7 +98,7 @@ auto CSql::make_connection_cfg() -> RAIIConnectionWrapper<unique_conn_t> {
     return RAIIConnectionWrapper<unique_conn_t>(std::move(con));
 }
 
-auto CSql::make_connection_cfg_noschema()
+auto CSql::make_connection_cfg_noschema_raii()
     -> RAIIConnectionWrapper<unique_conn_t> {
     auto &conf = CConfig::config();
     sql::mysql::MySQL_Driver *driver = get_sql_drv();

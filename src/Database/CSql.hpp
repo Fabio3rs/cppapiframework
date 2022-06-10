@@ -205,13 +205,13 @@ class CSql {
 
     CSql(const CSql &) = delete;
 
-    static inline auto
-    high_precision_time_to_str(std::chrono::high_resolution_clock::time_point t)
-        -> std::string {
-        std::time_t tt = std::chrono::high_resolution_clock::to_time_t(t);
+    static inline auto high_precision_time_to_str(
+        std::chrono::high_resolution_clock::time_point timeval) -> std::string {
+        std::time_t timet =
+            std::chrono::high_resolution_clock::to_time_t(timeval);
 
         auto mksec = std::chrono::duration_cast<std::chrono::microseconds>(
-                         t.time_since_epoch())
+                         timeval.time_since_epoch())
                          .count();
         mksec %= 1000000;
 
@@ -222,7 +222,7 @@ class CSql {
 
             size_t strft_res_sz =
                 strftime(buf.data(), buf.size(), "%Y/%m/%d %H:%M:%S.",
-                         std::localtime(&tt));
+                         std::localtime(&timet));
 
             str.reserve(28);
             str.append(buf.data(), strft_res_sz);
@@ -242,14 +242,15 @@ class CSql {
         return str;
     }
 
-    static inline auto
-    system_time_to_str(std::optional<std::chrono::system_clock::time_point> t)
+    static inline auto system_time_to_str(
+        std::optional<std::chrono::system_clock::time_point> timeval)
         -> std::string {
-        if (!t.has_value()) {
+        if (!timeval.has_value()) {
             return {};
         }
 
-        std::time_t tt = std::chrono::system_clock::to_time_t(t.value());
+        std::time_t timet =
+            std::chrono::system_clock::to_time_t(timeval.value());
 
         std::string str;
 
@@ -258,7 +259,7 @@ class CSql {
 
             size_t strft_res_sz =
                 strftime(buf.data(), buf.size(), "%Y/%m/%d %H:%M:%S",
-                         std::localtime(&tt));
+                         std::localtime(&timet));
 
             str.reserve(28);
             str.append(buf.data(), strft_res_sz);
@@ -270,7 +271,9 @@ class CSql {
     static auto string_to_system_clock(const std::string &str)
         -> std::optional<std::chrono::system_clock::time_point>;
 
-    auto make_shr_connection_cfg() -> RAIIConnectionWrapper<shared_conn_t>;
+    auto make_shr_connection_cfg_raii() -> RAIIConnectionWrapper<shared_conn_t>;
+
+    auto make_shr_connection_cfg() -> shared_conn_t;
 
     /**
      *@brief Conversão genérica de valores de multiplos tipos para string
@@ -286,11 +289,11 @@ class CSql {
 
         explicit argToString(bool value) : str(value ? "true" : "false") {}
 
-        explicit argToString(const char *s) : str(s) {}
+        explicit argToString(const char *istr) : str(istr) {}
 
-        explicit argToString(const std::exception &e) : str(e.what()) {}
+        explicit argToString(const std::exception &expt) : str(expt.what()) {}
 
-        explicit argToString(std::string s) : str(std::move(s)) {}
+        explicit argToString(std::string istr) : str(std::move(istr)) {}
 
         template <class T,
                   typename = std::enable_if_t<std::is_arithmetic<T>::value>>
@@ -310,9 +313,14 @@ class CSql {
      *
      * @return unique_conn_t unique da conexão
      */
-    auto make_connection_cfg() -> RAIIConnectionWrapper<unique_conn_t>;
+    auto make_connection_cfg() -> unique_conn_t;
 
-    auto make_connection_cfg_noschema() -> RAIIConnectionWrapper<unique_conn_t>;
+    auto make_connection_cfg_noschema() -> unique_conn_t;
+
+    auto make_connection_cfg_raii() -> RAIIConnectionWrapper<unique_conn_t>;
+
+    auto make_connection_cfg_noschema_raii()
+        -> RAIIConnectionWrapper<unique_conn_t>;
 
     /**
      *@brief Get the sql drv object. Objeto de driver do sql não é garantido
