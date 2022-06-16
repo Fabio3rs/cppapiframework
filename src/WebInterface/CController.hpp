@@ -50,6 +50,10 @@ class CController {
                                const Poco::JSON::Object::Ptr &json,
                                Pistache::Http::ResponseWriter &response);
 
+    static void send(Pistache::Http::ResponseWriter &response,
+                     Pistache::Http::Code code,
+                     const Poco::JSON::Object::Ptr &json);
+
     static auto get_ip_host_from_header(const Pistache::Rest::Request &request)
         -> std::pair<std::string, std::string>;
     static auto get_ip_host_from_request(const Pistache::Rest::Request &request)
@@ -116,8 +120,8 @@ class CController {
         for (auto it = std::istreambuf_iterator<char>(inputstream),
                   end = std::istreambuf_iterator<char>();
              it != end; it++) {
-            char ch = *it;
-            stream.write(&ch, 1);
+            char chr = *it;
+            stream.write(&chr, 1);
         }
         stream << Pistache::Http::ends;
 
@@ -136,11 +140,14 @@ class CController {
     auto operator=(CController &&) -> CController & = delete;
 
     /**
-     *@brief Ativa ou desativa a checagem de hash no input json das rotas
+     *@brief Ativa ou desativa a checagem de hash no input json das rotas, campo
+     *_hash no json
      *
-     * @param e true - ativa a checagem de hash
+     * @param enable true - ativa a checagem de hash
      */
-    void enableInputHashCheck(bool e) { habilita_hash_input_json = e; }
+    void enableInputHashCheck(bool enable) {
+        habilita_hash_input_json = enable;
+    }
 
     template <class T>
     void route_get(Pistache::Rest::Router &router, const std::string &routepath,

@@ -1,7 +1,10 @@
 #pragma once
 
+#include <functional>
 #include <pistache/net.h>
+#include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "pistache.hpp"
 
@@ -30,10 +33,11 @@ class Req {
     friend class WebApp;
 
   public:
-    ReqRaw raw;
-    Resp *resp = nullptr;
+    const Pistache::Rest::Request *raw{nullptr};
+    Resp *resp{nullptr};
 
-    explicit Req(ReqRaw requestRaw) : raw(requestRaw) {}
+    explicit Req(ReqRaw requestRaw) : raw(&requestRaw) {}
+    Req() = default;
 };
 
 class Resp {
@@ -42,7 +46,7 @@ class Resp {
 
   public:
     Code RouteStatus = Code::Ok;
-    Pistache::Http::ResponseWriter &response;
+    Pistache::Http::ResponseWriter *response{nullptr};
 
     auto status(Code val) -> Resp & {
         RouteStatus = val;
@@ -51,18 +55,19 @@ class Resp {
 
     auto send(const std::string &body, const MediaType &mime = MediaType())
         -> Resp & {
-        response.send(RouteStatus, body, mime);
+        response->send(RouteStatus, body, mime);
         return *this;
     }
 
     auto send(Code status, const std::string &body,
               const MediaType &mime = MediaType()) -> Resp & {
         RouteStatus = status;
-        response.send(status, body, mime);
+        response->send(status, body, mime);
         return *this;
     }
 
-    explicit Resp(Pistache::Http::ResponseWriter &res) : response(res) {}
+    explicit Resp(Pistache::Http::ResponseWriter &res) : response(&res) {}
+    Resp() = default;
 };
 
 class ResponseViaReturn {
@@ -96,7 +101,7 @@ class ExceptionResponseViaReturn : public ResponseViaReturn {
     }
 
     void sendResponse(Req req, Resp resp) override {
-        if (auto Accept = req.raw.headers().get("Accept")) {
+        if (auto Accept = req.raw->headers().get("Accept")) {
             std::cout << Accept << std::endl;
 
             resp.send(Code::Internal_Server_Error,
@@ -140,7 +145,37 @@ class RawStringResponse : public ResponseViaReturn {
 class RouterWrapper {
 
   public:
+    template <class> static inline constexpr bool always_false_v = false;
+
     using callbackDecl_t = std::unique_ptr<ResponseViaReturn>(Req, Resp);
+    using callbackNoRetDecl_t = void(Req, Resp);
+
+    using respviaretfn_t = std::function<callbackDecl_t>;
+    using respnotviaretfn_t = std::function<callbackNoRetDecl_t>;
+
+    using variant_t = std::variant<respviaretfn_t, respnotviaretfn_t>;
+
+    void call(Resp &resp, Req &req,
+              std::unique_ptr<ResponseViaReturn> &responseWrapper) {
+
+        std::visit(
+            [&](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, respnotviaretfn_t>) {
+                    if (arg) {
+                        arg(req, resp);
+                    }
+                } else if constexpr (std::is_same_v<T, respviaretfn_t>) {
+                    if (arg) {
+                        responseWrapper = arg(req, resp);
+                        responseWrapper->sendResponse(req, resp);
+                    }
+                } else {
+                    static_assert(always_false_v<T>, "non-exhaustive visitor!");
+                }
+            },
+            func);
+    }
 
     auto operator()(const Pistache::Rest::Request &request,
                     Pistache::Http::ResponseWriter response)
@@ -153,8 +188,7 @@ class RouterWrapper {
         std::unique_ptr<ResponseViaReturn> responseWrapper;
 
         try {
-            responseWrapper = func(req, resp);
-            responseWrapper->sendResponse(req, resp);
+            call(resp, req, responseWrapper);
         } catch (const std::exception &e) {
             ExceptionResponseViaReturn except(e);
             except.sendResponse(req, resp);
@@ -169,11 +203,37 @@ class RouterWrapper {
         // req.session.resp = &resp;
     }
 
-    explicit RouterWrapper(std::function<callbackDecl_t> callback)
+    explicit RouterWrapper(respnotviaretfn_t callback)
+        : func(std::move(callback)) {}
+
+    explicit RouterWrapper(respviaretfn_t callback)
         : func(std::move(callback)) {}
 
   private:
-    std::function<callbackDecl_t> func;
+    variant_t func;
 };
+
+template <class T,
+          typename std::enable_if_t<std::is_same<
+              std::unique_ptr<httpwrappers::ResponseViaReturn>, T>::value>::type
+              * = nullptr>
+inline auto callback_fn_cast(std::function<T(Req, Resp)> fnptr) {
+    return std::move(fnptr);
+}
+
+inline auto callback_fn_cast(
+    std::unique_ptr<httpwrappers::ResponseViaReturn> (*fnptr)(Req, Resp)) {
+    return RouterWrapper::respviaretfn_t(fnptr);
+}
+
+inline auto callback_fn_cast(void (*fnptr)(Req, Resp)) {
+    return RouterWrapper::respnotviaretfn_t(fnptr);
+}
+
+template <class T, typename std::enable_if_t<std::is_same<void, T>::value>::type
+                       * = nullptr>
+inline auto callback_fn_cast(RouterWrapper::respnotviaretfn_t fnptr) {
+    return std::move(fnptr);
+}
 
 } // namespace httpwrappers

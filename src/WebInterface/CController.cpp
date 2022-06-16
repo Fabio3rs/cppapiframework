@@ -10,6 +10,7 @@
  */
 #include "CController.hpp"
 #include "../utils/DocAPI.hpp"
+#include "../utils/PocoJsonStringify.hpp"
 #include "../utils/Validator.hpp"
 #include <Poco/Crypto/CryptoException.h>
 #include <exception>
@@ -29,6 +30,17 @@ void CController::returnPocoJson(Pistache::Http::Code code,
     json->stringify(out);
 
     response.send(code, out.str(), JSON_RETURN);
+}
+
+void CController::send(Pistache::Http::ResponseWriter &response,
+                       Pistache::Http::Code code,
+                       const Poco::JSON::Object::Ptr &json) {
+    DOCAPI_RESPONSE_JSON(code, json);
+
+    PocoJsonStringify stringifier;
+    stringifier.stringify(json);
+
+    response.send(code, stringifier.str, JSON_RETURN);
 }
 
 auto CController::default_json_return(bool success, const std::string &msg)
@@ -230,12 +242,12 @@ auto CController::hash_json(const Poco::JSON::Object::Ptr &param,
                             const std::string &ignorefield)
     -> Poco::DigestEngine::Digest {
     Poco::Crypto::DigestEngine SHA("SHA512");
-    for (const auto &p : *param.get()) {
-        if (p.first == ignorefield) {
+    for (const auto &parm : *param.get()) {
+        if (parm.first == ignorefield) {
             continue;
         }
 
-        SHA.update(p.second.toString());
+        SHA.update(parm.second.toString());
     }
 
     return SHA.digest();
@@ -291,8 +303,8 @@ auto CController::response_file(const std::string &fullpath,
     for (auto it = std::istreambuf_iterator<char>(file_stream),
               end = std::istreambuf_iterator<char>();
          it != end; it++) {
-        char ch = *it;
-        stream.write(&ch, 1);
+        char chr = *it;
+        stream.write(&chr, 1);
     }
     stream << Pistache::Http::ends;
 

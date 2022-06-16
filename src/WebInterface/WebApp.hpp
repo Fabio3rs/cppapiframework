@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <utility>
 
 #include "httpwrappers.hpp"
@@ -14,7 +15,7 @@ class WebApp {
         return httpEndpoint ? httpEndpoint->getPort() : Pistache::Port{0};
     }
 
-    void init(Address addr, size_t thr) {
+    auto init(Address addr, size_t thr) -> WebApp & {
         httpEndpoint = std::make_shared<Pistache::Http::Endpoint>(addr);
 
         auto opts =
@@ -22,14 +23,18 @@ class WebApp {
         opts.flags(Pistache::Tcp::Options::ReuseAddr);
 
         httpEndpoint->init(opts);
+
+        return *this;
     }
 
-    void startAsync() {
+    auto startAsync() -> WebApp & {
         httpEndpoint->setHandler(router.handler());
         httpEndpoint->serveThreaded();
+
+        return *this;
     }
 
-    void start(const std::function<void()> &callback) {
+    auto start(const std::function<void()> &callback) -> WebApp & {
         startAsync();
 
         if (callback) {
@@ -39,56 +44,65 @@ class WebApp {
         while (keepRunning) {
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
+
+        return *this;
     }
 
-    void stop() {
+    auto stop() -> WebApp & {
         keepRunning = false;
         if (httpEndpoint) {
             httpEndpoint->shutdown();
         }
+
+        return *this;
     }
 
     auto get_router() -> Pistache::Rest::Router & { return router; }
 
-    using callbackfn_t = std::function<RouterWrapper::callbackDecl_t>;
-
-    auto get(const std::string &resource, callbackfn_t func) -> WebApp & {
-        router.get(resource, RouterWrapper(std::move(func)));
+    template <class T>
+    auto get(const std::string &resource, T func) -> WebApp & {
+        router.get(resource, RouterWrapper(callback_fn_cast(func)));
         return *this;
     }
 
-    auto post(const std::string &resource, callbackfn_t func) -> WebApp & {
-        router.post(resource, RouterWrapper(std::move(func)));
+    template <class T>
+    auto post(const std::string &resource, T func) -> WebApp & {
+        router.post(resource, RouterWrapper(callback_fn_cast(func)));
         return *this;
     }
 
-    auto put(const std::string &resource, callbackfn_t func) -> WebApp & {
-        router.put(resource, RouterWrapper(std::move(func)));
+    template <class T>
+    auto put(const std::string &resource, T func) -> WebApp & {
+        router.put(resource, RouterWrapper(callback_fn_cast(func)));
         return *this;
     }
 
-    auto del(const std::string &resource, callbackfn_t func) -> WebApp & {
-        router.del(resource, RouterWrapper(std::move(func)));
+    template <class T>
+    auto del(const std::string &resource, T func) -> WebApp & {
+        router.del(resource, RouterWrapper(callback_fn_cast(func)));
         return *this;
     }
 
-    auto patch(const std::string &resource, callbackfn_t func) -> WebApp & {
-        router.patch(resource, RouterWrapper(std::move(func)));
+    template <class T>
+    auto patch(const std::string &resource, T func) -> WebApp & {
+        router.patch(resource, RouterWrapper(callback_fn_cast(func)));
         return *this;
     }
 
-    auto options(const std::string &resource, callbackfn_t func) -> WebApp & {
-        router.options(resource, RouterWrapper(std::move(func)));
+    template <class T>
+    auto options(const std::string &resource, T func) -> WebApp & {
+        router.options(resource, RouterWrapper(callback_fn_cast(func)));
         return *this;
     }
 
-    auto head(const std::string &resource, callbackfn_t func) -> WebApp & {
-        router.head(resource, RouterWrapper(std::move(func)));
+    template <class T>
+    auto head(const std::string &resource, T func) -> WebApp & {
+        router.head(resource, RouterWrapper(callback_fn_cast(func)));
         return *this;
     }
 
-    auto notfound(callbackfn_t func) -> WebApp & {
-        router.addNotFoundHandler(RouterWrapper(std::move(func)));
+    template <class T> auto notfound(T func) -> WebApp & {
+        router.addNotFoundHandler(RouterWrapper(callback_fn_cast(func)));
         return *this;
     }
 
@@ -103,7 +117,7 @@ class WebApp {
     WebApp(uint16_t port, size_t thr) { init({Ipv4::any(), port}, thr); }
     ~WebApp();
 
-  private:
+  protected:
     void prepareReqResp(Req &req, Resp &resp);
 
     std::shared_ptr<Pistache::Http::Endpoint> httpEndpoint;
