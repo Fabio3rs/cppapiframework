@@ -1,5 +1,4 @@
-# Cpp-Json-JobHandler
-C++ job handler/worker using json payloads
+# Util codes for my C++ test APIs
 
 # This code is a concept test yet
 
