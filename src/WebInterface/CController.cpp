@@ -32,7 +32,7 @@ void CController::returnPocoJson(Pistache::Http::Code code,
     response.send(code, out.str(), JSON_RETURN);
 }
 
-void CController::send(Pistache::Http::ResponseWriter &response,
+void CController::Send(Pistache::Http::ResponseWriter &response,
                        Pistache::Http::Code code,
                        const Poco::JSON::Object::Ptr &json) {
     DOCAPI_RESPONSE_JSON(code, json);

@@ -50,7 +50,7 @@ class CController {
                                const Poco::JSON::Object::Ptr &json,
                                Pistache::Http::ResponseWriter &response);
 
-    static void send(Pistache::Http::ResponseWriter &response,
+    static void Send(Pistache::Http::ResponseWriter &response,
                      Pistache::Http::Code code,
                      const Poco::JSON::Object::Ptr &json);
 
