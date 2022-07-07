@@ -40,6 +40,11 @@ class CPistacheEndpoint {
         return httpEndpoint ? httpEndpoint->getPort() : Pistache::Port{0};
     }
 
+    [[nodiscard]] auto getEndpoint() const
+        -> const std::shared_ptr<Pistache::Http::Endpoint> & {
+        return httpEndpoint;
+    }
+
     /**
      *@brief Start pistache server threaded
      *
@@ -67,16 +72,16 @@ class CPistacheEndpoint {
      */
     CPistacheEndpoint();
 
-    auto get_router() -> Pistache::Rest::Router& { return router; }
+    auto get_router() -> Pistache::Rest::Router & { return router; }
 
     /**
      *@brief Disable de construction of CPistacheEndpoint
      *
      */
-    auto operator=(const CPistacheEndpoint &) -> CPistacheEndpoint& = delete;
+    auto operator=(const CPistacheEndpoint &) -> CPistacheEndpoint & = delete;
     CPistacheEndpoint(const CPistacheEndpoint &) = delete;
 
-    auto operator=(CPistacheEndpoint &&) -> CPistacheEndpoint& = default;
+    auto operator=(CPistacheEndpoint &&) -> CPistacheEndpoint & = default;
     CPistacheEndpoint(CPistacheEndpoint &&) = default;
 
     ~CPistacheEndpoint() = default;
