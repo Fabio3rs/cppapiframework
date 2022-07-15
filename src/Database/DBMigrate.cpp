@@ -1,7 +1,10 @@
 #include "DBMigrate.hpp"
-#include "CSql.hpp"
+#include "../stdafx.hpp"
 #include <cppconn/prepared_statement.h>
+#include <memory>
+#include <utility>
 
+namespace Database {
 static auto connect_db(const DatabaseAddress &info) {
     sql::mysql::MySQL_Driver *driver = CSql::instance().get_sql_drv();
 
@@ -41,8 +44,9 @@ void DBMigrate::drop_all() {
      */
 }
 
-void DBMigrate::push_migration(const std::string &name, std::string_view data) {
-    migration_list[name] = data;
+void DBMigrate::push_migration(const std::string &name,
+                               std::shared_ptr<Migration> data) {
+    migration_list[name] = std::move(data);
 }
 
 static void
@@ -58,25 +62,24 @@ build_insert_migration_query(std::string &query, const std::string &migration,
     query += ";";
 }
 
-static void migrate_single(const std::pair<std::string, std::string_view> &data,
-                           std::string &queryBuffer, unique_conn_t &conn) {
+void DBMigrate::migrate(const std::shared_ptr<Migration> &migration,
+                        unique_conn_t &conn, std::string &query,
+                        std::string &migrationName) {
+    migration->setConnection(conn.get());
+    migration->setQueryBuildBuffer(&query);
+    migration->setMigrationName(migrationName);
 
-    queryBuffer.clear();
-    queryBuffer = data.second.data();
+    migration->begin();
+    migration->migrate();
+    migration->commit();
 
-    auto ssmt = unique_statement_t(conn->createStatement());
-    ssmt->execute("BEGIN;");
-
-    ssmt->execute(queryBuffer);
-
-    queryBuffer.clear();
-    build_insert_migration_query(queryBuffer, data.first,
+    query.clear();
+    build_insert_migration_query(query, migrationName,
                                  CSql::mysql_cast(conn.get()));
 
-    ssmt->execute(queryBuffer);
+    migration->statement->execute(query);
 
-    ssmt->execute("COMMIT;");
-    conn->commit();
+    migration->resetTmp();
 }
 
 static auto is_migrated(const std::string &name, unique_conn_t &conn) -> bool {
@@ -106,19 +109,22 @@ void DBMigrate::run() {
             continue;
         }
 
-        std::cout << "\033[33mMigrating:\033[39m " << migrating.first
+        std::string migrationName = migrating.first;
+        std::cout << "\033[33mMigrating:\033[39m " << migrationName
                   << std::endl;
+        auto &migration = migrating.second;
 
         try {
-            migrate_single(migrating, query, conn);
-
-            std::cout << "\033[32mMigrated:\033[39m " << migrating.first
+            migrate(migration, conn, query, migrationName);
+            std::cout << "\033[32mMigrated:\033[39m " << migrationName
                       << std::endl;
         } catch (const std::exception &e) {
-            std::cerr << "\033[31mMigration failed:\033[39m " << migrating.first
+            std::cerr << "\033[31mMigration failed:\033[39m " << migrationName
                       << ": " << e.what() << '\n';
             std::cerr << "DEBUG QUERY: " << query << std::endl;
+            migration->resetTmp();
             throw;
         }
     }
 }
+} // namespace Database

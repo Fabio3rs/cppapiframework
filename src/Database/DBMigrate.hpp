@@ -10,12 +10,16 @@
  *
  */
 #pragma once
+#include <memory>
 #ifndef DBMIGRATE_HPP
 #define DBMIGRATE_HPP
+#include "Migration.hpp"
 #include <cstdint>
 #include <map>
 #include <string>
 #include <string_view>
+
+namespace Database {
 
 /**
  *@brief dados de conexão com o banco de dados
@@ -29,7 +33,7 @@ struct DatabaseAddress {
 };
 
 class DBMigrate {
-    std::map<std::string, std::string_view> migration_list;
+    std::map<std::string, std::shared_ptr<Migration>> migration_list;
     DatabaseAddress databaseInfo;
 
     DBMigrate() = default;
@@ -63,7 +67,8 @@ class DBMigrate {
      *(nome do arquivo de migration sem o .php)
      * @param data comando sql para migração
      */
-    void push_migration(const std::string &name, std::string_view data);
+    void push_migration(const std::string &name,
+                        std::shared_ptr<Migration> data);
 
     /**
      *@brief Roda a lista de migrações
@@ -77,6 +82,12 @@ class DBMigrate {
      * @return DBMigrate& objeto
      */
     static auto singleton() -> DBMigrate &;
+
+  private:
+    static void migrate(const std::shared_ptr<Migration> &migration,
+                        unique_conn_t &conn, std::string &query,
+                        std::string &migrationName);
 };
+} // namespace Database
 
 #endif
