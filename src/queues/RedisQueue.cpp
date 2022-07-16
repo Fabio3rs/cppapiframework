@@ -1,23 +1,76 @@
 #include "RedisQueue.hpp"
 #include "../utils/RedisService.hpp"
+#include <Poco/Redis/Array.h>
+#include <Poco/Redis/Command.h>
+#include <Poco/Redis/Type.h>
+#include <chrono>
+#include <cstdint>
+#include <ctime>
+#include <stdexcept>
+#include <string>
 
 void RedisQueue::push(const std::string &queue, const std::string &data) {
     RedisService::default_inst().rpush({aliasname + queue, data});
 }
 
-void RedisQueue::pushToLater(
-    const std::string &queue, const std::string &data,
-    std::chrono::system_clock::time_point /*ununsed*/) {
-    RedisService::default_inst().rpush({aliasname + queue, data});
+void RedisQueue::pushToLater(const std::string &queue, const std::string &data,
+                             std::chrono::system_clock::time_point timep) {
+    auto conn = RedisService::default_inst().get_connection();
+
+    if (!conn) {
+        throw std::runtime_error("Redis connection failed");
+    }
+
+    Poco::Redis::Command cmd("zadd");
+
+    cmd << (aliasname + queue + ":later");
+    cmd << std::to_string(std::chrono::system_clock::to_time_t(timep));
+    cmd << data;
+
+    if (conn->execute<int64_t>(cmd) == 0) {
+        throw std::runtime_error("Job not added");
+    }
 }
 
 auto RedisQueue::pop(const std::string &queue, int timeout)
     -> std::optional<std::string> {
-    auto ret = RedisService::default_inst().blpop({aliasname + queue}, timeout);
-    if (!ret) {
+    auto conn = RedisService::default_inst().get_connection();
+
+    if (!conn) {
         return std::nullopt;
     }
-    return {ret.value().second};
+
+    auto defaultQueue = aliasname + queue;
+    auto ret = RedisService::blpop(*conn, {defaultQueue}, timeout);
+    if (ret) {
+        return {ret.value().second};
+    }
+
+    std::string popScript = R"lua(
+local expired = redis.call('zrangebyscore', KEYS[1], '-inf', ARGV[1], 'LIMIT', 0, 1)
+
+if (expired ~= nil) then
+    redis.call('zremrangebyrank', KEYS[1], 0, 0)
+end
+
+return expired
+)lua";
+
+    auto now = std::to_string(time(nullptr));
+    auto laterQueue = (defaultQueue + ":later");
+
+    auto result = RedisService::eval<Poco::Redis::Array>(*conn, popScript,
+                                                         {laterQueue}, {now});
+
+    if (!result.isNull() && result.size() > 0) {
+        auto jobuuid = result.get<Poco::Redis::BulkString>(0);
+
+        if (!jobuuid.isNull()) {
+            return {jobuuid.value()};
+        }
+    }
+
+    return std::nullopt;
 }
 
 auto RedisQueue::getName() const -> std::string { return "redis"; }

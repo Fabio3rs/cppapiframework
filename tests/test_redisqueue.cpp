@@ -1,5 +1,7 @@
 #include "../src/queues/RedisQueue.hpp"
+#include <chrono>
 #include <gtest/gtest.h>
+#include <string>
 
 static const std::string queue_name = "test_queue_worker:queue:default";
 
@@ -42,4 +44,24 @@ TEST(TestRedisQueue, ExpireTTLQueue) {
     EXPECT_EQ(popdata.value_or(std::string()), data);
 }
 
+// NOLINTNEXTLINE(hicpp-special-member-functions)
+TEST(TestRedisQueue, PushLaterPops) {
+    EXPECT_TRUE(redisq);
+    EXPECT_TRUE(redisq->isConnected());
 
+    std::string data = "0123456789 qwertyuiop for later";
+
+    auto now = std::chrono::system_clock::now();
+
+    auto custom_queue =
+        queue_name +
+        std::to_string(
+            std::chrono::system_clock::now().time_since_epoch().count());
+
+    redisq->pushToLater(custom_queue, data, now);
+    auto popdata = redisq->pop(custom_queue, 1);
+
+    EXPECT_TRUE(popdata);
+
+    EXPECT_EQ(popdata.value_or(std::string()), data);
+}
