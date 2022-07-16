@@ -1,4 +1,6 @@
 #include "RedisService.hpp"
+#include "CConfig.hpp"
+#include <exception>
 
 auto RedisService::default_inst() -> RedisService & {
     static RedisService instance;
@@ -8,6 +10,25 @@ auto RedisService::default_inst() -> RedisService & {
 RedisService::RedisService(size_t poolsize, std::string HostAddr, int port,
                            std::string pwd)
     : pool(poolsize) {
+    auto &config = CConfig::config();
+    if (HostAddr.empty()) {
+        HostAddr = config.at("REDIS_HOST", "127.0.0.1");
+    }
+
+    if (port == 0) {
+        try {
+            port = std::stoi(config.at("REDIS_PORT", "6379"));
+        } catch (const std::exception &ex) {
+            std::cerr << "Invalid REDIS_PORT, error: " << ex.what()
+                      << " data: " << config.at("REDIS_PORT") << std::endl;
+            port = 6379;
+        }
+    }
+
+    if (pwd.empty()) {
+        pwd = config.at("REDIS_PASSWORD", "");
+    }
+
     replicaList.push_back({std::move(HostAddr), port});
 
     password = std::move(pwd);

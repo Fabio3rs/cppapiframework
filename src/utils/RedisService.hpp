@@ -344,7 +344,6 @@ class RedisService {
     RedisService(size_t poolsize, std::vector<RedisServiceAddress> replicas,
                  std::string pwd = std::string());
 
-    explicit RedisService(size_t poolsize = 32,
-                          std::string HostAddr = "127.0.0.1", int port = 6379,
-                          std::string pwd = std::string());
+    explicit RedisService(size_t poolsize = 32, std::string HostAddr = {},
+                          int port = 0, std::string pwd = {});
 };
