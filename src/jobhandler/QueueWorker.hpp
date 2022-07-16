@@ -5,6 +5,7 @@
 #include "../utils/ProcessHelper.hpp"
 #include "../utils/ScopedStreamRedirect.hpp"
 #include "JobsHandler.hpp"
+#include <chrono>
 #include <fstream>
 #include <unistd.h>
 #include <utility>
@@ -70,7 +71,9 @@ class QueueWorker {
      * @return std::string job uuid
      */
     template <class T>
-    auto push(const std::string &queue, const T &job) -> std::string {
+    auto push(const std::string &queue, const T &job,
+              std::chrono::system_clock::time_point scheduledAt = {})
+        -> std::string {
         auto json = jobhandler->create_jobpayload(job);
         constexpr size_t KEYSIZE = sizeof("job_instance:") + 36;
         std::string jobuuid =
@@ -93,7 +96,11 @@ class QueueWorker {
                             {"created_at_unixt", std::to_string(time(nullptr))},
                             {"className", std::string(job.getName())}});
 
-        queueServiceInst->push(queue, persistentkey);
+        if (scheduledAt.time_since_epoch().count() != 0) {
+            queueServiceInst->pushToLater(queue, persistentkey, scheduledAt);
+        } else {
+            queueServiceInst->push(queue, persistentkey);
+        }
 
         return jobuuid;
     }
