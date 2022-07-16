@@ -49,7 +49,7 @@ auto RedisQueue::pop(const std::string &queue, int timeout)
     std::string popScript = R"lua(
 local expired = redis.call('zrangebyscore', KEYS[1], '-inf', ARGV[1], 'LIMIT', 0, 1)
 
-if (expired ~= nil) then
+if (expired ~= nil) and #expired > 0 then
     redis.call('zremrangebyrank', KEYS[1], 0, 0)
 end
 
