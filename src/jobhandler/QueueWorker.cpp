@@ -72,6 +72,8 @@ auto job::QueueWorker::handle_job_run(
                 resPid.second == 0) {
                 result = noerror;
             } else {
+                STDLOGINFO() << "wait status: " << resPid.first
+                             << " exit code: " << resPid.second << std::endl;
                 result = process_retry_condition(newjob);
             }
         } break;
@@ -87,6 +89,7 @@ auto job::QueueWorker::handle_job_run(
          * @brief Forked process exit with result
          *
          */
+        STDLOGINFO() << "Exiting job fork with status: " << result << std::endl;
         exit(result);
     }
 
