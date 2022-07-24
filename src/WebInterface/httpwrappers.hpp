@@ -213,27 +213,22 @@ class RouterWrapper {
     variant_t func;
 };
 
-template <class T,
-          typename std::enable_if_t<std::is_same<
-              std::unique_ptr<httpwrappers::ResponseViaReturn>, T>::value>::type
-              * = nullptr>
-inline auto callback_fn_cast(std::function<T(Req, Resp)> fnptr) {
-    return std::move(fnptr);
-}
-
 inline auto callback_fn_cast(
-    std::unique_ptr<httpwrappers::ResponseViaReturn> (*fnptr)(Req, Resp)) {
-    return RouterWrapper::respviaretfn_t(fnptr);
+    std::function<std::unique_ptr<ResponseViaReturn>(Req, Resp)> fnptr) {
+    return fnptr;
 }
 
-inline auto callback_fn_cast(void (*fnptr)(Req, Resp)) {
-    return RouterWrapper::respnotviaretfn_t(fnptr);
+template <class Signature,
+          typename = std::enable_if_t<std::is_void<
+              typename std::invoke_result<Signature, Req, Resp>::type>::value>>
+inline auto callback_fn_cast(std::function<Signature> fnptr)
+    -> RouterWrapper::respnotviaretfn_t {
+    return fnptr;
 }
 
-template <class T, typename std::enable_if_t<std::is_same<void, T>::value>::type
-                       * = nullptr>
-inline auto callback_fn_cast(RouterWrapper::respnotviaretfn_t fnptr) {
-    return std::move(fnptr);
+inline auto callback_fn_cast(void (*fnptr)(Req, Resp))
+    -> RouterWrapper::respnotviaretfn_t {
+    return fnptr;
 }
 
 } // namespace httpwrappers
