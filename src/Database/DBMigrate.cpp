@@ -71,13 +71,12 @@ void DBMigrate::migrate(const std::shared_ptr<Migration> &migration,
 
     migration->begin();
     migration->migrate();
-    migration->commit();
 
     query.clear();
     build_insert_migration_query(query, migrationName,
                                  CSql::mysql_cast(conn.get()));
-
     migration->statement->execute(query);
+    migration->commit();
 
     migration->resetTmp();
 }
