@@ -4,12 +4,16 @@
 #include <unordered_map>
 
 class RedisQueue : public GenericQueue {
+  protected:
     std::string aliasname;
 
   public:
     void push(const std::string &queue, const std::string &data) override;
     void pushToLater(const std::string &queue, const std::string &data,
                      std::chrono::system_clock::time_point timep) override;
+
+    [[nodiscard]] auto getFullQueue(const std::string &queue) const
+        -> std::vector<std::string> override;
 
     auto pop(const std::string &queue, int timeout)
         -> std::optional<std::string> override;

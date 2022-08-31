@@ -8,6 +8,24 @@
 #include <ctime>
 #include <stdexcept>
 #include <string>
+#include <typeinfo>
+
+namespace {
+auto RedisToBulkString(const Poco::Redis::RedisType::Ptr &element)
+    -> Poco::Redis::BulkString {
+    if (Poco::Redis::RedisTypeTraits<Poco::Redis::BulkString>::TypeId ==
+        element->type()) {
+        const auto *concrete =
+            dynamic_cast<const Poco::Redis::Type<Poco::Redis::BulkString> *>(
+                element.get());
+        if (concrete != nullptr) {
+            return concrete->value();
+        }
+    }
+
+    throw std::bad_cast();
+}
+} // namespace
 
 void RedisQueue::push(const std::string &queue, const std::string &data) {
     RedisService::default_inst().rpush({aliasname + queue, data});
@@ -30,6 +48,32 @@ void RedisQueue::pushToLater(const std::string &queue, const std::string &data,
     if (conn->execute<int64_t>(cmd) == 0) {
         throw std::runtime_error("Job not added");
     }
+}
+
+auto RedisQueue::getFullQueue(const std::string &queue) const
+    -> std::vector<std::string> {
+    auto conn = RedisService::default_inst().get_connection();
+
+    if (!conn) {
+        return {};
+    }
+    Poco::Redis::Command cmd("lrange");
+    cmd << queue << "0"
+        << "9999999";
+
+    auto resp = conn->execute<Poco::Redis::Array>(cmd);
+
+    std::vector<std::string> result;
+    result.reserve(resp.size());
+
+    std::back_insert_iterator<decltype(result)> out(result);
+
+    std::transform(resp.begin(), resp.end(), out,
+                   [](const Poco::Redis::RedisType::Ptr &val) {
+                       return RedisToBulkString(val).value({});
+                   });
+
+    return result;
 }
 
 auto RedisQueue::pop(const std::string &queue, int timeout)

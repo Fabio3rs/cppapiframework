@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../stdafx.hpp"
+#include <string>
+#include <vector>
 
 class GenericQueue {
   private:
@@ -11,6 +13,9 @@ class GenericQueue {
     virtual void push(const std::string &queue, const std::string &data) = 0;
     virtual void pushToLater(const std::string &queue, const std::string &data,
                              std::chrono::system_clock::time_point timep) = 0;
+
+    [[nodiscard]] virtual auto getFullQueue(const std::string &queue) const
+        -> std::vector<std::string> = 0;
 
     virtual auto pop(const std::string &queue, int timeout)
         -> std::optional<std::string> = 0;

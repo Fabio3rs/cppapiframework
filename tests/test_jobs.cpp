@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <utility>
 
 static constexpr int JSON_INDENT = 5;
@@ -229,6 +230,21 @@ TEST(TestJobHandler, TestJobDataIntegrity) {
     }
 }
 
+namespace {
+void checkQueueContent(const GenericQueue &queue, const std::string &data) {
+    auto queueList = queue.getFullQueue(queue_name);
+
+    auto found = std::find(queueList.begin(), queueList.end(), data);
+
+    for (const auto &val : queueList) {
+        std::cout << val << std::endl;
+    }
+
+    EXPECT_NE(found, queueList.end());
+    EXPECT_GT(queueList.size(), 0);
+}
+} // namespace
+
 // NOLINTNEXTLINE
 TEST(TestJobQueues, NewQueueIsEmptyDoOneIsFalse) {
     std::shared_ptr<job::JobsHandler> handler(
@@ -265,12 +281,15 @@ TEST(TestJobQueues, AddToTheQueueProcessRunOne) {
 
     job::QueueWorker queuew(handler, nqueue);
 
+    std::string jobuuid;
     {
         OtherPrintJob anyjob;
-        queuew.push(queue_name, anyjob);
+        jobuuid = queuew.push(queue_name, anyjob);
         EXPECT_EQ(nqueue->getNumQueues(), 1);
         EXPECT_EQ(nqueue->getQueueSize(queue_name), 1);
     }
+
+    checkQueueContent(*nqueue, "job_instance:" + jobuuid);
 
     {
         EXPECT_FALSE(jobrunned);

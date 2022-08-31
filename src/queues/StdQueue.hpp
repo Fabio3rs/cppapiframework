@@ -1,10 +1,12 @@
 #pragma once
 #include "GenericQueue.hpp"
+#include <algorithm>
+#include <iterator>
 #include <queue>
 #include <unordered_map>
 
 class StdQueue : public GenericQueue {
-    std::unordered_map<std::string, std::queue<std::string>> queue_map;
+    std::unordered_map<std::string, std::deque<std::string>> queue_map;
     std::unordered_map<std::string,
                        std::unordered_map<std::string, std::string>>
         persistentdata;
@@ -13,6 +15,16 @@ class StdQueue : public GenericQueue {
     void push(const std::string &queue, const std::string &data) override;
     void pushToLater(const std::string &queue, const std::string &data,
                      std::chrono::system_clock::time_point timep) override;
+
+    auto getFullQueue(const std::string &queue) const
+        -> std::vector<std::string> override {
+        const auto &queueInst = queue_map.at(queue);
+        std::vector<std::string> result;
+        result.reserve(queueInst.size());
+        result.assign(queueInst.begin(), queueInst.end());
+
+        return result;
+    }
 
     auto pop(const std::string &queue, int timeout)
         -> std::optional<std::string> override;

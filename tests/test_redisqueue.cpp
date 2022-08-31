@@ -1,4 +1,5 @@
 #include "../src/queues/RedisQueue.hpp"
+#include <algorithm>
 #include <chrono>
 #include <gtest/gtest.h>
 #include <string>
@@ -28,11 +29,28 @@ TEST(TestRedisQueue, PushPops) {
     EXPECT_EQ(popdata.value_or(std::string()), data);
 }
 
+namespace {
+void checkQueueContent(const std::string &data) {
+    auto queueList = redisq->getFullQueue(queue_name);
+
+    auto found = std::find(queueList.begin(), queueList.end(), data);
+
+    for (const auto &val : queueList) {
+        std::cout << val << std::endl;
+    }
+
+    EXPECT_NE(found, queueList.end());
+    EXPECT_GT(queueList.size(), 0);
+}
+} // namespace
+
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestRedisQueue, ExpireTTLQueue) {
     std::string data = "0123456789 qwertyuiop";
 
     redisq->push(queue_name, data);
+
+    checkQueueContent(data);
 
     EXPECT_TRUE(redisq->expire(queue_name, 32));
     EXPECT_GT(redisq->ttl(queue_name), 10);

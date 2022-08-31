@@ -1,12 +1,12 @@
 #include "StdQueue.hpp"
 
 void StdQueue::push(const std::string &queue, const std::string &data) {
-    queue_map[queue].push(data);
+    queue_map[queue].push_back(data);
 }
 
 void StdQueue::pushToLater(const std::string &queue, const std::string &data,
                            std::chrono::system_clock::time_point /*ununsed*/) {
-    queue_map[queue].push(data);
+    queue_map[queue].push_back(data);
 }
 
 auto StdQueue::pop(const std::string &queue, int /**/)
@@ -18,7 +18,7 @@ auto StdQueue::pop(const std::string &queue, int /**/)
     }
 
     auto front = queueInst.front();
-    queueInst.pop();
+    queueInst.pop_front();
     return {front};
 }
 
