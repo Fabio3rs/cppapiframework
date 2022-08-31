@@ -291,6 +291,14 @@ TEST(TestJobQueues, AddToTheQueueProcessRunOne) {
 
     checkQueueContent(*nqueue, "job_instance:" + jobuuid);
 
+    auto nAdded = queuew.getNumberOfPendentJobTypes(queue_name);
+
+    for (const auto &jlist : nAdded) {
+        std::cout << jlist.first << "   " << jlist.second << std::endl;
+    }
+
+    EXPECT_EQ(job::QueueWorker::getNumberOfJobsByT<OtherPrintJob>(nAdded), 1);
+
     {
         EXPECT_FALSE(jobrunned);
         EXPECT_TRUE(queuew.do_one(queue_name));

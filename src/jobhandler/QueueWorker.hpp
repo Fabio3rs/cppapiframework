@@ -6,8 +6,10 @@
 #include "../utils/ScopedStreamRedirect.hpp"
 #include "JobsHandler.hpp"
 #include <chrono>
+#include <cstddef>
 #include <fstream>
 #include <unistd.h>
+#include <unordered_map>
 #include <utility>
 
 namespace job {
@@ -75,7 +77,8 @@ class QueueWorker {
               std::chrono::system_clock::time_point scheduledAt = {})
         -> std::string {
         auto json = jobhandler->create_jobpayload(job);
-        constexpr size_t KEYSIZE = sizeof("job_instance:") + 36;
+        constexpr auto DEFAULT_UUID_SIZE = 36;
+        constexpr size_t KEYSIZE = sizeof("job_instance:") + DEFAULT_UUID_SIZE;
         std::string jobuuid =
             Poco::UUIDGenerator::defaultGenerator().createOne().toString();
 
@@ -140,6 +143,27 @@ class QueueWorker {
             queueServiceInst->push(queue, jobname);
             break;
         }
+    }
+
+    auto getNumberOfPendentJobTypes(const std::string &queue)
+        -> std::unordered_map<std::string, size_t> {
+        auto jobList = queueServiceInst->getFullQueue(queue);
+        std::unordered_map<std::string, size_t> result;
+
+        for (const auto &jobName : jobList) {
+            auto jobData = queueServiceInst->getPersistentData(jobName);
+
+            ++result[jobData.at("className")];
+        }
+
+        return result;
+    }
+
+    template <class T>
+    static auto
+    getNumberOfJobsByT(const std::unordered_map<std::string, size_t> &data)
+        -> size_t {
+        return data.at(job::JobsHandler::getTypeName<T>());
     }
 
     auto do_one(const std::string &queue, std::string &jobname) -> bool;
