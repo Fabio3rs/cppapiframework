@@ -10,8 +10,10 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/UUID.h>
 #include <Poco/UUIDGenerator.h>
+#include <array>
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>

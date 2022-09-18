@@ -73,6 +73,7 @@ file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Database/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/queues/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/jobhandler/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/WebSocket/*.cpp"
 )
 
 add_library(${projectname} STATIC ${SOURCES})
