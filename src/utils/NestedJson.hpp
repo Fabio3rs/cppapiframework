@@ -54,4 +54,39 @@ auto getArrObjNestedValue(const Poco::Dynamic::Var &enclosing, Types &&...args)
 
     return last.convert<T>();
 }
+
+template <class... Types>
+auto getArrObjNestedVar(const Poco::Dynamic::Var &enclosing, Types &&...args)
+    -> Poco::Dynamic::Var {
+    const std::tuple<Types...> arglist{std::forward<Types>(args)...};
+
+    if (std::tuple_size<std::tuple<Types...>>::value == 0) {
+        return {};
+    }
+
+    Poco::Dynamic::Var last = enclosing;
+
+    // NOLINTNEXTLINE(hicpp-no-array-decay)
+    ((last = getNextNested(last, args)), ...);
+
+    return last;
+}
+
+template <class T, class... Types>
+auto getArrObjNestedExtract(const Poco::Dynamic::Var &enclosing,
+                            Types &&...args) -> T {
+    const std::tuple<Types...> arglist{std::forward<Types>(args)...};
+
+    if (std::tuple_size<std::tuple<Types...>>::value == 0) {
+        return {};
+    }
+
+    Poco::Dynamic::Var last = enclosing;
+
+    // NOLINTNEXTLINE(hicpp-no-array-decay)
+    ((last = getNextNested(last, args)), ...);
+
+    return last.extract<T>();
+}
+
 } // namespace NestedJson
