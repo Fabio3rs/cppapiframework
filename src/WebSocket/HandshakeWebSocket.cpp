@@ -94,6 +94,31 @@ auto writeCookies(const CookieJar &cookies, DynamicStreamBuf &buf) -> bool {
 #undef OUT
 }
 
+inline auto streamWrite(int fd, const void *buf, size_t n) -> ssize_t {
+    ssize_t result = write(fd, buf, n);
+    if (result < 0) {
+        return result;
+    }
+
+    do {
+        auto written = static_cast<size_t>(result);
+        size_t diff = n - written;
+
+        if (diff == 0) {
+            return result;
+        }
+
+        ssize_t current = write(
+            fd, reinterpret_cast<const uint8_t *>(buf) + written, n - written);
+
+        if (current < 0) {
+            return -result;
+        }
+
+        result += current;
+    } while (true);
+}
+
 void putOnWire(Pistache::Http::ResponseWriter &response_) {
     Pistache::DynamicStreamBuf buf_(0, 256);
     // NOLINTNEXTLINE(readability-identifier-length)
@@ -114,8 +139,8 @@ void putOnWire(Pistache::Http::ResponseWriter &response_) {
 
     const auto buf = buf_.buffer().data();
     // std::cout.write(buf.c_str(), static_cast<std::streamsize>(buf.size()));
-    write(fd, buf.c_str(), buf.size());
-    write(fd, os.str().c_str(), os.str().size());
+    streamWrite(fd, buf.c_str(), buf.size());
+    streamWrite(fd, os.str().c_str(), os.str().size());
 }
 
 const std::string WEBSOCKET_GUID("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
