@@ -9,7 +9,10 @@
  *
  */
 #include "../src/utils/ControllerInputValidator.hpp"
+#include "../src/utils/ShortValidationsName.hpp"
+#include "utils/PocoJsonStringify.hpp"
 #include <gtest/gtest.h>
+#include <string>
 
 const std::string_view mockfname = "teste";
 
@@ -88,14 +91,14 @@ TEST(InputValidatorTest, CheckObjectValidator) {
 
 // NOLINTNEXTLINE
 TEST(InputValidatorTest, CheckArrayValidator) {
-    ArrayValidator arrval(
-        [](std::string_view /*unused*/, size_t pos, const Poco::Dynamic::Var& value) {
-            if (value != "teste") {
-                return Poco::Dynamic::Var("Incorrect value at " +
-                                          std::to_string(pos));
-            }
-            return Poco::Dynamic::Var{};
-        });
+    ArrayValidator arrval([](std::string_view /*unused*/, size_t pos,
+                             const Poco::Dynamic::Var &value) {
+        if (value != "teste") {
+            return Poco::Dynamic::Var("Incorrect value at " +
+                                      std::to_string(pos));
+        }
+        return Poco::Dynamic::Var{};
+    });
 
     EXPECT_TRUE(arrval.validate(mockfname, {}).isEmpty());
     EXPECT_FALSE(arrval.validate(mockfname, "").isEmpty());
@@ -139,4 +142,50 @@ TEST(InputValidatorTest, CheckOrValidator) {
     EXPECT_TRUE(orval.validate(mockfname, "123456").isEmpty());
     EXPECT_TRUE(orval.validate(mockfname, "123456789101112").isEmpty());
     EXPECT_TRUE(orval.validate(mockfname, "123456789101112").isEmpty());
+}
+
+// NOLINTNEXTLINE
+TEST(InputValidatorTest, FullValidation) {
+    Poco::JSON::Object::Ptr inf = new Poco::JSON::Object;
+
+    inf->set("email", "aaa.aa@bbbb.com");
+    inf->set("integer", 1);
+
+    ControllerInputValidator validator(inf);
+
+    using namespace ShortValidationsName;
+    using std::pair;
+    using std::tuple;
+    validator.full_validation(pair("email", tuple(required(), email())),
+                              pair("integer", tuple(required(), integer())));
+
+    EXPECT_TRUE(validator.get_response().isNull())
+        << PocoJsonStringify::JsonToString(validator.get_response());
+}
+
+// NOLINTNEXTLINE
+TEST(InputValidatorTest, FullValidationFailUnknownField) {
+    Poco::JSON::Object::Ptr inf = new Poco::JSON::Object;
+
+    inf->set("email", "aaa.aa@bbbb.com");
+    inf->set("integer", 1);
+    inf->set("unknownfield", 1);
+
+    ControllerInputValidator validator(inf);
+
+    using namespace ShortValidationsName;
+    using std::pair;
+    using std::tuple;
+    validator.full_validation(pair("email", tuple(required(), email())),
+                              pair("integer", tuple(required(), integer())));
+
+    auto response = validator.get_response();
+    EXPECT_FALSE(response.isNull());
+
+    EXPECT_FALSE(response->getValue<bool>(validator.SUCCESS));
+    EXPECT_EQ(response->getValue<std::string>(validator.MESSAGE),
+              validator.DEFAULT_MESSAGE);
+
+    auto result = response->getObject(validator.RESULT);
+    EXPECT_FALSE(result.isNull());
 }

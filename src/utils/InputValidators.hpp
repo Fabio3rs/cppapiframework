@@ -356,7 +356,7 @@ class StringLengthValidator : public InputValidator {
         }
 
         std::string str = valchk.toString();
-        if (str.empty()) {
+        if (str.empty() && min > 0) {
             return fail_message_empty(fieldname);
         }
         if (str.size() >= min && str.size() <= max) {

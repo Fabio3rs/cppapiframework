@@ -17,9 +17,15 @@ class ControllerInputValidator {
     const Poco::JSON::Object::Ptr parameters;
     Poco::JSON::Object::Ptr resultadofinal;
     Poco::JSON::Object::Ptr resobj;
-    bool validation_failed;
+    bool validation_failed{};
 
   public:
+    std::string RESULT{"resultado"};
+    std::string SUCCESS{"sucesso"};
+    std::string MESSAGE{"mensagem"};
+    std::string DEFAULT_MESSAGE{"Falha na validação de um ou mais campos"};
+    std::string UNKNOWN_FIELD{"Não é um parâmetro reconhecido"};
+
     /**
      *@brief pequeno helper que recebe um pair e guarda o first como
      *std::string_view, criado para ser usado em conjunto com
@@ -65,9 +71,8 @@ class ControllerInputValidator {
          */
         if (resultadofinal.isNull()) {
             resultadofinal = new Poco::JSON::Object;
-            resultadofinal->set("sucesso", false);
-            resultadofinal->set("mensagem",
-                                "Falha na validação de um ou mais campos");
+            resultadofinal->set(SUCCESS, false);
+            resultadofinal->set(MESSAGE, DEFAULT_MESSAGE);
         }
 
         if (resobj.isNull()) {
@@ -128,7 +133,7 @@ class ControllerInputValidator {
 
             if (itval == valid.end()) {
                 Poco::JSON::Array resultmsg;
-                resultmsg.add("Não é um parâmetro reconhecido");
+                resultmsg.add(UNKNOWN_FIELD);
 
                 push_val_list(item.first, resultmsg);
             }
@@ -161,7 +166,7 @@ class ControllerInputValidator {
      */
     auto get_response() {
         if (!resultadofinal.isNull()) {
-            resultadofinal->set("resultado", resobj);
+            resultadofinal->set(RESULT, resobj);
         }
         return resultadofinal;
     }

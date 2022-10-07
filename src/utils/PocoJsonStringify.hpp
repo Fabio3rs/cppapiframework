@@ -58,6 +58,12 @@ class PocoJsonStringify {
     bool strictJSON = true;
     bool escapeAllUnicode = false;
 
+    template <class T> static auto JsonToString(const T &json) -> std::string {
+        PocoJsonStringify stringifier;
+        stringifier.stringify(json);
+        return stringifier.str;
+    }
+
     /**
      * @brief função de stringify Poco::JSON::Object
      * https://github.com/pocoproject/poco/blob/master/JSON/include/Poco/JSON/Object.h
