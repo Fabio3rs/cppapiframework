@@ -3,12 +3,15 @@ set(projectname cppapiframework)
 cmake_minimum_required(VERSION 3.6.0)
 project(${projectname} VERSION 0.1.0)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_DEFAULT 17)
-set(CXX17 ON)
-set(CMAKE_CXX_EXTENSIONS Off)
-set(CMAKE_C_EXTENSIONS Off)
+if (NOT DEFINED CPPAPIFRAMEWORK_APPLY_FLAGS)
+    message("Applying flags")
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_DEFAULT 17)
+    set(CXX17 ON)
+    set(CMAKE_CXX_EXTENSIONS ON)
+    set(CMAKE_C_EXTENSIONS ON)
+endif()
 
 option(CompileTestsApiFramework "CompileTestsApiFramework" ON)
 
@@ -83,22 +86,24 @@ add_compile_definitions("FULL_COMMIT_HASH=\"${CURRENT_FULL_MAIN_GIT_COMMIT}\"")
 target_compile_definitions(${projectname} PRIVATE "PROJECT_NAME=\"cppapiframework\"")
 
 # Compiler-specific compile flags
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    message(STATUS "Setting G++ flags")
-    # G++
-    target_compile_options(${projectname} PRIVATE -Wall -Werror -Wextra -std=c++17 -Wformat-security -Wconversion -Wsign-conversion)
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-    message(STATUS "Setting MSVC flags")
-    # MSVC
-    target_compile_options(${projectname} PRIVATE /EHsc /W2 /c)
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    message(STATUS "Setting Clang flags")
-    set(USING_COMPILER_FLAGS -Weverything -Werror -Wno-unused-macros -std=c++17 -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors)
-    target_compile_options(${PROJECT_NAME} PRIVATE ${USING_COMPILER_FLAGS})
-    # Clang-tidy
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-        message(STATUS "Setting clang-tidy flags")
-        set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-header-filter=${CMAKE_CURRENT_SOURCE_DIR}/src;--warnings-as-errors=\"*\";-extra-arg=-std=c++17;-checks=read*,modern*,hicpp*,performance*,-readability-magic-numbers,-hicpp-use-auto,-modernize-use-equals-default,-modernize-deprecated-headers,-readability-uppercase-literal-suffix;-export-fixes=clang-tidy-sugested-fixes.txt")
+if (NOT DEFINED USING_COMPILER_FLAGS)
+    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+        message(STATUS "Setting G++ flags")
+        # G++
+        target_compile_options(${projectname} PRIVATE -Wall -Werror -Wextra -std=gnu++17 -Wformat-security -Wconversion -Wsign-conversion)
+    elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
+        message(STATUS "Setting MSVC flags")
+        # MSVC
+        target_compile_options(${projectname} PRIVATE /EHsc /W2 /c)
+    elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+        message(STATUS "Setting Clang flags")
+        set(USING_COMPILER_FLAGS -Weverything -Werror -Wno-unused-macros -std=gnu++17 -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors)
+        target_compile_options(${PROJECT_NAME} PRIVATE ${USING_COMPILER_FLAGS})
+        # Clang-tidy
+        if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+            message(STATUS "Setting clang-tidy flags")
+            set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-header-filter=${CMAKE_CURRENT_SOURCE_DIR}/src;--warnings-as-errors=\"*\";-extra-arg=-std=gnu++17;-export-fixes=clang-tidy-sugested-fixes.txt")
+        endif()
     endif()
 endif()
 
