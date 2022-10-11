@@ -104,6 +104,23 @@ TEST(TestResult, SingleCallTest) {
 }
 
 // NOLINTNEXTLINE
+TEST(TestResult, SingleCallTestErr) {
+    std::atomic<int> callCount = 0;
+    using res_t = Result<okvalue, std::string>;
+    auto someFn = [&]() -> res_t {
+        ++callCount;
+        return res_t::error_t{"#"};
+    };
+
+    auto callWrapper = [&]() -> res_t {
+        return res_t::ok_t{EXPECT_RESULT(someFn())};
+    };
+
+    EXPECT_EQ(callWrapper().unwrap_error().get(), "#");
+    EXPECT_EQ(callCount.load(), 1);
+}
+
+// NOLINTNEXTLINE
 TEST(TestResult, SingleCallTestE) {
     std::atomic<int> callCount = 0;
     using res_t = Result<okvalue, std::string>;

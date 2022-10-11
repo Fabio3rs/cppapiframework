@@ -22,7 +22,7 @@
     ({                                                                         \
         auto value = test;                                                     \
         if (value.state() != utils::State::OkState) {                          \
-            return std::move(test.unwrap_error());                             \
+            return std::move(value.unwrap_error());                            \
         }                                                                      \
         value.unwrap();                                                        \
     })
