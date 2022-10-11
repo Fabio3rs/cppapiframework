@@ -1,5 +1,5 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,read*,modern*,hicpp*,performance*,-readability-magic-numbers,-hicpp-use-auto,-modernize-use-equals-default,-modernize-deprecated-headers,-readability-uppercase-literal-suffix'
+Checks:          'clang-diagnostic-*,clang-analyzer-*,read*,modern*,hicpp*,performance*,-readability-magic-numbers,-clang-diagnostic-gnu-statement-expression,-hicpp-use-auto,-modernize-use-equals-default,-modernize-deprecated-headers,-readability-uppercase-literal-suffix'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
