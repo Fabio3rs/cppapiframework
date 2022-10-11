@@ -11,16 +11,18 @@
 
 #define EXPECT_RESULT_E(test, error)                                           \
     ({                                                                         \
-        if (test.state() != utils::State::OkState) {                           \
+        auto value = test;                                                     \
+        if (value.state() != utils::State::OkState) {                          \
             return error;                                                      \
         }                                                                      \
-        test.unwrap();                                                         \
+        value.unwrap();                                                        \
     })
 
 #define EXPECT_RESULT(test)                                                    \
     ({                                                                         \
-        if (test.state() != utils::State::OkState) {                           \
+        auto value = test;                                                     \
+        if (value.state() != utils::State::OkState) {                          \
             return std::move(test.unwrap_error());                             \
         }                                                                      \
-        test.unwrap();                                                         \
+        value.unwrap();                                                        \
     })

@@ -1,4 +1,5 @@
 #include "../src/utils/ResultMacros.hpp"
+#include <atomic>
 #include <gtest/gtest.h>
 #include <string>
 #include <type_traits>
@@ -84,4 +85,36 @@ TEST(TestResult, EarlyReturn) {
 // NOLINTNEXTLINE
 TEST(TestResult, NotEarlyReturn) {
     EXPECT_EQ(notEarlyReturnEvaluateSomething().unwrap().val, 1);
+}
+
+// NOLINTNEXTLINE
+TEST(TestResult, SingleCallTest) {
+    std::atomic<int> callCount = 0;
+    using res_t = Result<okvalue, std::string>;
+    auto someFn = [&]() -> res_t {
+        ++callCount;
+        return res_t::ok_t{{callCount.load()}};
+    };
+
+    auto callWrapper = [&]() -> res_t {
+        return res_t::ok_t{EXPECT_RESULT(someFn())};
+    };
+
+    EXPECT_EQ(callWrapper().unwrap().val, 1);
+}
+
+// NOLINTNEXTLINE
+TEST(TestResult, SingleCallTestE) {
+    std::atomic<int> callCount = 0;
+    using res_t = Result<okvalue, std::string>;
+    auto someFn = [&]() -> res_t {
+        ++callCount;
+        return res_t::ok_t{{callCount.load()}};
+    };
+
+    auto callWrapper = [&]() -> res_t {
+        return res_t::ok_t{EXPECT_RESULT_E(someFn(), res_t::error_t{""})};
+    };
+
+    EXPECT_EQ(callWrapper().unwrap().val, 1);
 }
