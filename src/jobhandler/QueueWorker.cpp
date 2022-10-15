@@ -1,5 +1,9 @@
 #include "QueueWorker.hpp"
 #include "../utils/LogDefines.hpp"
+#include "JobsHandler.hpp"
+#include <Poco/Exception.h>
+#include <exception>
+#include <string>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -40,8 +44,8 @@ auto job::QueueWorker::allocateJobOutputStream(
 
 auto job::QueueWorker::handle_job_run(
     const std::shared_ptr<QueueableJob> &newjob,
-    const Poco::JSON::Object::Ptr &json, GenericQueue::datamap_t &datamap)
-    -> jobStatus {
+    const Poco::JSON::Object::Ptr &json, GenericQueue::datamap_t &datamap,
+    const std::string &jobname) -> jobStatus {
     jobStatus result = noerror;
     STDLOGINFO() << "Job " << newjob->getName() << " tries " << newjob->tries
                  << std::endl;
@@ -84,6 +88,18 @@ auto job::QueueWorker::handle_job_run(
         result = errexcept;
     }
 
+    try {
+        if (result != noerror && newjob->getRetryAfterSecs() > 0) {
+            queueServiceInst->setPersistentData(
+                jobname,
+                {{"retryAfter", std::to_string(newjob->getRetryAfterSecs())}});
+        }
+    } catch (const Poco::Exception &e) {
+        STDLOGERR() << e.displayText() << std::endl;
+    } catch (const std::exception &e) {
+        STDLOGERR() << e.what() << std::endl;
+    }
+
     if (forkToHandle && pid == 0) {
         /**
          * @brief Forked process exit with result
@@ -93,13 +109,19 @@ auto job::QueueWorker::handle_job_run(
         exit(result);
     }
 
+    if (auto retryAfter = datamap.find("retryAfter");
+        retryAfter != datamap.end()) {
+        datamap.erase(retryAfter);
+    }
+
     jobhandler->saveJobLog(joblog, joblogerr, datamap);
 
     return result;
 }
 
 auto job::QueueWorker::work(const std::string & /*queue*/,
-                            GenericQueue::datamap_t &datamap) -> jobStatus {
+                            GenericQueue::datamap_t &datamap,
+                            const std::string &jobname) -> jobStatus {
     std::shared_ptr<QueueableJob> newjob;
     jobStatus result = noerror;
 
@@ -146,7 +168,7 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
     }
 
     try {
-        result = handle_job_run(newjob, json, datamap);
+        result = handle_job_run(newjob, json, datamap, jobname);
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
         result = errexcept;
@@ -205,8 +227,8 @@ auto job::QueueWorker::do_one(const std::string &queue) -> bool {
     return do_one(queue, jobpayload);
 }
 
-auto job::QueueWorker::do_one(const std::string &queue, std::string &jobname)
-    -> bool {
+auto job::QueueWorker::do_one(const std::string &queue,
+                              const std::string &jobname) -> bool {
     if (jobname.empty()) {
         return false;
     }
@@ -214,7 +236,7 @@ auto job::QueueWorker::do_one(const std::string &queue, std::string &jobname)
     STDLOGINFO() << "Job UUID name " << jobname << std::endl;
     auto jobdata = queueServiceInst->getPersistentData(jobname);
 
-    jobStatus workresult = work(queue, jobdata);
+    jobStatus workresult = work(queue, jobdata, jobname);
 
     process_job_result(queue, jobname, jobdata, workresult);
 

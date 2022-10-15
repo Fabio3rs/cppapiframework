@@ -9,6 +9,7 @@ auto job::QueueableJob::dump_json() const -> Poco::JSON::Object::Ptr {
 
     json->set("tries", tries);
     json->set("maxtries", maxtries);
+    json->set("retryAfter", retryAfter);
 
     return json;
 }

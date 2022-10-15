@@ -3,6 +3,8 @@
 #include "../src/jobhandler/QueueableJob.hpp"
 #include "../src/queues/StdQueue.hpp"
 
+#include <chrono>
+#include <cstdint>
 #include <gtest/gtest.h>
 
 #include <memory>
@@ -11,6 +13,7 @@
 static constexpr int JSON_INDENT = 5;
 static bool jobrunned = false;
 static const std::string queue_name = "test_queue_worker:queue:default";
+static std::atomic<int64_t> shouldFailAfter{0};
 
 /**
  * @brief First test job
@@ -97,6 +100,10 @@ void OtherPrintJob::handle() {
     }
 
     if (shouldfail) {
+        if (shouldFailAfter != 0) {
+            setRetryAfter(shouldFailAfter);
+        }
+
         throw std::runtime_error("Failed by something");
     }
 }
@@ -386,5 +393,48 @@ TEST(TestJobQueues, AddToTheQueueProcessRunMultipleAllFail) {
     EXPECT_EQ(nqueue->getQueueSize(queue_name), 0); // Queue empty
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
-TEST(Nothing, CheckNothing) { EXPECT_TRUE(true); }
+// NOLINTNEXTLINE
+TEST(TestJobQueues, CheckFailWithRetryAfter) {
+    shouldFailAfter = 60;
+    auto FuturePos = std::chrono::system_clock::now() +
+                     std::chrono::seconds(shouldFailAfter);
+
+    std::shared_ptr<job::JobsHandler> handler(
+        std::make_shared<job::JobsHandler>());
+
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
+    EXPECT_NO_THROW(handler->register_job_handler<OtherPrintJob>());
+    // NOLINTNEXTLINE(hicpp-avoid-goto)
+    EXPECT_NO_THROW(handler->register_job_handler<MockJob>());
+
+    auto nqueue(std::make_shared<StdQueue>());
+
+    EXPECT_EQ(nqueue->getNumQueues(), 0);
+
+    job::QueueWorker queuew(handler, nqueue);
+
+    std::string uuid;
+    {
+        OtherPrintJob anyjob;
+
+        anyjob.shouldfail = true;
+
+        anyjob.setMaxTries(3);
+
+        uuid = queuew.push(queue_name, anyjob);
+        EXPECT_EQ(nqueue->getNumQueues(), 1);
+        EXPECT_EQ(nqueue->getQueueSize(queue_name), 1);
+    }
+
+    EXPECT_TRUE(queuew.do_one(queue_name));
+
+    EXPECT_EQ(nqueue->getLaterQueueSize(queue_name), 1);
+
+    auto queueId = nqueue->getLaterQueueTop(queue_name);
+
+    EXPECT_EQ(queueId.data, "job_instance:" + uuid);
+
+    EXPECT_GE(queueId.pos, std::chrono::duration_cast<std::chrono::seconds>(
+                               FuturePos.time_since_epoch())
+                               .count());
+}

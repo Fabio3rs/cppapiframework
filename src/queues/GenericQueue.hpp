@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../stdafx.hpp"
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,11 @@ class GenericQueue {
 
     [[nodiscard]] virtual auto getPersistentData(const std::string &name) const
         -> std::unordered_map<std::string, std::string> = 0;
+
+    [[nodiscard]] virtual auto
+    getPersistentDataField(const std::string &name,
+                           const std::string &field) const
+        -> std::optional<std::string> = 0;
 
     virtual void setPersistentData(
         const std::string &name,

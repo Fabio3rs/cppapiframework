@@ -12,6 +12,7 @@
 #include "../stdafx.hpp"
 
 #include "../utils/map.h"
+#include <cstdint>
 
 namespace job {
 class QueueableJob {
@@ -19,6 +20,7 @@ class QueueableJob {
 
   protected:
     size_t tries{0}, maxtries{3};
+    int64_t retryAfter{0};
 
     bool failed{false};
 
@@ -63,8 +65,13 @@ class QueueableJob {
         if (json->has("tries")) {
             tries = json->getValue<size_t>("tries");
         }
+
         if (json->has("maxtries")) {
             maxtries = json->getValue<size_t>("maxtries");
+        }
+
+        if (json->has("retryAfter")) {
+            retryAfter = json->getValue<int64_t>("retryAfter");
         }
 
         return true;
@@ -72,7 +79,13 @@ class QueueableJob {
 
     [[nodiscard]] auto getTries() const noexcept { return tries; }
     [[nodiscard]] auto getMaxTries() const noexcept { return maxtries; }
+    [[nodiscard]] auto getRetryAfterSecs() const noexcept { return retryAfter; }
     void setMaxTries(size_t n) noexcept { maxtries = n; }
+
+    void setRetryAfter(int64_t seconds) noexcept { retryAfter = seconds; }
+    void setRetryAfter(std::chrono::seconds seconds) noexcept {
+        retryAfter = seconds.count();
+    }
 
     /**
      * @brief Should retry if error occurred

@@ -7,7 +7,9 @@
 #include "JobsHandler.hpp"
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
+#include <string>
 #include <unistd.h>
 #include <unordered_map>
 #include <utility>
@@ -49,7 +51,8 @@ class QueueWorker {
 
     auto handle_job_run(const std::shared_ptr<QueueableJob> &newjob,
                         const Poco::JSON::Object::Ptr &json,
-                        GenericQueue::datamap_t &datamap) -> jobStatus;
+                        GenericQueue::datamap_t &datamap,
+                        const std::string &jobname) -> jobStatus;
 
     /**
      * @brief instanciates and run the job
@@ -59,8 +62,8 @@ class QueueWorker {
      * @param datamap all job data
      * @return jobStatus job result
      */
-    auto work(const std::string & /*queue*/, GenericQueue::datamap_t &datamap)
-        -> jobStatus;
+    auto work(const std::string & /*queue*/, GenericQueue::datamap_t &datamap,
+              const std::string &jobname) -> jobStatus;
 
     auto fork_process() -> pid_t;
 
@@ -122,6 +125,9 @@ class QueueWorker {
         const std::string &queue, const std::string &jobname,
         const std::unordered_map<std::string, std::string> &datamap,
         jobStatus workresult) {
+
+        int64_t retryAfter = 0;
+
         switch (workresult) {
         case noerror:
             if (cleanSuccessfulJobsLogs) {
@@ -139,8 +145,25 @@ class QueueWorker {
 
         case errexcept:
         case errorretry:
+            try {
+                if (auto retryAfterOpt =
+                        queueServiceInst->getPersistentDataField(
+                            jobname, "retryAfter")) {
+                    retryAfter = std::stoll(retryAfterOpt.value());
+                }
+            } catch (...) {
+            }
+
             queueServiceInst->setPersistentData(jobname, datamap);
-            queueServiceInst->push(queue, jobname);
+
+            if (retryAfter == 0) {
+                queueServiceInst->push(queue, jobname);
+            } else {
+                queueServiceInst->pushToLater(
+                    queue, jobname,
+                    std::chrono::system_clock::now() +
+                        std::chrono::seconds(retryAfter));
+            }
             break;
         }
     }
@@ -166,7 +189,7 @@ class QueueWorker {
         return data.at(job::JobsHandler::getTypeName<T>());
     }
 
-    auto do_one(const std::string &queue, std::string &jobname) -> bool;
+    auto do_one(const std::string &queue, const std::string &jobname) -> bool;
 
     /**
      * @brief Pop job from the queue and run it

@@ -24,6 +24,10 @@ class RedisQueue : public GenericQueue {
     [[nodiscard]] auto getPersistentData(const std::string &name) const
         -> std::unordered_map<std::string, std::string> override;
 
+    [[nodiscard]] auto getPersistentDataField(const std::string &name,
+                                              const std::string &field) const
+        -> std::optional<std::string> override;
+
     void setPersistentData(
         const std::string &name,
         const std::unordered_map<std::string, std::string> &data) override;
