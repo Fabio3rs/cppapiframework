@@ -18,7 +18,7 @@ done
 )
 
 namespace autogen{
-static void registerJobs(job::JobsHandler &handler){
+inline void registerJobs(job::JobsHandler &handler){
     $(
 for f in $FILES
 do 
