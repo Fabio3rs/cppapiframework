@@ -5,6 +5,8 @@
 
 #include "HandshakeWebSocket.hpp"
 #include <Poco/Base64Encoder.h>
+#include <cassert>
+#include <openssl/ssl.h>
 
 namespace WebSocket {
 DisableParserStep::~DisableParserStep() = default;
@@ -94,8 +96,20 @@ auto writeCookies(const CookieJar &cookies, DynamicStreamBuf &buf) -> bool {
 #undef OUT
 }
 
-inline auto streamWrite(int fd, const void *buf, size_t n) -> ssize_t {
-    ssize_t result = write(fd, buf, n);
+inline auto pistachePeerWrite(Pistache::Tcp::Peer &peer, const void *buffer,
+                              size_t len) -> ssize_t {
+#ifdef PISTACHE_USE_SSL
+    if (peer.ssl() != nullptr) {
+        auto *ssl_ = static_cast<SSL *>(peer.ssl());
+        return SSL_write(ssl_, buffer, static_cast<int>(len));
+    }
+#endif /* PISTACHE_USE_SSL */
+    return ::write(peer.fd(), buffer, len);
+}
+
+inline auto streamWrite(Pistache::Tcp::Peer &peer, const void *buf, size_t n)
+    -> ssize_t {
+    ssize_t result = pistachePeerWrite(peer, buf, n);
     if (result < 0) {
         return result;
     }
@@ -108,8 +122,9 @@ inline auto streamWrite(int fd, const void *buf, size_t n) -> ssize_t {
             return result;
         }
 
-        ssize_t current = write(
-            fd, reinterpret_cast<const uint8_t *>(buf) + written, n - written);
+        ssize_t current = pistachePeerWrite(
+            peer, reinterpret_cast<const uint8_t *>(buf) + written,
+            n - written);
 
         if (current < 0) {
             return -result;
@@ -134,13 +149,14 @@ void putOnWire(Pistache::Http::ResponseWriter &response_) {
 
     os << crlf;
 
-    // NOLINTNEXTLINE(readability-identifier-length)
-    int fd = response_.getPeer()->fd();
+    auto peer = response_.getPeer();
+
+    assert(peer); // NOLINT
 
     const auto buf = buf_.buffer().data();
     // std::cout.write(buf.c_str(), static_cast<std::streamsize>(buf.size()));
-    streamWrite(fd, buf.c_str(), buf.size());
-    streamWrite(fd, os.str().c_str(), os.str().size());
+    streamWrite(*peer, buf.c_str(), buf.size());
+    streamWrite(*peer, os.str().c_str(), os.str().size());
 }
 
 const std::string WEBSOCKET_GUID("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
