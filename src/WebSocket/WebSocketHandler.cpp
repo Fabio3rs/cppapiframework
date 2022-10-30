@@ -15,7 +15,7 @@ auto WebSocketHandler::frame::receiveData(const char *buffer, size_t lenraw)
 
     bool done = false;
 
-    while (inBufferOffset < lenraw) {
+    while (inBufferOffset < lenraw && !done) {
         switch (readingState) {
         case 0:
             flags = bytesRaw[inBufferOffset++];
@@ -71,6 +71,8 @@ auto WebSocketHandler::frame::receiveData(const char *buffer, size_t lenraw)
             break;
 
         default:
+            assert(size == payload.size()); // NOLINT
+            assert(bufferPos < payload.size()); // NOLINT
             payload[bufferPos++] = buffer[inBufferOffset++];
 
             if (bufferPos == size) {
