@@ -40,12 +40,13 @@ jobs:
           export CURRENT_SOURCE_DIR=$(pwd)
           mkdir build && cd build
           export CURRENT_BUILD_DIR=$(pwd)
-          cmake .. -G Ninja
-          cmake --build . --config Release --target all -j $(nproc) --
+          export SANITIZER_CMAKE_FLAGS=' -DCMAKE_CXX_FLAGS=" -fsanitize=address  -fsanitize=leak " -DCMAKE_MODULE_LINKER_FLAGS=" -fsanitize=address  -fsanitize=leak " -DCMAKE_EXE_LINKER_FLAGS=" -fsanitize=address  -fsanitize=leak " -DCMAKE_C_FLAGS=" -fsanitize=address  -fsanitize=leak "'
+          cmake .. -G Ninja ${SANITIZER_CMAKE_FLAGS}
+          cmake --build . --config Debug --target all -j $(nproc) --
 
       - name: Test project
         run: |
           export CC=$(which clang)
           export CXX=$(which clang++)
           cd build
-          ctest -j 20 -C Release -T test --output-on-failure
+          ctest -j 20 -C Debug -T test --output-on-failure
