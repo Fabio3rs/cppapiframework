@@ -22,6 +22,14 @@ void CPistacheEndpoint::init(Pistache::Address addr, size_t thr) {
     setupRoutes();
 }
 
+void CPistacheEndpoint::init(Pistache::Address addr,
+                             const Pistache::Http::Endpoint::Options &options) {
+    httpEndpoint = std::make_shared<Pistache::Http::Endpoint>(addr);
+
+    httpEndpoint->init(options);
+    setupRoutes();
+}
+
 void CPistacheEndpoint::start() {
     httpEndpoint->setHandler(router.handler());
     httpEndpoint->serveThreaded();

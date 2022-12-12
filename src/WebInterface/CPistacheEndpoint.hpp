@@ -35,6 +35,8 @@ class CPistacheEndpoint {
      * @param thr The number of threads the server is allowed to use
      */
     void init(Pistache::Address addr, size_t thr = 2);
+    void init(Pistache::Address addr,
+              const Pistache::Http::Endpoint::Options &options);
 
     auto getPort() const -> Pistache::Port {
         return httpEndpoint ? httpEndpoint->getPort() : Pistache::Port{0};
