@@ -52,7 +52,6 @@
             auto i = 0U;                                                       \
                                                                                \
             for (; i < size; ++i) {                                            \
-                std::cout << "comparison " << JsonInput[i].first << std::endl; \
                 auto comparison = JsonInput[i].first.compare(k);               \
                 if (comparison == 0) {                                         \
                     return std::addressof(JsonInput[i].second);                \

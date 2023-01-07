@@ -1,5 +1,9 @@
 #pragma once
 
+/**
+* @brief for testing purposes
+*/
+
 #include "../stdafx.hpp"
 #include <Poco/Dynamic/Var.h>
 #include <Poco/Dynamic/VarHolder.h>
@@ -23,9 +27,9 @@ namespace JSONStructParser {
 template <class T, std::size_t = sizeof(
                        static_cast<void (Poco::Dynamic::VarHolder::*)(
                            T &) const>(&Poco::Dynamic::VarHolder::convert))>
-std::true_type has_var_holder_overload(T *);
+auto has_var_holder_overload(T *) -> std::true_type;
 
-std::false_type has_var_holder_overload(...);
+auto has_var_holder_overload(...) -> std::false_type;
 
 template <class T>
 using has_complete_overl =
@@ -84,7 +88,7 @@ struct StructFiller {
 class StructParser : public Poco::JSON::Handler {
 
   public:
-    virtual void reset() override {}
+    void reset() override {}
     /// Resets the handler state.
 
     void startObject() override {
@@ -128,52 +132,54 @@ class StructParser : public Poco::JSON::Handler {
     void key(const std::string &k) override { currentKey = k; }
     /// A key is read
 
-    Poco::Dynamic::Var asVar() const override { return {}; }
+    [[nodiscard]] auto asVar() const -> Poco::Dynamic::Var override {
+        return {};
+    }
     /// Returns the result of the parser (an object or an array).
 
-    virtual void value(int v) override {
+    void value(int v) override {
         // std::cout  << "key " << currentKey << " : " << v << "\n";
         current->value(*this, v);
     }
     /// An integer value is read
 
-    virtual void value(unsigned v) override {
+    void value(unsigned v) override {
         // std::cout  << "key " << currentKey << " : " << v << "\n";
         current->value(*this, v);
     }
     /// An unsigned value is read. This will only be triggered if the
     /// value cannot fit into a signed int.
 
-    virtual void value(int64_t v) override {
+    void value(int64_t v) override {
         // std::cout  << "key " << currentKey << " : " << v << "\n";
         current->value(*this, v);
     }
     /// A 64-bit integer value is read
 
-    virtual void value(uint64_t v) override {
+    void value(uint64_t v) override {
         // std::cout  << "key " << currentKey << " : " << v << "\n";
         current->value(*this, v);
     }
 
-    virtual void value(const std::string &s) override {
+    void value(const std::string &s) override {
         // std::cout  << "key " << currentKey << " : " << s << "\n";
         current->value(*this, s);
     }
     /// A string value is read.
 
-    virtual void value(double d) override {
+    void value(double d) override {
         // std::cout  << "key " << currentKey << " : " << d << "\n";
         current->value(*this, d);
     }
     /// A double value is read.
 
-    virtual void value(bool b) override {
+    void value(bool b) override {
         // std::cout  << "key " << currentKey << " : " << b << "\n";
         current->value(*this, b);
     }
     /// A boolean value is read.
 
-    virtual void null() override {
+    void null() override {
         // std::cout  << "key " << currentKey << " : null\n";
     }
     /// A null value is read.
@@ -185,9 +191,9 @@ class StructParser : public Poco::JSON::Handler {
     StructParser() = default;
     StructParser(const StructParser &) = delete;
     StructParser(StructParser &&) = delete;
-    StructParser &operator=(const StructParser &) = delete;
-    StructParser &operator=(StructParser &&) = delete;
-    StructParser(std::unique_ptr<StructFiller> &&filler)
+    auto operator=(const StructParser &) -> StructParser & = delete;
+    auto operator=(StructParser &&) -> StructParser & = delete;
+    explicit StructParser(std::unique_ptr<StructFiller> &&filler)
         : current(std::move(filler)) {}
     ~StructParser() override;
 };
@@ -325,11 +331,11 @@ template <class T> struct Filter : public StructFiller {
     }
 
     Filter() = default;
-    Filter(T & /*data*/) {
+    explicit Filter(T & /*data*/) {
         throw std::runtime_error("Unknown type " +
                                  std::string(typeid(T).name()));
     }
-    virtual ~Filter() override = default;
+    ~Filter() override = default;
 };
 
 template <> struct Filter<std::string> : public StructFiller {
@@ -395,14 +401,14 @@ template <> struct Filter<std::string> : public StructFiller {
     /// A double value is read.
 
     void value(StructParser & /*parser*/, bool b) override {
-        *ptrdata = std::to_string(b);
+        *ptrdata = std::to_string(static_cast<int>(b));
     }
 
     std::string *ptrdata{};
 
     Filter() = default;
-    Filter(std::string &data) : ptrdata(&data) {}
-    virtual ~Filter() override;
+    explicit Filter(std::string &data) : ptrdata(&data) {}
+    ~Filter() override;
 };
 
 template <class T> struct setField {
@@ -517,8 +523,8 @@ struct Filter<std::vector<vecdata_t>> : public StructFiller {
     std::vector<vecdata_t> *ptrdata{};
 
     Filter() = default;
-    Filter(std::vector<vecdata_t> &data) : ptrdata(&data) {}
-    virtual ~Filter() override = default;
+    explicit Filter(std::vector<vecdata_t> &data) : ptrdata(&data) {}
+    ~Filter() override = default;
 };
 
 template <class ndata_t>
@@ -615,8 +621,8 @@ struct Filter<std::unordered_map<Key, Tp>> : public StructFiller {
     std::unordered_map<Key, Tp> *ptrdata{};
 
     Filter() = default;
-    Filter(std::unordered_map<Key, Tp> &data) : ptrdata(&data) {}
-    virtual ~Filter() override = default;
+    explicit Filter(std::unordered_map<Key, Tp> &data) : ptrdata(&data) {}
+    ~Filter() override = default;
 };
 
 template <class Key, class Tp> struct setField<std::unordered_map<Key, Tp>> {
@@ -651,7 +657,7 @@ template <class T> struct TemplateStructFiller : public StructFiller {
     template <class Holder_t>
     void setHolder(StructParser & /*parser*/, const std::string &k,
                    Poco::Dynamic::VarHolderImpl<Holder_t> &&val) {
-        auto *res = find(k);
+        const auto *res = find(k);
 
         if (!res) {
             throw std::runtime_error("invalid key " + k);
@@ -664,17 +670,17 @@ template <class T> struct TemplateStructFiller : public StructFiller {
         res->set(ptrdata, val);
     }
 
-    virtual void reset() override {}
+    void reset() override {}
     /// Resets the handler state.
 
-    virtual auto startObject(StructParser &parser) -> ptr_t override {
-        auto *res = find(parser.currentKey);
+    auto startObject(StructParser &parser) -> ptr_t override {
+        const auto *res = find(parser.currentKey);
 
-        if (!res) {
+        if (res == nullptr) {
             throw std::runtime_error("invalid key " + parser.currentKey);
         }
 
-        if (!res->makeObject) {
+        if (res->makeObject == nullptr) {
             throw std::runtime_error("invalid key for object");
         }
 
@@ -682,17 +688,17 @@ template <class T> struct TemplateStructFiller : public StructFiller {
     }
     /// The parser has read a {, meaning a new object will be read.
 
-    virtual void endObject(StructParser & /*parser*/) override {}
+    void endObject(StructParser & /*parser*/) override {}
     /// The parser has read a }, meaning the object is read.
 
-    virtual auto startArray(StructParser &parser) -> ptr_t override {
-        auto *res = find(parser.currentKey);
+    auto startArray(StructParser &parser) -> ptr_t override {
+        const auto *res = find(parser.currentKey);
 
-        if (!res) {
+        if (res == nullptr) {
             throw std::runtime_error("invalid key " + parser.currentKey);
         }
 
-        if (!res->makeArray) {
+        if (res->makeArray == nullptr) {
             throw std::runtime_error("invalid key for array");
         }
 
@@ -700,56 +706,54 @@ template <class T> struct TemplateStructFiller : public StructFiller {
     }
     /// The parser has read a [, meaning a new array will be read.
 
-    virtual void endArray(StructParser & /*parser*/) override {}
+    void endArray(StructParser & /*parser*/) override {}
     /// The parser has read a ], meaning the array is read.
 
-    virtual void key(StructParser & /*parser*/,
-                     const std::string & /*k*/) override {}
+    void key(StructParser & /*parser*/, const std::string & /*k*/) override {}
     /// A key of an object is read.
 
-    virtual void null(StructParser & /*parser*/) override {}
+    void null(StructParser & /*parser*/) override {}
     /// A null value is read.
 
-    virtual void value(StructParser &parser, int v) override {
+    void value(StructParser &parser, int v) override {
         setHolder<decltype(v)>(parser, parser.currentKey, v);
     }
     /// An integer value is read.
 
-    virtual void value(StructParser &parser, unsigned v) override {
+    void value(StructParser &parser, unsigned v) override {
         setHolder<decltype(v)>(parser, parser.currentKey, v);
     }
     /// An unsigned value is read. This will only be triggered if the
     /// value cannot fit into a signed int.
 
-    virtual void value(StructParser &parser, int64_t v) override {
+    void value(StructParser &parser, int64_t v) override {
         setHolder<decltype(v)>(parser, parser.currentKey, v);
     }
     /// A 64-bit integer value is read.
 
-    virtual void value(StructParser &parser, uint64_t v) override {
+    void value(StructParser &parser, uint64_t v) override {
         setHolder<decltype(v)>(parser, parser.currentKey, v);
     }
 
-    virtual void value(StructParser &parser,
-                       const std::string &value) override {
+    void value(StructParser &parser, const std::string &value) override {
         setHolder<std::string>(parser, parser.currentKey, value);
     }
     /// A string value is read.
 
-    virtual void value(StructParser &parser, double d) override {
+    void value(StructParser &parser, double d) override {
         setHolder<decltype(d)>(parser, parser.currentKey, d);
     }
     /// A double value is read.
 
-    virtual void value(StructParser &parser, bool b) override {
+    void value(StructParser &parser, bool b) override {
         setHolder<decltype(b)>(parser, parser.currentKey, b);
     }
 
     struct_type *ptrdata{};
 
     TemplateStructFiller() = default;
-    TemplateStructFiller(struct_type &data) : ptrdata(&data) {}
-    virtual ~TemplateStructFiller() override = default;
+    explicit TemplateStructFiller(struct_type &data) : ptrdata(&data) {}
+    ~TemplateStructFiller() override = default;
 };
 
 } // namespace JSONStructParser
