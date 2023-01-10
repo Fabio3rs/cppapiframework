@@ -5,46 +5,34 @@
 #include <cstdint>
 #include <ios>
 #include <iterator>
+#include <string>
 #include <vector>
 
+/*
+ * @brief not tested yet
+ */
 struct Storage {
-    /*
-     * @brief not tested yet
-     */
     static auto put(const std::filesystem::path &path,
-                    const std::string &contents) -> bool {
-        std::fstream out(path,
-                         std::ios::binary | std::ios::out | std::ios::trunc);
+                    const std::string &contents) -> bool;
 
-        if (!out) {
-            return false;
-        }
+    static auto put(const std::filesystem::path &path,
+                    const std::vector<uint8_t> &contents) -> bool;
 
-        out.write(contents.c_str(),
-                  static_cast<std::streamsize>(contents.size()));
-
-        out.flush();
-
-        return out.good();
+    static inline auto publicPath() -> std::filesystem::path {
+        return "./storage/public";
     }
 
-    /*
-     * @brief not tested yet
-     */
-    static auto put(const std::filesystem::path &path,
-                    const std::vector<uint8_t> &contents) -> bool {
-        std::fstream out(path,
-                         std::ios::binary | std::ios::out | std::ios::trunc);
-
-        if (!out) {
-            return false;
-        }
-
-        std::ostream_iterator<uint8_t> itwrite(out);
-        std::copy(contents.begin(), contents.end(), itwrite);
-
-        out.flush();
-
-        return out.good();
+    static inline auto buildPublicPath(const std::string &name) {
+        return publicPath() / name;
     }
+
+    static auto putPublicly(const std::string &name,
+                            const std::string &contents)
+        -> std::filesystem::path;
+
+    static auto putPublicly(const std::string &name,
+                            const std::vector<uint8_t> &contents)
+        -> std::filesystem::path;
+
+    static auto uriFromPublic(const std::filesystem::path &path) -> std::string;
 };
