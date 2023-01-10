@@ -9,9 +9,15 @@ using namespace Pistache::Http;
 
 auto CStorageController::getFilePath(
     const Pistache::Rest::Request &request) const -> std::filesystem::path {
-    std::string fileName;
+    std::filesystem::path fileName;
     try {
-        fileName = request.param(":fileName").as<std::string>();
+        auto fileNameStr = request.param(":fileName").as<std::string>();
+
+        if (fileNameStr.at(0) == '.') {
+            return {};
+        }
+
+        fileName = fileNameStr;
     } catch (...) {
         throw HttpError(Pistache::Http::Code::Not_Found, "");
     }
@@ -20,7 +26,24 @@ auto CStorageController::getFilePath(
         throw HttpError(Pistache::Http::Code::Not_Found, "");
     }
 
-    std::filesystem::path fullName = storageDirectory / fileName;
+    auto absStorage = std::filesystem::absolute(storageDirectory);
+
+    auto fullName = absStorage / fileName;
+
+    try {
+        fullName =
+            std::filesystem::absolute(std::filesystem::canonical(fullName));
+    } catch (...) {
+        throw HttpError(Pistache::Http::Code::Not_Found, "");
+    }
+
+    if (!std::filesystem::exists(fileName)) {
+        throw HttpError(Pistache::Http::Code::Not_Found, "");
+    }
+
+    if (fullName.string().find(absStorage) != 0) {
+        throw HttpError(Pistache::Http::Code::Bad_Request, "");
+    }
 
     return fullName;
 }
