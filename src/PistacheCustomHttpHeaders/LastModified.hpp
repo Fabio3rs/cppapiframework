@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../stdafx.hpp"
+#include <bits/types/time_t.h>
 #include <memory>
+#include <string>
 
 namespace PistacheCustomHttpHeaders {
 class LastModified : public Pistache::Http::Header::Header {
@@ -22,12 +24,16 @@ class LastModified : public Pistache::Http::Header::Header {
         os << formatedDate;
     }
 
-    [[nodiscard]] auto getTimeT() const -> std::time_t {
+    static auto getTimeFromStr(const std::string &dateTime) -> time_t {
         std::tm tmHeader{};
-        std::stringstream ssdate(formatedDate);
+        std::stringstream ssdate(dateTime);
         ssdate >> std::get_time(&tmHeader, "%a, %d %b %Y %H:%M:%S %Z");
 
         return std::mktime(&tmHeader);
+    }
+
+    [[nodiscard]] auto getTimeT() const -> std::time_t {
+        return getTimeFromStr(formatedDate);
     }
 
     static auto format(std::time_t cftime) -> std::string {
@@ -41,12 +47,17 @@ class LastModified : public Pistache::Http::Header::Header {
     }
 
     template <class T>
-    static auto format(std::chrono::time_point<T> timePoint) -> std::string {
+    static auto timeCast(std::chrono::time_point<T> timePoint) -> time_t {
         using namespace std::chrono;
         auto sctp = time_point_cast<system_clock::duration>(
             timePoint - std::chrono::time_point<T>::clock::now() +
             system_clock::now());
-        return format(system_clock::to_time_t(sctp));
+        return system_clock::to_time_t(sctp);
+    }
+
+    template <class T>
+    static auto format(std::chrono::time_point<T> timePoint) -> std::string {
+        return format(timeCast(timePoint));
     }
 
     static auto make(std::time_t cftime) {

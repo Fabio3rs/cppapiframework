@@ -17,12 +17,9 @@ class CStorageController : public CController {
 
     [[nodiscard]] auto getFilePath(const Pistache::Rest::Request &request) const
         -> std::filesystem::path;
-
-    void GET_file(const Pistache::Rest::Request &request,
+    
+    void request_file(const Pistache::Rest::Request &request,
                   Pistache::Http::ResponseWriter response);
-
-    void HEAD_file(const Pistache::Rest::Request &request,
-                   Pistache::Http::ResponseWriter response);
 
     void register_routes(const std::string &baseAddr,
                          Pistache::Rest::Router &router) override;

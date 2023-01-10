@@ -1,5 +1,7 @@
 #include "CStorageController.hpp"
+#include "../PistacheCustomHttpHeaders/LastModified.hpp"
 #include <filesystem>
+#include <fstream>
 #include <pistache/http_defs.h>
 #include <string>
 #include <string_view>
@@ -26,7 +28,8 @@ auto CStorageController::getFilePath(
         throw HttpError(Pistache::Http::Code::Not_Found, "");
     }
 
-    auto absStorage = std::filesystem::absolute(storageDirectory);
+    auto absStorage =
+        std::filesystem::absolute(std::filesystem::canonical(storageDirectory));
 
     auto fullName = absStorage / fileName;
 
@@ -37,7 +40,7 @@ auto CStorageController::getFilePath(
         throw HttpError(Pistache::Http::Code::Not_Found, "");
     }
 
-    if (!std::filesystem::exists(fileName)) {
+    if (!std::filesystem::exists(fullName)) {
         throw HttpError(Pistache::Http::Code::Not_Found, "");
     }
 
@@ -49,19 +52,47 @@ auto CStorageController::getFilePath(
 }
 
 // NOLINTNEXTLINE
-void CStorageController::GET_file(const Pistache::Rest::Request &request,
-                                  ResponseWriter response) {
+void CStorageController::request_file(const Pistache::Rest::Request &request,
+                                      ResponseWriter response) {
     std::filesystem::path fullName = getFilePath(request);
 
-    response.send(Pistache::Http::Code::Not_Found, fullName);
-}
+    if (fullName.empty()) {
+        throw HttpError(Pistache::Http::Code::Not_Found, "");
+    }
 
-// NOLINTNEXTLINE
-void CStorageController::HEAD_file(const Pistache::Rest::Request &request,
-                                   ResponseWriter response) {
-    std::filesystem::path fullName = getFilePath(request);
+    std::filesystem::file_time_type lastWriteTime =
+        std::filesystem::last_write_time(fullName);
 
-    response.send(Pistache::Http::Code::Not_Found, fullName);
+    auto lastWriteTimeCTime =
+        PistacheCustomHttpHeaders::LastModified::timeCast(lastWriteTime);
+    auto lastWriteTimeGmt = (lastWriteTimeCTime + timezone);
+
+    if (auto IfModifiedSince =
+            request.headers().tryGetRaw("If-Modified-Since")) {
+        auto cTimeIfModifiedSince =
+            PistacheCustomHttpHeaders::LastModified::getTimeFromStr(
+                IfModifiedSince->value());
+        if (lastWriteTimeGmt <= cTimeIfModifiedSince) {
+            response.send(Pistache::Http::Code::Not_Modified);
+            return;
+        }
+    }
+
+    response.headers().add(
+        std::make_shared<PistacheCustomHttpHeaders::LastModified>(
+            lastWriteTime));
+
+    if (request.method() == Pistache::Http::Method::Get) {
+        Pistache::Http::serveFile(response, fullName);
+        return;
+    }
+
+    auto fileSize = std::filesystem::file_size(fullName);
+    response.headers().add(
+        std::make_shared<Pistache::Http::Header::ContentLength>(fileSize));
+
+    auto stream = response.stream(Pistache::Http::Code::Ok);
+    stream.ends();
 }
 
 void CStorageController::register_routes(const std::string &baseAddr,
@@ -70,10 +101,10 @@ void CStorageController::register_routes(const std::string &baseAddr,
     std::filesystem::create_directories(storageDirectory, eCode);
     Pistache::Rest::Routes::Get(
         router, baseAddr + "/storage/:fileName",
-        Pistache::Rest::Routes::bind(&CStorageController::GET_file, this));
+        Pistache::Rest::Routes::bind(&CStorageController::request_file, this));
     Pistache::Rest::Routes::Head(
         router, baseAddr + "/storage/:fileName",
-        Pistache::Rest::Routes::bind(&CStorageController::HEAD_file, this));
+        Pistache::Rest::Routes::bind(&CStorageController::request_file, this));
 }
 
 CStorageController::~CStorageController() = default;
