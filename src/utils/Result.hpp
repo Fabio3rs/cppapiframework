@@ -86,7 +86,12 @@ class Result : public std::variant<Ok<OkType_t>, Err<ErrorType_t>> {
     auto unwrap() -> OkType_t & { return std::get<0>(*this); }
     auto unwrap() const -> const OkType_t & { return std::get<0>(*this); }
 
-    auto unwrap_or(ok_t &&defaultVal) -> auto & {
+    auto unwrap_or_ref(const ok_t &defaultVal) -> auto & {
+        return state() == OkState ? unwrap()
+                                  : std::forward<OkType_t>(defaultVal);
+    }
+
+    auto unwrap_or(ok_t &&defaultVal) -> OkType_t {
         return state() == OkState ? unwrap()
                                   : std::forward<OkType_t>(defaultVal);
     }
