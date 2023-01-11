@@ -78,6 +78,7 @@ file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/jobhandler/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/WebControllers/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/WebSocket/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Storage/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/JSON/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/PistacheCustomHttpHeaders/*.cpp"
 )
