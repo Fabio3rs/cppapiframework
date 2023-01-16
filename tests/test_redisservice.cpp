@@ -1,7 +1,9 @@
 #include "../src/utils/RedisService.hpp"
+#include <Poco/JSON/Object.h>
 #include <Poco/UUID.h>
 #include <Poco/UUIDGenerator.h>
 #include <gtest/gtest.h>
+#include <stdexcept>
 
 static std::string test_hashset_key =
     "test_hashset:" +
@@ -126,4 +128,34 @@ TEST(TestRedisService, customCmdExpireTTL) {
         RedisService::default_inst().cmd<int64_t>("ttl", test_hashset_key), 32);
 
     default_key_test_delete();
+}
+
+// NOLINTNEXTLINE(hicpp-special-member-functions)
+TEST(TestRedisService, jsonSetGet) {
+    auto conn = RedisService::default_inst().get_connection();
+
+    if (!conn) {
+        throw std::runtime_error("conn is null");
+    }
+
+    {
+        Poco::JSON::Object::Ptr json = new Poco::JSON::Object;
+
+        json->set("test", "a");
+        json->set("test2", 0);
+        json->set("test3", false);
+
+        EXPECT_EQ(
+            RedisService::setJson(*conn, "redisservice:testsetjson", json, 60),
+            "OK");
+    }
+
+    auto retJson = RedisService::getJson(*conn, "redisservice:testsetjson")
+                       .extract<Poco::JSON::Object::Ptr>();
+
+    EXPECT_FALSE(retJson.isNull());
+
+    EXPECT_EQ(retJson->getValue<std::string>("test"), "a");
+    EXPECT_EQ(retJson->getValue<int>("test2"), 0);
+    EXPECT_EQ(retJson->getValue<bool>("test3"), false);
 }

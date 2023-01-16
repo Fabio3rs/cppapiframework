@@ -1,6 +1,8 @@
 #include "RedisService.hpp"
 #include "CConfig.hpp"
+#include "PocoJsonStringify.hpp"
 #include <exception>
+#include <string>
 
 auto RedisService::default_inst() -> RedisService & {
     static RedisService instance;
@@ -68,4 +70,18 @@ auto RedisService::blpop(const std::vector<std::string> &lista, int64_t timeout)
     }
 
     return blpop(*connection, lista, timeout);
+}
+
+auto RedisService::setJson(Poco::Redis::Client &inst,
+                           const std::string &key_name,
+                           const Poco::Dynamic::Var &var, int key_expire)
+    -> std::string {
+    Poco::Redis::Command setcmd = Poco::Redis::Command::set(
+        key_name, PocoJsonStringify::JsonToString(var), true);
+
+    if (key_expire > 0) {
+        setcmd << "EX" << std::to_string(key_expire);
+    }
+
+    return inst.execute<std::string>(setcmd);
 }

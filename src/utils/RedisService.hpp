@@ -2,10 +2,14 @@
 
 #include "../stdafx.hpp"
 #include "BorrowPool.hpp"
+#include <Poco/Dynamic/Var.h>
+#include <Poco/JSON/Parser.h>
+#include <Poco/Nullable.h>
 #include <Poco/ObjectPool.h>
 #include <Poco/Redis/Client.h>
 #include <Poco/Redis/Command.h>
 #include <Poco/Redis/Redis.h>
+#include <Poco/Redis/Type.h>
 
 struct RedisServiceAddress {
     std::string host;
@@ -119,6 +123,20 @@ class RedisService {
                           const std::string &key_name) {
         return inst.execute<T>(Poco::Redis::Command::get(key_name));
     }
+
+    static auto getJson(Poco::Redis::Client &inst, const std::string &key_name)
+        -> Poco::Dynamic::Var {
+        auto data = get_cache<Poco::Redis::BulkString>(inst, key_name);
+        if (data.isNull()) {
+            return {};
+        }
+
+        return Poco::JSON::Parser().parse(data.value());
+    }
+
+    static auto setJson(Poco::Redis::Client &inst, const std::string &key_name,
+                        const Poco::Dynamic::Var &var, int key_expire = 0)
+        -> std::string;
 
     template <class T> auto get_cache(const std::string &key_name) {
         auto connection = get_connection();
