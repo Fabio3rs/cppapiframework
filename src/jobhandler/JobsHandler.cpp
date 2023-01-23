@@ -1,5 +1,6 @@
 #include "JobsHandler.hpp"
 #include "../utils/ScopedStreamRedirect.hpp"
+#include <Poco/Exception.h>
 #include <fstream>
 
 auto job::JobsHandler::default_instance() -> std::shared_ptr<JobsHandler> {
@@ -17,8 +18,14 @@ auto job::JobsHandler::handle(const std::shared_ptr<QueueableJob> &newjob,
 
     try {
         newjob->handle();
+    } catch (const Poco::Exception &e) {
+        std::cerr << __FILE__ << "@" << __LINE__
+                  << ": Job exception: " << e.what() << "; " << e.displayText()
+                  << '\n';
+        result = errexcept;
     } catch (const std::exception &e) {
-        std::cerr << e.what() << '\n';
+        std::cerr << __FILE__ << "@" << __LINE__
+                  << ": Job exception: " << e.what() << '\n';
         result = errexcept;
     }
 
