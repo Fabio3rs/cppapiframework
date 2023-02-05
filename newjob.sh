@@ -37,14 +37,14 @@ class ${JOBNAME} : public QueueableJob {
   public:
     QUEUEABLE_SERIALIZE(data)
 
-    auto getName() const -> std::string_view override {
+    [[nodiscard]] auto getName() const -> std::string override {
         return getTypeNameByInst(*this);
     }
 
     void handle() override;
 
     ${JOBNAME}();
-    ${JOBNAME}(const ${DEFAULTINPUT} &inputdata);
+    ${JOBNAME}(${DEFAULTINPUT} inputdata);
 };
 }
 
@@ -56,18 +56,19 @@ cppsource=$(${COMMAND} <<EOF
 #include <iostream>
 
 namespace job {
-${JOBNAME}::${JOBNAME}() : QueueableJob() {}
+${JOBNAME}::${JOBNAME}() = default;
 
-${JOBNAME}::${JOBNAME}(const ${DEFAULTINPUT} &inputdata)
-    : QueueableJob(), data(inputdata) {}
+${JOBNAME}::${JOBNAME}(${DEFAULTINPUT} inputdata)
+    : data(std::move(inputdata)) {}
 
 void ${JOBNAME}::handle() {
-    if (data) {
-        data->stringify(std::cout, 5);
-        std::cout << std::endl;
-    } else {
+    if (data.isNull()) {
         std::cout << "${JOBNAME} data is null" << std::endl;
+        return;
     }
+
+    data->stringify(std::cout);
+    std::cout << std::endl;
 }
 }
 
