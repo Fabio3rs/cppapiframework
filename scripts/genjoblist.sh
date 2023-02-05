@@ -4,7 +4,7 @@ DIR="jobs"
 mkdir "autogen"
 
 pushd "${DIR}"
-FILES=$(find -iname '*.hpp')
+FILES=$(find -iname '*.hpp' | sort)
 popd
 
 echo "$(clang-format - <<EOF
