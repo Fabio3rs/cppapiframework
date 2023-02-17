@@ -1,5 +1,8 @@
 #include "../src/utils/PocoJsonStringify.hpp"
 #include "allocation_count.hpp"
+#include "utils/Validator.hpp"
+#include <Poco/JSON/Array.h>
+#include <Poco/JSON/Object.h>
 #include <atomic>
 #include <gtest/gtest.h>
 #include <new>
@@ -28,7 +31,7 @@ static auto setupJson() {
     return JsonObject;
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(PocoJSONStringify, StringifyTeste) {
     auto json = setupJson();
 
@@ -48,4 +51,18 @@ TEST(PocoJSONStringify, StringifyTeste) {
     json->stringify(sstr);
 
     EXPECT_EQ(stringifier.str, sstr.str());
+}
+
+// NOLINTNEXTLINE
+TEST(PocoJSONStringify, StringifyNull) {
+    auto json = setupJson();
+
+    json->set("nullobject", Poco::JSON::Object::Ptr());
+    json->set("nullarray", Poco::JSON::Array::Ptr());
+
+    auto reparsedJson = Validator::parse_json_from_string(
+        PocoJsonStringify::JsonToString(json));
+
+    EXPECT_TRUE(reparsedJson->get("nullobject").isEmpty());
+    EXPECT_TRUE(reparsedJson->get("nullarray").isEmpty());
 }

@@ -98,7 +98,14 @@ class PocoJsonStringify {
         append('}');
     }
 
-    void stringify(const Poco::JSON::Object::Ptr &arr) { stringify(*arr); }
+    void stringify(const Poco::JSON::Object::Ptr &arr) {
+        if (arr.isNull()) {
+            append("null");
+            return;
+        }
+
+        stringify(*arr);
+    }
 
     /**
      * @brief função de stringify baseada em Poco::JSON::Array
@@ -132,7 +139,14 @@ class PocoJsonStringify {
         append(']');
     }
 
-    void stringify(const Poco::JSON::Array::Ptr &arr) { stringify(*arr); }
+    void stringify(const Poco::JSON::Array::Ptr &arr) {
+        if (arr.isNull()) {
+            append("null");
+            return;
+        }
+
+        stringify(*arr);
+    }
 
     /**
      * @brief função de stringify baseada em Poco::Dynamic::Var
@@ -161,9 +175,9 @@ class PocoJsonStringify {
         } else if (type == typeid(Array)) {
             stringify(any.extract<Array>());
         } else if (type == typeid(Object::Ptr)) {
-            stringify(*any.extract<Object::Ptr>());
+            stringify(any.extract<Object::Ptr>());
         } else if (type == typeid(Array::Ptr)) {
-            stringify(*any.extract<Array::Ptr>());
+            stringify(any.extract<Array::Ptr>());
         } else if (any.isEmpty()) {
             append("null");
         } else if (any.isNumeric() || any.isBoolean()) {

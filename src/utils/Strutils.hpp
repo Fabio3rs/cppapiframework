@@ -149,6 +149,38 @@ class Strutils {
         }
         return result;
     }
+
+    template <class StrType = std::string>
+    static auto split(std::string_view strview, std::string_view term)
+        -> std::vector<StrType> {
+        size_t current = 0;
+        std::vector<StrType> result;
+
+        if (strview.empty()) {
+            return result;
+        }
+
+        if (term.empty()) {
+            result.emplace_back(strview);
+            return result;
+        }
+
+        do {
+            auto sep = strview.find(term, current);
+
+            result.emplace_back(strview.substr(
+                current,
+                (sep == std::string_view::npos) ? sep : (sep - current)));
+
+            if (sep == std::string_view::npos) {
+                break;
+            }
+
+            current = sep + term.size();
+        } while (current < strview.size());
+
+        return result;
+    }
 };
 
 #endif
