@@ -26,10 +26,7 @@ void CController::returnPocoJson(Pistache::Http::Code code,
                                  Pistache::Http::ResponseWriter &response) {
     DOCAPI_RESPONSE_JSON(code, json);
 
-    std::stringstream out;
-    json->stringify(out);
-
-    response.send(code, out.str(), JSON_RETURN);
+    response.send(code, PocoJsonStringify::JsonToString(json), JSON_RETURN);
 }
 
 void CController::Send(Pistache::Http::ResponseWriter &response,

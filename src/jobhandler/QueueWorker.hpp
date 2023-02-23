@@ -2,6 +2,7 @@
 
 #include "../queues/GenericQueue.hpp"
 #include "../stdafx.hpp"
+#include "../utils/PocoJsonStringify.hpp"
 #include "../utils/ProcessHelper.hpp"
 #include "../utils/ScopedStreamRedirect.hpp"
 #include "JobsHandler.hpp"
@@ -92,13 +93,10 @@ class QueueWorker {
 
         json->set("uuid", jobuuid);
 
-        std::stringstream sstr;
-        json->stringify(sstr);
-
         queueServiceInst->setPersistentData(
             persistentkey, {{"tries", "0"},
                             {"maxtries", std::to_string(job.getMaxTries())},
-                            {"payload", sstr.str()},
+                            {"payload", PocoJsonStringify::JsonToString(json)},
                             {"created_at_unixt", std::to_string(time(nullptr))},
                             {"className", std::string(job.getName())}});
 
