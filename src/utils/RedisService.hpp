@@ -129,7 +129,7 @@ class RedisService {
             return T{};
         }
 
-        return set<T>(*connection, data, key_expire);
+        return set_cache<T>(*connection, data, key_expire);
     }
 
     template <class T>
