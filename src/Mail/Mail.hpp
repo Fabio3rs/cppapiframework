@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../TimeHandler.h"
+//#include "../TimeHandler.h"
 #include <Poco/Net/HTMLForm.h>
 #include <Poco/Net/MailMessage.h>
 #include <sstream>
@@ -10,7 +10,7 @@ namespace mailbase {
 struct Mail {
 
     void build() {
-        Poco::Net::MailMessage message;
+        /*Poco::Net::MailMessage message;
 
         std::stringstream sstr;
 
@@ -23,7 +23,7 @@ struct Mail {
 
         message.setSubject("subject");
         message.write(std::cout);
-        std::cout << std::endl;
+        std::cout << std::endl;*/
     }
 };
 
