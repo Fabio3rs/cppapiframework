@@ -10,6 +10,7 @@
 #include <Poco/Redis/Command.h>
 #include <Poco/Redis/Redis.h>
 #include <Poco/Redis/Type.h>
+#include <string_view>
 
 struct RedisServiceAddress {
     std::string host;
@@ -108,6 +109,19 @@ class RedisService {
     }
 
     template <class T>
+    static auto set(Poco::Redis::Client &inst, const std::string &key,
+                    const T &data, int key_expire = 0) {
+        Poco::Redis::Command setcmd =
+            Poco::Redis::Command::set(key, data, true);
+
+        if (key_expire > 0) {
+            setcmd << "EX" << std::to_string(key_expire);
+        }
+
+        return inst.execute<T>(setcmd);
+    }
+
+    template <class T>
     auto set_cache(const std::pair<std::string, T> &data, int key_expire = 0) {
         auto connection = get_connection();
 
@@ -115,7 +129,7 @@ class RedisService {
             return T{};
         }
 
-        return set_cache<T>(*connection, data, key_expire);
+        return set<T>(*connection, data, key_expire);
     }
 
     template <class T>

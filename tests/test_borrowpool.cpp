@@ -4,7 +4,7 @@
 #include <string>
 #include <thread>
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestBorrowPool, IsConnected) {
     BorrowPool<uint64_t> pool(32);
 
@@ -48,7 +48,7 @@ static void TestBorrowPoolString(BorrowPool<std::string> &pool) {
     }
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestBorrowPool, SaturatePoolRequestInteger) {
     BorrowPool<uint64_t> pool(32);
     size_t THREADS = 32;
@@ -57,7 +57,7 @@ TEST(TestBorrowPool, SaturatePoolRequestInteger) {
     mthreads.reserve(THREADS);
 
     for (size_t i = 0; i < THREADS; i++) {
-        mthreads.emplace_back(std::thread(TestBorrowPoolInt64, std::ref(pool)));
+        mthreads.emplace_back(TestBorrowPoolInt64, std::ref(pool));
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -70,7 +70,7 @@ TEST(TestBorrowPool, SaturatePoolRequestInteger) {
 }
 
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestBorrowPool, SaturatePoolRequestString) {
     BorrowPool<std::string> pool(32);
     size_t THREADS = 32;
@@ -79,7 +79,7 @@ TEST(TestBorrowPool, SaturatePoolRequestString) {
     mthreads.reserve(THREADS);
 
     for (size_t i = 0; i < THREADS; i++) {
-        mthreads.emplace_back(std::thread(TestBorrowPoolString, std::ref(pool)));
+        mthreads.emplace_back(TestBorrowPoolString, std::ref(pool));
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
