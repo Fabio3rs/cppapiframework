@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include <chrono>
 #ifndef CSql_hpp
 #define CSql_hpp
 
@@ -273,6 +274,26 @@ class CSql {
 
     static auto string_to_system_clock(const std::string &str)
         -> std::optional<std::chrono::system_clock::time_point>;
+
+    /**
+     * @brief time_point - now() to seconds
+     */
+    template <class Tclock>
+    static inline auto
+    time_point_to_seconds(std::chrono::time_point<Tclock> timeval)
+        -> std::chrono::seconds {
+        return std::chrono::duration_cast<std::chrono::seconds>(timeval -
+                                                                Tclock::now());
+    }
+
+    /**
+     * @brief returns a sql DATE_ADD(NOW(), INTERVAL input SECOND)
+     */
+    static inline auto sql_date_add_now_seconds(std::chrono::seconds input)
+        -> std::string {
+        return "DATE_ADD(NOW(), INTERVAL " + std::to_string(input.count()) +
+               " SECOND)";
+    }
 
     auto make_shr_connection_cfg_raii() -> RAIIConnectionWrapper<shared_conn_t>;
 
