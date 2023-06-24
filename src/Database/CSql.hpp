@@ -224,9 +224,12 @@ class CSql {
         {
             std::array<char, 32> buf{};
 
-            size_t strft_res_sz =
-                strftime(buf.data(), buf.size(), "%Y/%m/%d %H:%M:%S.",
-                         std::localtime(&timet));
+            std::tm tmLocal{};
+
+            localtime_r(&timet, &tmLocal);
+
+            size_t strft_res_sz = strftime(buf.data(), buf.size(),
+                                           "%Y/%m/%d %H:%M:%S.", &tmLocal);
 
             str.reserve(28);
             str.append(buf.data(), strft_res_sz);
@@ -237,7 +240,9 @@ class CSql {
             size_t mksecsz = mksecstr.size();
 
             if (mksecsz < 6) {
-                { str.append(6 - mksecsz, '0'); }
+                {
+                    str.append(6 - mksecsz, '0');
+                }
             }
 
             str += mksecstr;
@@ -260,10 +265,12 @@ class CSql {
 
         {
             std::array<char, 32> buf{};
+            std::tm tmLocal{};
+
+            localtime_r(&timet, &tmLocal);
 
             size_t strft_res_sz =
-                strftime(buf.data(), buf.size(), "%Y/%m/%d %H:%M:%S",
-                         std::localtime(&timet));
+                strftime(buf.data(), buf.size(), "%Y/%m/%d %H:%M:%S", &tmLocal);
 
             str.reserve(28);
             str.append(buf.data(), strft_res_sz);
@@ -378,7 +385,9 @@ class CSql {
                               const std::string &val,
                               bool null_if_empty = false) -> std::string {
         if (conn == nullptr) {
-            { throw std::invalid_argument("Resource is null"); }
+            {
+                throw std::invalid_argument("Resource is null");
+            }
         }
 
         if (null_if_empty && val.empty()) {
@@ -401,7 +410,9 @@ class CSql {
                                  const std::string &val,
                                  bool null_if_empty = false) -> std::string {
         if (conn == nullptr) {
-            { throw std::invalid_argument("Resource is null"); }
+            {
+                throw std::invalid_argument("Resource is null");
+            }
         }
 
         if (null_if_empty && val.empty()) {
@@ -431,7 +442,9 @@ class CSql {
                            const std::string &val, bool null_if_empty = false)
         -> std::string {
         if (conn == nullptr) {
-            { throw std::invalid_argument("Resource is null"); }
+            {
+                throw std::invalid_argument("Resource is null");
+            }
         }
 
         if (null_if_empty && val.empty()) {
