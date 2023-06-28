@@ -23,9 +23,11 @@ class ChronoUtils {
         {
             std::array<char, 32> buf{};
 
+            std::tm tmLocal{};
+
             size_t strft_res_sz =
                 strftime(buf.data(), buf.size(), "%Y/%m/%d %H:%M:%S.",
-                         std::localtime(&tt));
+                         localtime_r(&tt, &tmLocal));
 
             str.reserve(28);
             str.append(buf.data(), strft_res_sz);
