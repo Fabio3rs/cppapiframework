@@ -63,14 +63,34 @@ class Strutils {
                                   std::string("$1"));
     }
 
-    static auto explode(const std::string &s, char delim)
-        -> std::vector<std::string> {
-        std::vector<std::string> result;
-        std::istringstream iss(s);
+    template <class StrType = std::string>
+    static auto explode(std::string_view strview, std::string_view term)
+        -> std::vector<StrType> {
+        size_t current = 0;
+        std::vector<StrType> result;
 
-        for (std::string token; std::getline(iss, token, delim);) {
-            result.push_back(std::move(token));
+        if (strview.empty()) {
+            return result;
         }
+
+        if (term.empty()) {
+            result.emplace_back(strview);
+            return result;
+        }
+
+        do {
+            auto sep = strview.find(term, current);
+
+            result.emplace_back(strview.substr(
+                current,
+                (sep == std::string_view::npos) ? sep : (sep - current)));
+
+            if (sep == std::string_view::npos) {
+                break;
+            }
+
+            current = sep + term.size();
+        } while (current < strview.size());
 
         return result;
     }

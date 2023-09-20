@@ -14,3 +14,16 @@ TEST(TestStrutils, TestMultiConcat) {
                                      std::to_string(987654321), "a"),
               "12345678910123456789abcd123456789987654321a");
 }
+
+// NOLINTNEXTLINE
+TEST(TestStrutils, TestExplodeFunction) {
+    std::vector<std::string> fullvecabc{"a", "b", "c"};
+    std::vector<std::string> fullvecab{"a", "b"};
+    EXPECT_EQ(Strutils::explode("a,b,c", ","), fullvecabc);
+    EXPECT_EQ(Strutils::explode("a,b", ","), fullvecab);
+    EXPECT_EQ(Strutils::explode("", ","), std::vector<std::string>{});
+    EXPECT_EQ(Strutils::explode("", ""), std::vector<std::string>{});
+    EXPECT_EQ(Strutils::explode("a,b,c", ""),
+              std::vector<std::string>{"a,b,c"});
+    EXPECT_EQ(Strutils::explode("a,b,c", ","), fullvecabc);
+}
