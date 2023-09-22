@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <utility>
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestLog, Open) {
     auto &log = CLog::initSingleton("TestLog.log");
 
@@ -24,7 +24,7 @@ TEST(TestLog, Open) {
     }
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestLog, MultiRegisterStrEqual) {
     auto &log = CLog::initSingleton("TestLogStrEqual.log");
 
@@ -35,7 +35,7 @@ TEST(TestLog, MultiRegisterStrEqual) {
               "Teste log (10) AAAAAAAAAAAA Teste | 20");
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestLog, MultiRegisterAllocationLimit) {
     auto &log = CLog::initSingleton("TestLogAllocations.log");
 
@@ -53,7 +53,7 @@ static void somelogadd() {
     }
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestLog, SaturateLog) {
     std::filesystem::remove("Saturate.log");
     auto &log = CLog::initSingleton("Saturate.log");
@@ -68,7 +68,7 @@ TEST(TestLog, SaturateLog) {
     mthreads.reserve(THREADS);
 
     for (size_t i = 0; i < THREADS; i++) {
-        mthreads.emplace_back(std::thread(somelogadd));
+        mthreads.emplace_back(somelogadd);
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -83,7 +83,7 @@ TEST(TestLog, SaturateLog) {
     std::filesystem::remove("Saturate.log");
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestLog, RedirectLog) {
     std::filesystem::remove("Redirection.log");
     std::fstream redirectionlog("Redirection.log",
@@ -154,7 +154,7 @@ static auto findLineOnStream(std::fstream &toSearch, const std::string &val)
     return false;
 }
 
-// NOLINTNEXTLINE(hicpp-special-member-functions)
+// NOLINTNEXTLINE
 TEST(TestLog, ForkAndLog) {
     signal(SIGCHLD, SIG_IGN);
     std::fstream fsout("ForkAndLog.log",
