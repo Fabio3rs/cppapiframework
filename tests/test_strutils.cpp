@@ -27,3 +27,26 @@ TEST(TestStrutils, TestExplodeFunction) {
               std::vector<std::string>{"a,b,c"});
     EXPECT_EQ(Strutils::explode("a,b,c", ","), fullvecabc);
 }
+
+// NOLINTNEXTLINE
+TEST(TestStrutils, JoinTest) {
+    std::vector<std::string> vec1 = {"hello", "world", "!"};
+    std::string result1 = Strutils::join(vec1, " ");
+    EXPECT_EQ(result1, "hello world !");
+
+    std::vector<std::string> vec2 = {"apple", "banana", "cherry"};
+    std::string result2 = Strutils::join(vec2, ", ");
+    EXPECT_EQ(result2, "apple, banana, cherry");
+
+    std::vector<std::string> vec3 = {"1", "2", "3", "4", "5"};
+    std::string result3 = Strutils::join(vec3, "");
+    EXPECT_EQ(result3, "12345");
+
+    std::vector<std::string> vec4 = {"", "", ""};
+    std::string result4 = Strutils::join(vec4, " ");
+    EXPECT_EQ(result4, "  ");
+
+    std::vector<std::string> vec5 = {};
+    std::string result5 = Strutils::join(vec5, " ");
+    EXPECT_EQ(result5, "");
+}

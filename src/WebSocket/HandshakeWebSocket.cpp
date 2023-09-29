@@ -160,7 +160,7 @@ void putOnWire(Pistache::Http::ResponseWriter &response_) {
 }
 
 const std::string WEBSOCKET_GUID("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-const std::string WEBSOCKET_VERSION("13");
+[[maybe_unused]] const std::string WEBSOCKET_VERSION("13");
 
 // https://github.com/pocoproject/poco/blob/devel/Net/src/WebSocket.cpp#L301
 auto computeAccept(const std::string &key) -> std::string {

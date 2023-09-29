@@ -72,51 +72,6 @@ class basic_stringviewbuf : public std::basic_streambuf<CharT, Traits> {
         : basic_stringviewbuf(std::move(i_rhs), xfer_bufptrs(i_rhs, this)) {
         i_rhs.M_sync(const_cast<char_type *>(i_rhs.M_string.data()), 0, 0);
     }
-
-#if __cplusplus > 201703L && _GLIBCXX_USE_CXX11_ABI
-    explicit basic_stringviewbuf(const allocator_type &i_a)
-        : basic_stringviewbuf(ios_base::in | std::ios_base::out, i_a) {}
-
-    basic_stringviewbuf(ios_base::openmode inMode, const allocator_type &i_a)
-        : streambuf_type(), MMode(inMode), M_string(i_a) {}
-
-    explicit basic_stringviewbuf(stringview_type &&i_s,
-                                 ios_base::openmode inMode = ios_base::in |
-                                                             ios_base::out)
-        : streambuf_type(), MMode(inMode), M_string(std::move(i_s)) {
-        M_stringviewbuf_init(inMode);
-    }
-
-    template <typename _SAlloc>
-    basic_stringviewbuf(const basic_string<CharT, Traits, _SAlloc> &i_s,
-                        const allocator_type &i_a)
-        : basic_stringviewbuf(i_s, ios_base::in | std::ios_base::out, i_a) {}
-
-    template <typename _SAlloc>
-    basic_stringviewbuf(const basic_string<CharT, Traits, _SAlloc> &i_s,
-                        ios_base::openmode inMode, const allocator_type &i_a)
-        : streambuf_type(), MMode(inMode),
-          M_string(i_s.data(), i_s.size(), i_a) {
-        M_stringviewbuf_init(inMode);
-    }
-
-    template <typename _SAlloc>
-    explicit basic_stringviewbuf(
-        const basic_string<CharT, Traits, _SAlloc> &i_s,
-        ios_base::openmode inMode = ios_base::in | ios_base::out)
-        : basic_stringviewbuf(i_s, inMode, allocator_type{}) {}
-
-    basic_stringviewbuf(basic_stringviewbuf &&i_rhs, const allocator_type &i_a)
-        : basic_stringviewbuf(std::move(i_rhs), i_a,
-                              xfer_bufptrs(i_rhs, this)) {
-        i_rhs.M_sync(const_cast<char_type *>(i_rhs.M_string.data()), 0, 0);
-    }
-
-    allocator_type getAllocator() const noexcept {
-        return M_string.getAllocator();
-    }
-#endif // C++20
-
     // 27.8.2.2 Assign and swap:
 
     auto operator=(const basic_stringviewbuf &)
@@ -164,35 +119,6 @@ class basic_stringviewbuf : public std::basic_streambuf<CharT, Traits> {
         }
         return i_ret;
     }
-
-#if __cplusplus > 201703L && _GLIBCXX_USE_CXX11_ABI
-#if i_cpp_concepts
-    template <_Allocator_like _SAlloc>
-    basic_string<CharT, Traits, _SAlloc> str(const _SAlloc &i_sa) const {
-        auto i_sv = view();
-        return {i_sv.data(), i_sv.size(), i_sa};
-    }
-#endif
-
-    stringview_type str() && {
-        if (char_type *i_hi = M_highMark()) {
-            // Set length to end of character sequence and add null terminator.
-            M_string.M_set_length(M_highMark() - this->pbase());
-        }
-        auto in_str = std::move(M_string);
-        M_string.clear();
-        M_sync(M_string.data(), 0, 0);
-        return in_str;
-    }
-
-    basic_string_view<char_type, traits_type> view() const noexcept {
-        if (char_type *i_hi = M_highMark())
-            return {this->pbase(), i_hi};
-        else
-            return M_string;
-    }
-#endif // C++20
-
     /**
      *  @brief  Setting a new buffer.
      *  @param  i_s  The string to use as a new sequence.
@@ -208,15 +134,6 @@ class basic_stringviewbuf : public std::basic_streambuf<CharT, Traits> {
     }
 
 #if __cplusplus > 201703L && _GLIBCXX_USE_CXX11_ABI
-#if i_cpp_concepts
-    template <_Allocator_like _SAlloc>
-        requires(!is_same_v<_SAlloc, Alloc>)
-    void str(const basic_string<CharT, Traits, _SAlloc> &i_s) {
-        M_string.assign(i_s.data(), i_s.size());
-        M_stringviewbuf_init(MMode);
-    }
-#endif
-
     void str(stringview_type &&i_s) {
         M_string = std::move(i_s);
         M_stringviewbuf_init(MMode);
@@ -507,15 +424,6 @@ class basic_stringviewbuf : public std::basic_streambuf<CharT, Traits> {
     basic_stringviewbuf(basic_stringviewbuf &&i_rhs, xfer_bufptrs && /*unused*/)
         : streambuf_type(static_cast<const streambuf_type &>(i_rhs)),
           MMode(i_rhs.MMode), M_string(std::move(i_rhs.M_string)) {}
-
-#if __cplusplus > 201703L && _GLIBCXX_USE_CXX11_ABI
-    // The move constructor initializes an xfer_bufptrs temporary then
-    // delegates to this constructor to performs moves during its lifetime.
-    basic_stringviewbuf(basic_stringviewbuf &&i_rhs, const allocator_type &i_a,
-                        xfer_bufptrs &&)
-        : streambuf_type(static_cast<const streambuf_type &>(i_rhs)),
-          MMode(i_rhs.MMode), M_string(std::move(i_rhs.M_string), i_a) {}
-#endif
 #endif // C++11
 };
 

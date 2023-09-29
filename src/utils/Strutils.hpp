@@ -7,6 +7,7 @@
 #include <limits>
 #include <optional>
 #include <regex>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -61,6 +62,23 @@ class Strutils {
     static inline auto getCNPJNumbers(const std::string &cnpj) -> std::string {
         return std::regex_replace(cnpj, std::regex("[^0-9]*"),
                                   std::string("$1"));
+    }
+
+    static inline auto join(const std::span<std::string> &vec,
+                            const std::string &term) -> std::string {
+        std::string result;
+        result.reserve(vec.size() * term.size());
+
+        for (const auto &str : vec) {
+            result += str;
+            result += term;
+        }
+
+        if (!result.empty() && !term.empty()) {
+            result.erase(result.size() - term.size());
+        }
+
+        return result;
     }
 
     template <class StrType = std::string>
