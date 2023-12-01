@@ -35,8 +35,8 @@ jobs:
         
       - name: Build project
         run: |
-          export CC=$(which clang)
-          export CXX=$(which clang++)
+          export CC=$(which clang-15)
+          export CXX=$(which clang++-15)
           export CURRENT_SOURCE_DIR=$(pwd)
           mkdir build && cd build
           export CURRENT_BUILD_DIR=$(pwd)
@@ -45,7 +45,7 @@ jobs:
 
       - name: Test project
         run: |
-          export CC=$(which clang)
-          export CXX=$(which clang++)
+          export CC=$(which clang-15)
+          export CXX=$(which clang++-15)
           cd build
           ctest -j 20 -C Debug -T test --output-on-failure
