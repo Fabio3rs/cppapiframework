@@ -133,7 +133,8 @@ auto RedisQueue::getPersistentDataField(const std::string &name,
                                         const std::string &field) const
     -> std::optional<std::string> {
     if (auto res = RedisService::default_inst().hget<Poco::Redis::BulkString>(
-            aliasname + name, field)) {
+            aliasname + name, field);
+        !res.isNull()) {
         return res.value();
     }
 
