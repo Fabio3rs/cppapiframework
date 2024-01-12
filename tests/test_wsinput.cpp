@@ -1,4 +1,5 @@
-#include "../src/WebSocket/WebSocketHandler.hpp"
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
 
 namespace {

@@ -16,7 +16,7 @@ file(
 
 add_executable(apiframework_test ${ALL_TESTS_SOURCES})
 
-target_precompile_headers(apiframework_test PRIVATE "${msrcdir}/stdafx.hpp")
+target_precompile_headers(apiframework_test PRIVATE "${msrcdir}/projstdafx.hpp")
 
 target_compile_options(apiframework_test PUBLIC ${USING_COMPILER_FLAGS})
 target_link_libraries(apiframework_test GTest::GTest GTest::Main cppapiframework)

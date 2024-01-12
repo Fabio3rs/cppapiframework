@@ -1,3 +1,5 @@
+#include "projstdafx.hpp"
+
 #include "Json2StructTest.hpp"
 #include "../src/JSON/StructParserMacros.hpp"
 

@@ -1,9 +1,6 @@
-#include "../src/utils/RedisService.hpp"
-#include <Poco/JSON/Object.h>
-#include <Poco/UUID.h>
-#include <Poco/UUIDGenerator.h>
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
-#include <stdexcept>
 
 static std::string test_hashset_key =
     "test_hashset:" +

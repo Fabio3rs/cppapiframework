@@ -46,7 +46,6 @@
 #include "utils/LogUtils.hpp"
 #include "utils/NestedJson.hpp"
 #include "utils/PocoJsonStringify.hpp"
-#include "utils/PocoJsonStringifyBorrowed.hpp"
 #include "utils/ProcessHelper.hpp"
 #include "utils/RedisService.hpp"
 #include "utils/Result.hpp"

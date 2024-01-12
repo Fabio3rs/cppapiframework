@@ -1,4 +1,5 @@
-#include "../src/utils/Strutils.hpp"
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)

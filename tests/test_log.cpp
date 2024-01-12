@@ -1,19 +1,7 @@
-#include "../src/utils/CLog.hpp"
-#include "../src/utils/LogUtils.hpp"
-#include "../src/utils/ProcessHelper.hpp"
-#include "allocation_count.hpp"
-#include <chrono>
-#include <cstddef>
-#include <cstdlib>
-#include <filesystem>
-#include <fstream>
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
-#include <ratio>
-#include <stdexcept>
-#include <string>
-#include <thread>
-#include <unistd.h>
-#include <utility>
+#include "allocation_count.hpp"
 
 // NOLINTNEXTLINE
 TEST(TestLog, Open) {

@@ -1,12 +1,6 @@
-#include "../src/jobhandler/JobsHandler.hpp"
-#include "../src/jobhandler/QueueWorker.hpp"
-#include "../src/jobhandler/QueueableJob.hpp"
-#include "../src/queues/StdQueue.hpp"
+#include "projstdafx.hpp"
 
-#include <chrono>
-#include <cstdint>
 #include <gtest/gtest.h>
-
 #include <memory>
 #include <utility>
 

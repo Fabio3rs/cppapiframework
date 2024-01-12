@@ -1,7 +1,9 @@
+#include "projstdafx.hpp"
+
 #include "Json2StructTest.hpp"
 #include "allocation_count.hpp"
-#include <atomic>
 #include <gtest/gtest.h>
+
 #include <new>
 #include <sstream>
 
@@ -68,7 +70,7 @@ TEST(Json2StructT, NormalParse) {
     std::cout << "getDeallocationCount "
               << AllocationCount::getDeallocationCount() << std::endl;
 
-    //EXPECT_TRUE(false);
+    // EXPECT_TRUE(false);
 }
 
 // NOLINTNEXTLINE
@@ -81,7 +83,7 @@ TEST(Json2StructT, None) {
     std::cout << "getDeallocationCount "
               << AllocationCount::getDeallocationCount() << std::endl;
 
-    //EXPECT_TRUE(false);
+    // EXPECT_TRUE(false);
 
     std::cout << "data.anotherval " << data.anotherval << std::endl;
     std::cout << "data.val " << data.val << std::endl;

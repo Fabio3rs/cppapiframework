@@ -1,14 +1,6 @@
-#include "../src/CacheUtils/Cache.hpp"
-#include "../src/utils/RedisService.hpp"
-#include "utils/Strutils.hpp"
-#include <Poco/UUIDGenerator.h>
-#include <chrono>
-#include <cstdint>
-#include <functional>
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
-#include <string>
-#include <string_view>
-#include <thread>
 
 // NOLINTNEXTLINE
 TEST(CacheUtils, Cache) {

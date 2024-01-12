@@ -1,9 +1,6 @@
-#include "../src/utils/PocoJsonStringify.hpp"
+#include "projstdafx.hpp"
+
 #include "allocation_count.hpp"
-#include "utils/Validator.hpp"
-#include <Poco/JSON/Array.h>
-#include <Poco/JSON/Object.h>
-#include <atomic>
 #include <gtest/gtest.h>
 #include <new>
 #include <sstream>

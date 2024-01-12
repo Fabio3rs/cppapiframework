@@ -1,10 +1,6 @@
-#include "../src/utils/ResultMacros.hpp"
-#include <atomic>
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
-#include <string>
-#include <type_traits>
-#include <utility>
-#include <variant>
 
 namespace {
 using utils::Err;

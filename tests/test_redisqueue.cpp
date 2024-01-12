@@ -1,8 +1,6 @@
-#include "../src/queues/RedisQueue.hpp"
-#include <algorithm>
-#include <chrono>
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
-#include <string>
 
 static const std::string queue_name = "test_queue_worker:queue:default";
 

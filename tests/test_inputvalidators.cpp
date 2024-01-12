@@ -8,11 +8,9 @@
  * @copyright Copyright (c) 2021
  *
  */
-#include "../src/utils/ControllerInputValidator.hpp"
-#include "../src/utils/ShortValidationsName.hpp"
-#include "utils/PocoJsonStringify.hpp"
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
-#include <string>
 
 const std::string_view mockfname = "teste";
 

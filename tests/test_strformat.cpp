@@ -1,5 +1,6 @@
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
-#include "../src/utils/StrFormat.hpp"
 
 // NOLINTNEXTLINE
 TEST(StrFormatTest, MultiRegisterStrEqual) {

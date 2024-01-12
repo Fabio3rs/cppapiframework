@@ -1,22 +1,6 @@
-#include "../src/WebInterface/JsonResponse.hpp"
-#include "../src/WebInterface/WebApp.hpp"
-#include "../src/WebInterface/httpwrappers.hpp"
-#include "../src/utils/CHttpPool.hpp"
-#include "../src/utils/LogUtils.hpp"
-#include "../src/utils/Strutils.hpp"
-#include <Poco/DateTimeFormat.h>
-#include <Poco/InflatingStream.h>
-#include <Poco/JSON/Object.h>
-#include <Poco/Net/HTTPRequest.h>
-#include <Poco/Net/HTTPResponse.h>
-#include <Poco/StreamCopier.h>
-#include <Poco/URI.h>
-#include <chrono>
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
-#include <memory>
-#include <string>
-#include <thread>
-#include <utility>
 
 using namespace webapp;
 

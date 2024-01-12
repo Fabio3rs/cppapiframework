@@ -1,11 +1,5 @@
-#include "../src/utils/NestedJson.hpp"
-#include "../src/utils/PocoJsonStringify.hpp"
-#include "allocation_count.hpp"
-#include <Poco/JSON/Array.h>
-#include <Poco/JSON/Object.h>
-#include <Poco/JSON/Parser.h>
-#include <atomic>
-#include <cstddef>
+#include "projstdafx.hpp"
+
 #include <gtest/gtest.h>
 #include <iterator>
 #include <new>
