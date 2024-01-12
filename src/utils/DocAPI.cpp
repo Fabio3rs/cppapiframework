@@ -1,4 +1,5 @@
-#include "DocAPI.hpp"
+#include "../projstdafx.hpp"
+
 #include <Poco/UTF8Encoding.h>
 #include <Poco/UTF8String.h>
 

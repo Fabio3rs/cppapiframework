@@ -1,4 +1,4 @@
-#include "CHttpPool.hpp"
+#include "../projstdafx.hpp"
 
 auto CHttpPool::default_inst() -> CHttpPool & {
     static CHttpPool pool;

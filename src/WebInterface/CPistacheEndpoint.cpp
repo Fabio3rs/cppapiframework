@@ -7,7 +7,7 @@
  * @copyright Copyright (c) 2021
  *
  */
-#include "CPistacheEndpoint.hpp"
+#include "../projstdafx.hpp"
 
 CPistacheEndpoint::CPistacheEndpoint() = default;
 

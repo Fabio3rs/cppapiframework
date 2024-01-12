@@ -1,4 +1,4 @@
-#include "JsonResponse.hpp"
+#include "../projstdafx.hpp"
 
 namespace httpwrappers {
 JsonResponse::~JsonResponse() = default;

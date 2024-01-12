@@ -1,8 +1,4 @@
-#include "RedisService.hpp"
-#include "CConfig.hpp"
-#include "PocoJsonStringify.hpp"
-#include <exception>
-#include <string>
+#include "../projstdafx.hpp"
 
 auto RedisService::default_inst() -> RedisService & {
     static RedisService instance;

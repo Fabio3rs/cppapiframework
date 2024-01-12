@@ -1,14 +1,4 @@
-#include "RedisQueue.hpp"
-#include "../utils/RedisService.hpp"
-#include <Poco/Redis/Array.h>
-#include <Poco/Redis/Command.h>
-#include <Poco/Redis/Type.h>
-#include <chrono>
-#include <cstdint>
-#include <ctime>
-#include <stdexcept>
-#include <string>
-#include <typeinfo>
+#include "../projstdafx.hpp"
 
 namespace {
 auto RedisToBulkString(const Poco::Redis::RedisType::Ptr &element)

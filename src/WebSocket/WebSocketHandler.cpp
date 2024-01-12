@@ -1,11 +1,7 @@
 /*
  * @brief Test/dev code for websockets with pistache rest websever
  */
-
-#include "WebSocketHandler.hpp"
-#include <cstddef>
-#include <pistache/peer.h>
-#include <tuple>
+#include "../projstdafx.hpp"
 
 // NOLINTNEXTLINE
 auto WebSocketHandler::frame::receiveData(const char *buffer, size_t lenraw)

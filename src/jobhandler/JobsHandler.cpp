@@ -1,7 +1,4 @@
-#include "JobsHandler.hpp"
-#include "../utils/ScopedStreamRedirect.hpp"
-#include <Poco/Exception.h>
-#include <fstream>
+#include "../projstdafx.hpp"
 
 auto job::JobsHandler::default_instance() -> std::shared_ptr<JobsHandler> {
     static std::shared_ptr<JobsHandler> instance(

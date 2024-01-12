@@ -1,5 +1,4 @@
-#include "WebInputValidator.hpp"
-#include "CController.hpp"
+#include "../projstdafx.hpp"
 
 auto WebInputValidator::validate() -> bool {
     /**

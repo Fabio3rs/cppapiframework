@@ -106,12 +106,12 @@ if (NOT DEFINED USING_COMPILER_FLAGS)
         # Clang-tidy
         if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
             message(STATUS "Setting clang-tidy flags")
-            set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-header-filter=${CMAKE_CURRENT_SOURCE_DIR}/src;--warnings-as-errors=\"*\";-extra-arg=-std=gnu++20;-extra-arg=-Wno-gnu;-export-fixes=clang-tidy-sugested-fixes.txt")
+            #set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-header-filter=${CMAKE_CURRENT_SOURCE_DIR}/src;--warnings-as-errors=\"*\";-extra-arg=-std=gnu++20;-extra-arg=-Wno-gnu;-export-fixes=clang-tidy-sugested-fixes.txt")
         endif()
     endif()
 endif()
 
-target_precompile_headers(${projectname} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/stdafx.hpp")
+target_precompile_headers(${projectname} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/projstdafx.hpp")
 
 # verifica se o poco foi encontrado e faz o link com a lib
 if(Poco_FOUND)

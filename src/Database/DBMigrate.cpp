@@ -1,8 +1,4 @@
-#include "DBMigrate.hpp"
-#include "../stdafx.hpp"
-#include <cppconn/prepared_statement.h>
-#include <memory>
-#include <utility>
+#include "../projstdafx.hpp"
 
 namespace Database {
 static auto connect_db(const DatabaseAddress &info) {

@@ -2,17 +2,7 @@
  * @brief Test/dev code for websockets with pistache rest websever
  */
 
-#include "RouterHandler.hpp"
-#include "../stdafx.hpp"
-#include "../utils/LogUtils.hpp"
-#include "WebSocketHandler.hpp"
-#include <cstddef>
-#include <cstdint>
-#include <exception>
-#include <memory>
-#include <pistache/http.h>
-#include <pistache/peer.h>
-#include <utility>
+#include "../projstdafx.hpp"
 
 void RouterHandlerProxy::onConnection(
     const std::shared_ptr<Pistache::Tcp::Peer> &peer) {

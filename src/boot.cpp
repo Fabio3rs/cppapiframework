@@ -1,5 +1,4 @@
-#include "boot.hpp"
-#include "utils/CConfig.hpp"
+#include "projstdafx.hpp"
 
 // NOLINTNEXTLINE(hicpp-avoid-c-arrays, modernize-avoid-c-arrays)
 auto apiframework::mainboot(int /* argc */, char * /* argv */[], char **envp) -> int {

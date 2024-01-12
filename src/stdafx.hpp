@@ -2,6 +2,7 @@
 
 #include "Database/GenericDBConnection.hpp"
 #include "utils/CConfig.hpp"
+#include <Poco/Base64Encoder.h>
 #include <Poco/Crypto/DigestEngine.h>
 #include <Poco/Dynamic/Var.h>
 #include <Poco/HMACEngine.h>

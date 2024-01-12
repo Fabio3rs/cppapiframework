@@ -1,5 +1,5 @@
-#include "ProcessHelper.hpp"
-#include "../utils/CLog.hpp"
+#include "../projstdafx.hpp"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>

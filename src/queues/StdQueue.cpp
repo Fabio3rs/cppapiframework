@@ -1,4 +1,4 @@
-#include "StdQueue.hpp"
+#include "../projstdafx.hpp"
 
 void StdQueue::push(const std::string &queue, const std::string &data) {
     queue_map[queue].push_back(data);

@@ -1,3 +1,5 @@
+#include "../projstdafx.hpp"
+
 #include "CLog.hpp"
 #include "ChronoUtils.hpp"
 #include "CircleMTIO.hpp"

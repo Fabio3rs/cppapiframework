@@ -5,8 +5,7 @@
  * @version 0.1
  *
  */
-#include "CConfig.hpp"
-#include <algorithm>
+#include "../projstdafx.hpp"
 
 auto CConfig::config() -> CConfig & {
     static CConfig conf;

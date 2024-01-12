@@ -1,8 +1,4 @@
-#include "Cache.hpp"
-#include "../utils/RedisService.hpp"
-#include "../utils/Strutils.hpp"
-#include <Poco/Redis/Type.h>
-#include <string>
+#include "../projstdafx.hpp"
 
 namespace cache_utils {
 std::string Cache::prefix = "apicache:";

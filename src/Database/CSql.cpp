@@ -8,9 +8,7 @@
  * @copyright Copyright (c) 2021
  *
  */
-#include "CSql.hpp"
-#include <iomanip>
-#include <utility>
+#include "../projstdafx.hpp"
 
 auto CSql::instance() -> CSql & {
     static CSql sql;

@@ -3,8 +3,8 @@
  * Library for hashing and base64 functions
  */
 
-#include "HandshakeWebSocket.hpp"
-#include <Poco/Base64Encoder.h>
+#include "../projstdafx.hpp"
+
 #include <cassert>
 #include <openssl/ssl.h>
 

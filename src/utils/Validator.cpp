@@ -1,5 +1,4 @@
-#include "Validator.hpp"
-#include "CConfig.hpp"
+#include "../projstdafx.hpp"
 
 auto ValidatorException::to_json() const -> Poco::JSON::Object::Ptr {
     Poco::JSON::Object::Ptr result = new Poco::JSON::Object;

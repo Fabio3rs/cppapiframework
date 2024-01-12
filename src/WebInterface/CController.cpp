@@ -8,13 +8,7 @@
  * @copyright Copyright (c) 2021
  *
  */
-#include "CController.hpp"
-#include "../utils/DocAPI.hpp"
-#include "../utils/PocoJsonStringify.hpp"
-#include "../utils/Validator.hpp"
-#include <Poco/Crypto/CryptoException.h>
-#include <exception>
-#include <fstream>
+#include "../projstdafx.hpp"
 
 const Pistache::Http::Mime::MediaType CController::JSON_RETURN =
     Pistache::Http::Mime::MediaType(Pistache::Http::Mime::Type::Application,

@@ -1,3 +1,3 @@
-#include "Migration.hpp"
+#include "../projstdafx.hpp"
 
 Database::Migration::~Migration() = default;

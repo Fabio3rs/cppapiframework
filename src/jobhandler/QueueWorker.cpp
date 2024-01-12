@@ -1,9 +1,5 @@
-#include "QueueWorker.hpp"
-#include "../utils/LogDefines.hpp"
-#include "JobsHandler.hpp"
-#include <Poco/Exception.h>
-#include <exception>
-#include <string>
+#include "../projstdafx.hpp"
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
