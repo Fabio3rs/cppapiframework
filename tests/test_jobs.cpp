@@ -87,8 +87,7 @@ OtherPrintJob::OtherPrintJob(const Poco::JSON::Object::Ptr &inputdata)
 void OtherPrintJob::handle() {
     jobrunned = true;
     if (!data.isNull()) {
-        data->stringify(std::cout, JSON_INDENT);
-        std::cout << std::endl;
+        std::cout << PocoJsonStringify::JsonToString(data) << std::endl;
     } else {
         std::cout << "PrintJob data is null" << std::endl;
     }
