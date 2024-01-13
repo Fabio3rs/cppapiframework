@@ -32,13 +32,24 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.8
         with:
           cmake-version: '3.16.x'
-        
+
+      - name: Mkdir build
+        run: |
+          mkdir -p build
+
+      - name: Cache build
+        uses: actions/cache@v3
+        with:
+          path: ${{github.workspace}}/build
+          key: ${{ runner.os }}-build
+          restore-keys: ${{ runner.os }}-build
+
       - name: Build project
         run: |
           export CC=$(which clang-15)
           export CXX=$(which clang++-15)
           export CURRENT_SOURCE_DIR=$(pwd)
-          mkdir build && cd build
+          mkdir -p build && cd build
           export CURRENT_BUILD_DIR=$(pwd)
           cmake .. -G Ninja
           cmake --build . --config Debug --target all -j $(nproc) --
