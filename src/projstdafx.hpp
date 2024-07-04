@@ -41,6 +41,7 @@
 #include "utils/ControllerInputModifier.hpp"
 #include "utils/ControllerInputValidator.hpp"
 #include "utils/DocAPI.hpp"
+#include "utils/ExceptUnwindExec.hpp"
 #include "utils/InputValidators.hpp"
 #include "utils/LogDefines.hpp"
 #include "utils/LogUtils.hpp"

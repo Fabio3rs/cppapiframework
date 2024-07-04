@@ -1,0 +1,31 @@
+#include "projstdafx.hpp"
+
+#include <gtest/gtest.h>
+
+TEST(ExceptUnwindTest, ExceptUnwindExec) {
+    int calledTimes = 0;
+    auto callbackfn = [&]() -> void { ++calledTimes; };
+
+    {
+        ExceptUnwindExec exec(callbackfn);
+        EXPECT_EQ(calledTimes, 0);
+    }
+
+    EXPECT_EQ(calledTimes, 0);
+}
+
+TEST(ExceptUnwindTest, ExceptUnwindExecThrow) {
+    int calledTimes = 0;
+    auto callbackfn = [&]() -> void { ++calledTimes; };
+
+    try {
+        ExceptUnwindExec exec(callbackfn);
+        EXPECT_EQ(calledTimes, 0);
+
+        throw std::runtime_error("Test");
+    } catch (const std::exception &e) {
+        std::cerr << __FILE__ << "   " << e.what() << std::endl;
+    }
+
+    EXPECT_EQ(calledTimes, 1);
+}
