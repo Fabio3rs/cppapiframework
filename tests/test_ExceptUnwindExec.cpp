@@ -14,6 +14,26 @@ TEST(ExceptUnwindTest, ExceptUnwindExec) {
     EXPECT_EQ(calledTimes, 0);
 }
 
+[[noreturn]] static void someErrorFun(int &counter) {
+    ExceptUnwindExec exec([&counter]() -> void {
+        ++counter;
+        std::cerr << "someErrorFun" << std::endl;
+    });
+
+    throw std::runtime_error("Test");
+}
+
+TEST(ExceptUnwindTest, ExceptUnwindExecInFunc) {
+    int counter = 0;
+    try {
+        someErrorFun(counter);
+    } catch (const std::exception &e) {
+        std::cerr << __FILE__ << "   " << e.what() << std::endl;
+    }
+
+    EXPECT_EQ(counter, 1);
+}
+
 TEST(ExceptUnwindTest, ExceptUnwindExecThrow) {
     int calledTimes = 0;
     auto callbackfn = [&]() -> void { ++calledTimes; };
