@@ -50,4 +50,8 @@ TEST(TestStrutils, JoinTest) {
     std::vector<std::string> vec5 = {};
     std::string result5 = Strutils::join(vec5, " ");
     EXPECT_EQ(result5, "");
+
+    const std::vector<std::string> cvec2 = {"apple", "banana", "cherry"};
+    std::string cresult2 = Strutils::join(vec2, ", ");
+    EXPECT_EQ(cresult2, "apple, banana, cherry");
 }

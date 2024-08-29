@@ -64,7 +64,7 @@ class Strutils {
                                   std::string("$1"));
     }
 
-    static inline auto join(const std::span<std::string> &vec,
+    static inline auto join(const std::span<const std::string> &vec,
                             const std::string &term) -> std::string {
         std::string result;
         result.reserve(vec.size() * term.size());
