@@ -116,8 +116,8 @@ auto CLog::initSingleton(std::string_view filepath) -> CLog & {
 void CLog::insertLogHeader() {
     LogFile << "***********************************************************"
                "******************\n";
-    LogFile << std::string("* Program compilation date/time: ") + __DATE__ +
-                   " " + __TIME__;
+    LogFile << std::string("* Program compilation date/time: ") + std::string(__DATE__) +
+                   " " + std::string(__TIME__);
     LogFile << "\n*********************************************************"
                "********************\n";
     LogFile << "* Full commit hash: " FULL_COMMIT_HASH;
