@@ -101,7 +101,7 @@ if (NOT DEFINED USING_COMPILER_FLAGS)
         target_compile_options(${projectname} PRIVATE /EHsc /W2 /c)
     elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
         message(STATUS "Setting Clang flags")
-        set(USING_COMPILER_FLAGS -Weverything -Werror -Wno-unused-macros -std=gnu++20 -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors -Wno-gnu -Wno-gnu-statement-expression)
+        set(USING_COMPILER_FLAGS -Weverything -Werror -Wno-unused-macros -std=gnu++20 -Wno-unsafe-buffer-usage -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors -Wno-gnu -Wno-gnu-statement-expression)
         target_compile_options(${PROJECT_NAME} PRIVATE ${USING_COMPILER_FLAGS})
         # Clang-tidy
         if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
