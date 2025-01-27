@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <sstream>
 #include <string_view>
 
@@ -64,6 +65,8 @@ class basic_stringviewbuf : public std::basic_streambuf<CharT, Traits> {
         : streambuf_type(), MMode(), M_string(in_str.data(), in_str.size()) {
         M_stringviewbuf_init(inMode);
     }
+
+    ~basic_stringviewbuf() override = default;
 
 #if __cplusplus >= 201103L
     basic_stringviewbuf(const basic_stringviewbuf &) = delete;
@@ -339,9 +342,9 @@ class basic_stringviewbuf : public std::basic_streambuf<CharT, Traits> {
     // interface of basic_streambuf, taking just an int.
     void M_pbump(char_type *i_pbeg, char_type *i_pend, off_type i_off) {
         this->setp(i_pbeg, i_pend);
-        while (i_off > __gnu_cxx::__numeric_traits<int>::__max) {
-            this->pbump(__gnu_cxx::__numeric_traits<int>::__max);
-            i_off -= __gnu_cxx::__numeric_traits<int>::__max;
+        while (i_off > std::numeric_limits<int>::max()) {
+            this->pbump(std::numeric_limits<int>::max());
+            i_off -= std::numeric_limits<int>::max();
         }
         this->pbump(static_cast<int>(i_off));
     }
@@ -428,3 +431,4 @@ class basic_stringviewbuf : public std::basic_streambuf<CharT, Traits> {
 };
 
 using stringstream_view = basic_stringviewbuf<char>;
+using wstringstream_view = basic_stringviewbuf<wchar_t>;
