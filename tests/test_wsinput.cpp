@@ -16,7 +16,7 @@ TEST(TestWsInput, TestParseBaseMsg) {
     EXPECT_EQ(frm.payload, "A");
     EXPECT_TRUE(receiveState.second);
 
-    const char *bufferit = DATA_TWO_WS_FRM.data() + receiveState.first;
+    const char *bufferit = &(DATA_TWO_WS_FRM[receiveState.first]);
 
     receiveState =
         frm.receiveData(bufferit, DATA_TWO_WS_FRM.size() - receiveState.first);
