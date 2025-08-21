@@ -171,7 +171,9 @@ class ControllerInputValidator {
         return resultadofinal;
     }
 
-    auto get_only_messages() { return resobj; }
+    [[nodiscard]] auto get_only_messages() const { return resobj; }
+
+    [[nodiscard]] auto get_parameters() const { return parameters; }
 
     /**
      *@brief Construct a new Controller Input Validator object
