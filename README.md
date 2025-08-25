@@ -35,6 +35,12 @@ A modern C++20 framework for building REST APIs with advanced features like job 
 - **Code Quality**: Clang-tidy and clang-format support
 - **Docker Ready**: Containerization support
 
+## ⚠️ Project Status
+
+**Important Notice**: This is a personal project currently under development and is provided without any warranties or guarantees. The framework is experimental and should not be used in production environments without thorough testing and evaluation. Features may change, and compatibility is not guaranteed across versions.
+
+This project serves primarily as a learning exercise and concept exploration for modern C++20 API development patterns.
+
 ## 📋 Requirements
 
 ### Dependencies
