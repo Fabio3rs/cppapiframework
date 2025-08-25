@@ -115,11 +115,14 @@ auto job::QueueWorker::handle_job_run(
     return result;
 }
 
-auto job::QueueWorker::work(const std::string & /*queue*/,
+auto job::QueueWorker::work(const std::string &queue,
                             GenericQueue::datamap_t &datamap,
                             const std::string &jobname) -> jobStatus {
     std::shared_ptr<QueueableJob> newjob;
     jobStatus result = noerror;
+    std::chrono::steady_clock::time_point startTime;
+    std::string jobClassName;
+    std::string jobUuid;
 
     /**
      * @brief allocate and construct the instance
@@ -128,12 +131,17 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
     Poco::JSON::Object::Ptr json;
 
     try {
-        STDLOGINFO() << "Instancing job " << datamap.at("className")
-                     << std::endl;
+        jobClassName = datamap.at("className");
+        STDLOGINFO() << "Instancing job " << jobClassName << std::endl;
 
         Poco::JSON::Parser parser;
         json =
             parser.parse(datamap["payload"]).extract<Poco::JSON::Object::Ptr>();
+
+        // Extrair UUID do job para métricas
+        if (json->has("uuid")) {
+            jobUuid = json->getValue<std::string>("uuid");
+        }
 
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
@@ -163,6 +171,14 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
         return errorretry;
     }
 
+    // Callback de início do job
+    if (metricsCallback && !jobClassName.empty()) {
+        startTime = metricsCallback->onJobStarted(queue, jobClassName, jobUuid,
+                                                  newjob->getTries());
+    } else {
+        startTime = std::chrono::steady_clock::now();
+    }
+
     try {
         result = handle_job_run(newjob, json, datamap, jobname);
     } catch (const std::exception &e) {
@@ -174,6 +190,12 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
         result = process_retry_condition(newjob);
         STDLOGINFO() << "Job " << newjob->getName() << " error " << result
                      << std::endl;
+    }
+
+    // Callback de finalização do job
+    if (metricsCallback && !jobClassName.empty()) {
+        metricsCallback->onJobCompleted(queue, jobClassName, jobUuid, result,
+                                        startTime, newjob->getTries());
     }
 
     /**
@@ -188,8 +210,8 @@ auto job::QueueWorker::work(const std::string & /*queue*/,
     return result;
 }
 
-auto job::QueueWorker::pop(const std::string &queue, int timeout)
-    -> std::string {
+auto job::QueueWorker::pop(const std::string &queue,
+                           int timeout) -> std::string {
     auto data = queueServiceInst->pop(queue, timeout);
     return data.value_or(std::string());
 }

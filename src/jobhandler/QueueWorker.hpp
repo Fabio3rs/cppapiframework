@@ -6,6 +6,7 @@
 #include "../utils/ProcessHelper.hpp"
 #include "../utils/ScopedStreamRedirect.hpp"
 #include "JobsHandler.hpp"
+#include "WorkerMetricsCallback.hpp"
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -22,6 +23,7 @@ class QueueWorker {
     std::shared_ptr<JobsHandler> jobhandler;
     std::shared_ptr<GenericQueue> queueServiceInst;
     std::shared_ptr<ProcessHelper> processHelperInst;
+    std::shared_ptr<WorkerMetricsCallback> metricsCallback;
 
     int queueTimeout{1}, retryInTimeout{0};
     int64_t jobLogExpireSeconds{3600};
@@ -46,9 +48,28 @@ class QueueWorker {
         return processHelperInst;
     }
 
-    virtual auto
-    process_retry_condition(const std::shared_ptr<QueueableJob> &job)
-        -> jobStatus;
+    virtual auto process_retry_condition(
+        const std::shared_ptr<QueueableJob> &job) -> jobStatus;
+
+    /**
+     * @brief Define o callback para métricas do worker
+     *
+     * @param callback callback que será chamado durante o processamento dos
+     * jobs
+     */
+    void setMetricsCallback(std::shared_ptr<WorkerMetricsCallback> callback) {
+        metricsCallback = std::move(callback);
+    }
+
+    /**
+     * @brief Obtém o callback atual para métricas
+     *
+     * @return std::shared_ptr<WorkerMetricsCallback> callback atual ou nullptr
+     */
+    [[nodiscard]] auto
+    getMetricsCallback() const -> std::shared_ptr<WorkerMetricsCallback> {
+        return metricsCallback;
+    }
 
     auto handle_job_run(const std::shared_ptr<QueueableJob> &newjob,
                         const Poco::JSON::Object::Ptr &json,
@@ -106,6 +127,11 @@ class QueueWorker {
             queueServiceInst->push(queue, persistentkey);
         }
 
+        // Callback de métricas para job enfileirado
+        if (metricsCallback) {
+            metricsCallback->onJobQueued(queue, job.getName(), jobuuid);
+        }
+
         return jobuuid;
     }
 
@@ -126,6 +152,30 @@ class QueueWorker {
 
         int64_t retryAfter = 0;
 
+        // Extrair informações para métricas
+        std::string jobClassName;
+        std::string jobUuid;
+        size_t tries = 0;
+
+        auto classNameIt = datamap.find("className");
+        if (classNameIt != datamap.end()) {
+            jobClassName = classNameIt->second;
+        }
+
+        // Tentar extrair UUID do jobname (formato: "job_instance:UUID")
+        if (jobname.starts_with("job_instance:")) {
+            jobUuid = jobname.substr(13); // Remove "job_instance:"
+        }
+
+        auto triesIt = datamap.find("tries");
+        if (triesIt != datamap.end()) {
+            try {
+                tries = std::stoull(triesIt->second);
+            } catch (...) {
+                tries = 0;
+            }
+        }
+
         switch (workresult) {
         case noerror:
             if (cleanSuccessfulJobsLogs) {
@@ -139,6 +189,12 @@ class QueueWorker {
         case errorremove:
             queueServiceInst->setPersistentData(jobname, datamap);
             queueServiceInst->expire(jobname, jobLogExpireSeconds);
+
+            // Callback para job removido permanentemente
+            if (metricsCallback && !jobClassName.empty()) {
+                metricsCallback->onJobRemoved(queue, jobClassName, jobUuid,
+                                              workresult, tries);
+            }
             break;
 
         case errexcept:
@@ -153,6 +209,12 @@ class QueueWorker {
             }
 
             queueServiceInst->setPersistentData(jobname, datamap);
+
+            // Callback para retry
+            if (metricsCallback && !jobClassName.empty()) {
+                metricsCallback->onJobRetry(queue, jobClassName, jobUuid, tries,
+                                            retryAfter);
+            }
 
             if (retryAfter == 0) {
                 queueServiceInst->push(queue, jobname);
@@ -181,9 +243,8 @@ class QueueWorker {
     }
 
     template <class T>
-    static auto
-    getNumberOfJobsByT(const std::unordered_map<std::string, size_t> &data)
-        -> size_t {
+    static auto getNumberOfJobsByT(
+        const std::unordered_map<std::string, size_t> &data) -> size_t {
         return data.at(job::JobsHandler::getTypeName<T>());
     }
 
