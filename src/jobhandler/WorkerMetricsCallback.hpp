@@ -19,7 +19,7 @@ namespace job {
 
 /**
  * @brief Interface para callback de métricas do QueueWorker
- * 
+ *
  * Esta interface permite capturar métricas durante o ciclo de vida dos jobs
  * sem alterar a lógica principal do processamento.
  */
@@ -29,7 +29,7 @@ class WorkerMetricsCallback {
 
     /**
      * @brief Chamado quando um job é adicionado à fila
-     * 
+     *
      * @param queue nome da fila
      * @param jobName nome da classe do job
      * @param jobUuid UUID único do job
@@ -40,17 +40,17 @@ class WorkerMetricsCallback {
 
     /**
      * @brief Chamado quando o processamento de um job inicia
-     * 
+     *
      * @param queue nome da fila
      * @param jobName nome da classe do job
      * @param jobUuid UUID único do job
      * @param tries número atual de tentativas
      * @return std::chrono::steady_clock::time_point timestamp de início
      */
-    virtual auto onJobStarted(const std::string &queue,
-                              const std::string &jobName,
-                              const std::string &jobUuid,
-                              size_t tries) -> std::chrono::steady_clock::time_point {
+    virtual auto
+    onJobStarted(const std::string &queue, const std::string &jobName,
+                 const std::string &jobUuid,
+                 size_t tries) -> std::chrono::steady_clock::time_point {
         (void)queue;
         (void)jobName;
         (void)jobUuid;
@@ -60,7 +60,7 @@ class WorkerMetricsCallback {
 
     /**
      * @brief Chamado quando um job termina (sucesso ou falha)
-     * 
+     *
      * @param queue nome da fila
      * @param jobName nome da classe do job
      * @param jobUuid UUID único do job
@@ -70,8 +70,7 @@ class WorkerMetricsCallback {
      */
     virtual void onJobCompleted(const std::string &queue,
                                 const std::string &jobName,
-                                const std::string &jobUuid,
-                                jobStatus result,
+                                const std::string &jobUuid, jobStatus result,
                                 std::chrono::steady_clock::time_point startTime,
                                 size_t tries) {
         (void)queue;
@@ -84,7 +83,7 @@ class WorkerMetricsCallback {
 
     /**
      * @brief Chamado quando um job é reprocessado (retry)
-     * 
+     *
      * @param queue nome da fila
      * @param jobName nome da classe do job
      * @param jobUuid UUID único do job
@@ -93,8 +92,7 @@ class WorkerMetricsCallback {
      */
     virtual void onJobRetry(const std::string &queue,
                             const std::string &jobName,
-                            const std::string &jobUuid,
-                            size_t tries,
+                            const std::string &jobUuid, size_t tries,
                             int64_t retryAfterSecs) {
         (void)queue;
         (void)jobName;
@@ -105,7 +103,7 @@ class WorkerMetricsCallback {
 
     /**
      * @brief Chamado quando um job é removido permanentemente da fila
-     * 
+     *
      * @param queue nome da fila
      * @param jobName nome da classe do job
      * @param jobUuid UUID único do job
@@ -114,8 +112,7 @@ class WorkerMetricsCallback {
      */
     virtual void onJobRemoved(const std::string &queue,
                               const std::string &jobName,
-                              const std::string &jobUuid,
-                              jobStatus finalResult,
+                              const std::string &jobUuid, jobStatus finalResult,
                               size_t totalTries) {
         (void)queue;
         (void)jobName;

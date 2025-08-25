@@ -173,7 +173,8 @@ auto job::QueueWorker::work(const std::string &queue,
 
     // Callback de início do job
     if (metricsCallback && !jobClassName.empty()) {
-        startTime = metricsCallback->onJobStarted(queue, jobClassName, jobUuid, newjob->getTries());
+        startTime = metricsCallback->onJobStarted(queue, jobClassName, jobUuid,
+                                                  newjob->getTries());
     } else {
         startTime = std::chrono::steady_clock::now();
     }
@@ -193,7 +194,8 @@ auto job::QueueWorker::work(const std::string &queue,
 
     // Callback de finalização do job
     if (metricsCallback && !jobClassName.empty()) {
-        metricsCallback->onJobCompleted(queue, jobClassName, jobUuid, result, startTime, newjob->getTries());
+        metricsCallback->onJobCompleted(queue, jobClassName, jobUuid, result,
+                                        startTime, newjob->getTries());
     }
 
     /**
@@ -208,8 +210,8 @@ auto job::QueueWorker::work(const std::string &queue,
     return result;
 }
 
-auto job::QueueWorker::pop(const std::string &queue, int timeout)
-    -> std::string {
+auto job::QueueWorker::pop(const std::string &queue,
+                           int timeout) -> std::string {
     auto data = queueServiceInst->pop(queue, timeout);
     return data.value_or(std::string());
 }

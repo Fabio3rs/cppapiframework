@@ -48,14 +48,14 @@ class QueueWorker {
         return processHelperInst;
     }
 
-    virtual auto
-    process_retry_condition(const std::shared_ptr<QueueableJob> &job)
-        -> jobStatus;
+    virtual auto process_retry_condition(
+        const std::shared_ptr<QueueableJob> &job) -> jobStatus;
 
     /**
      * @brief Define o callback para métricas do worker
-     * 
-     * @param callback callback que será chamado durante o processamento dos jobs
+     *
+     * @param callback callback que será chamado durante o processamento dos
+     * jobs
      */
     void setMetricsCallback(std::shared_ptr<WorkerMetricsCallback> callback) {
         metricsCallback = std::move(callback);
@@ -63,10 +63,11 @@ class QueueWorker {
 
     /**
      * @brief Obtém o callback atual para métricas
-     * 
+     *
      * @return std::shared_ptr<WorkerMetricsCallback> callback atual ou nullptr
      */
-    [[nodiscard]] auto getMetricsCallback() const -> std::shared_ptr<WorkerMetricsCallback> {
+    [[nodiscard]] auto
+    getMetricsCallback() const -> std::shared_ptr<WorkerMetricsCallback> {
         return metricsCallback;
     }
 
@@ -150,22 +151,22 @@ class QueueWorker {
         jobStatus workresult) {
 
         int64_t retryAfter = 0;
-        
+
         // Extrair informações para métricas
         std::string jobClassName;
         std::string jobUuid;
         size_t tries = 0;
-        
+
         auto classNameIt = datamap.find("className");
         if (classNameIt != datamap.end()) {
             jobClassName = classNameIt->second;
         }
-        
+
         // Tentar extrair UUID do jobname (formato: "job_instance:UUID")
         if (jobname.starts_with("job_instance:")) {
             jobUuid = jobname.substr(13); // Remove "job_instance:"
         }
-        
+
         auto triesIt = datamap.find("tries");
         if (triesIt != datamap.end()) {
             try {
@@ -188,10 +189,11 @@ class QueueWorker {
         case errorremove:
             queueServiceInst->setPersistentData(jobname, datamap);
             queueServiceInst->expire(jobname, jobLogExpireSeconds);
-            
+
             // Callback para job removido permanentemente
             if (metricsCallback && !jobClassName.empty()) {
-                metricsCallback->onJobRemoved(queue, jobClassName, jobUuid, workresult, tries);
+                metricsCallback->onJobRemoved(queue, jobClassName, jobUuid,
+                                              workresult, tries);
             }
             break;
 
@@ -210,7 +212,8 @@ class QueueWorker {
 
             // Callback para retry
             if (metricsCallback && !jobClassName.empty()) {
-                metricsCallback->onJobRetry(queue, jobClassName, jobUuid, tries, retryAfter);
+                metricsCallback->onJobRetry(queue, jobClassName, jobUuid, tries,
+                                            retryAfter);
             }
 
             if (retryAfter == 0) {
@@ -240,9 +243,8 @@ class QueueWorker {
     }
 
     template <class T>
-    static auto
-    getNumberOfJobsByT(const std::unordered_map<std::string, size_t> &data)
-        -> size_t {
+    static auto getNumberOfJobsByT(
+        const std::unordered_map<std::string, size_t> &data) -> size_t {
         return data.at(job::JobsHandler::getTypeName<T>());
     }
 
