@@ -25,7 +25,14 @@ namespace job {
  */
 class WorkerMetricsCallback {
   public:
-    virtual ~WorkerMetricsCallback() = default;
+    WorkerMetricsCallback() = default;
+    WorkerMetricsCallback(const WorkerMetricsCallback &) = default;
+    WorkerMetricsCallback(WorkerMetricsCallback &&) = delete;
+    auto operator=(const WorkerMetricsCallback &)
+        -> WorkerMetricsCallback & = default;
+    auto operator=(WorkerMetricsCallback &&)
+        -> WorkerMetricsCallback & = delete;
+    virtual ~WorkerMetricsCallback();
 
     /**
      * @brief Chamado quando um job é adicionado à fila
@@ -36,7 +43,11 @@ class WorkerMetricsCallback {
      */
     virtual void onJobQueued(const std::string &queue,
                              const std::string &jobName,
-                             const std::string &jobUuid) {}
+                             const std::string &jobUuid) {
+        (void)queue;
+        (void)jobName;
+        (void)jobUuid;
+    }
 
     /**
      * @brief Chamado quando o processamento de um job inicia
@@ -47,10 +58,10 @@ class WorkerMetricsCallback {
      * @param tries número atual de tentativas
      * @return std::chrono::steady_clock::time_point timestamp de início
      */
-    virtual auto
-    onJobStarted(const std::string &queue, const std::string &jobName,
-                 const std::string &jobUuid,
-                 size_t tries) -> std::chrono::steady_clock::time_point {
+    virtual auto onJobStarted(const std::string &queue,
+                              const std::string &jobName,
+                              const std::string &jobUuid, size_t tries)
+        -> std::chrono::steady_clock::time_point {
         (void)queue;
         (void)jobName;
         (void)jobUuid;
