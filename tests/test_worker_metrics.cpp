@@ -11,6 +11,8 @@
 // Implementação simples de callback para testes
 class TestMetricsCallback : public job::WorkerMetricsCallback {
   public:
+    ~TestMetricsCallback() override;
+    
     struct Event {
         std::string type;
         std::string queue;
@@ -70,6 +72,8 @@ class TestMetricsJob : public job::QueueableJob {
     int failAfter{0};
 
   public:
+    ~TestMetricsJob() override;
+    
     QUEUEABLE_SERIALIZE(shouldFail, failAfter)
 
     [[nodiscard]] auto getName() const -> std::string override {
@@ -219,3 +223,7 @@ TEST(TestWorkerMetrics, SimpleConsoleMetricsWorks) {
     // Se chegou até aqui sem crash, a implementação básica funciona
     SUCCEED();
 }
+
+// Virtual destructor implementations to avoid weak vtables warning
+TestMetricsCallback::~TestMetricsCallback() = default;
+TestMetricsJob::~TestMetricsJob() = default;

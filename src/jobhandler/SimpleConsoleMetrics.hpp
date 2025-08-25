@@ -26,6 +26,8 @@ namespace job {
  */
 class SimpleConsoleMetrics : public WorkerMetricsCallback {
   public:
+    ~SimpleConsoleMetrics() override;
+    
     void onJobQueued(const std::string &queue, const std::string &jobName,
                      const std::string &jobUuid) override {
         std::cout << "[METRICS] Job enfileirado - Queue: " << queue
@@ -53,6 +55,8 @@ class SimpleConsoleMetrics : public WorkerMetricsCallback {
             endTime - startTime);
 
         const char *statusStr = "";
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-default"
         switch (result) {
         case noerror:
             statusStr = "SUCESSO";
@@ -67,6 +71,7 @@ class SimpleConsoleMetrics : public WorkerMetricsCallback {
             statusStr = "EXCEÇÃO";
             break;
         }
+#pragma clang diagnostic pop
 
         std::cout << "[METRICS] Job concluído - Queue: " << queue
                   << ", Job: " << jobName << ", UUID: " << jobUuid
@@ -88,6 +93,8 @@ class SimpleConsoleMetrics : public WorkerMetricsCallback {
                       const std::string &jobUuid, jobStatus finalResult,
                       size_t totalTries) override {
         const char *statusStr = "";
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-default"
         switch (finalResult) {
         case noerror:
             statusStr = "SUCESSO";
@@ -102,6 +109,7 @@ class SimpleConsoleMetrics : public WorkerMetricsCallback {
             statusStr = "EXCEÇÃO";
             break;
         }
+#pragma clang diagnostic pop
 
         std::cout << "[METRICS] Job removido permanentemente - Queue: " << queue
                   << ", Job: " << jobName << ", UUID: " << jobUuid
