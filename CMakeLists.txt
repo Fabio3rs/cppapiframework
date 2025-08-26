@@ -89,53 +89,28 @@ add_compile_definitions("CUR_JOB_FRAMEWORK_VERSION=\"${CURRENT_JOB_VERSION}\"")
 add_compile_definitions("FULL_COMMIT_HASH=\"${CURRENT_FULL_MAIN_GIT_COMMIT}\"")
 target_compile_definitions(${projectname} PRIVATE "PROJECT_NAME=\"cppapiframework\"")
 
-# Compiler-specific compile flags with enhanced security
+# Compiler-specific compile flags
 if (NOT DEFINED USING_COMPILER_FLAGS)
-    # Security-hardened compilation flags for all compilers
-    set(SECURITY_FLAGS "")
-    
-    # Add security flags based on compiler support
-    if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        list(APPEND SECURITY_FLAGS -D_FORTIFY_SOURCE=2)
-    endif()
-    
+    add_compile_definitions(_FORTIFY_SOURCE=3)
+
     if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-        message(STATUS "Setting G++ flags with security enhancements")
-        # G++ with enhanced security flags
-        set(USING_COMPILER_FLAGS -Wall -Werror -Wextra -std=gnu++20 -Wformat-security -Wconversion -Wsign-conversion -Wno-gnu -Wno-gnu-statement-expression
-            # Security-focused flags
-            -fstack-protector-strong -fPIE -Wformat=2 -Wformat-overflow=2 -Wformat-truncation=2
-            -fstack-clash-protection -fcf-protection=full
-            ${SECURITY_FLAGS})
-        target_compile_options(${projectname} PRIVATE ${USING_COMPILER_FLAGS})
-        target_link_options(${projectname} PRIVATE -pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack)
-        
+        message(STATUS "Setting G++ flags")
+        # G++
+        target_compile_options(${projectname} PRIVATE -Wall -Werror -Wextra -Wformat-security -Wconversion -Wsign-conversion  -Wno-gnu -Wno-gnu-statement-expression)
     elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-        message(STATUS "Setting MSVC flags with security enhancements")
-        # MSVC with security flags
-        set(USING_COMPILER_FLAGS /EHsc /W2 /c /GS /DYNAMICBASE /NXCOMPAT)
-        target_compile_options(${projectname} PRIVATE ${USING_COMPILER_FLAGS})
-        
+        message(STATUS "Setting MSVC flags")
+        # MSVC
+        target_compile_options(${projectname} PRIVATE /EHsc /W2 /c)
     elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-        message(STATUS "Setting Clang flags with security enhancements")
-        set(USING_COMPILER_FLAGS -Weverything -Werror -Wno-unused-macros -std=gnu++20 -Wno-unsafe-buffer-usage -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors -Wno-gnu -Wno-gnu-statement-expression
-            # Security-focused flags for Clang
-            -fstack-protector-strong -fPIE -Wformat=2 -Wformat-security
-            -fsanitize=cfi -flto -fvisibility=hidden
-            ${SECURITY_FLAGS})
+        message(STATUS "Setting Clang flags")
+        set(USING_COMPILER_FLAGS -Weverything -Werror -Wno-unused-macros -Wno-unsafe-buffer-usage -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors -Wno-gnu -Wno-gnu-statement-expression)
         target_compile_options(${PROJECT_NAME} PRIVATE ${USING_COMPILER_FLAGS})
-        target_link_options(${projectname} PRIVATE -pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack -fsanitize=cfi -flto)
-        
-        # Enhanced clang-tidy for security
+        # Clang-tidy
         if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-            message(STATUS "Setting enhanced clang-tidy with security checks")
-            # Optional: Enable clang-tidy with security-focused checks
-            # set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-header-filter=${CMAKE_CURRENT_SOURCE_DIR}/src;--checks=-*,cert-*,bugprone-*,clang-analyzer-security*,cppcoreguidelines-*;-extra-arg=-std=gnu++20;-extra-arg=-Wno-gnu")
+            message(STATUS "Setting clang-tidy flags")
+            #set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-header-filter=${CMAKE_CURRENT_SOURCE_DIR}/src;--warnings-as-errors=\"*\";-extra-arg=-std=gnu++20;-extra-arg=-Wno-gnu;-export-fixes=clang-tidy-sugested-fixes.txt")
         endif()
     endif()
-    
-    # Set the flags for use in tests
-    set(USING_COMPILER_FLAGS ${USING_COMPILER_FLAGS} CACHE STRING "Compiler flags used by the project")
 endif()
 
 target_precompile_headers(${projectname} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/projstdafx.hpp")
