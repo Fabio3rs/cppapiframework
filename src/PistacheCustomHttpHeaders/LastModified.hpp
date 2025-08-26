@@ -4,6 +4,7 @@
 #include <bits/types/time_t.h>
 #include <memory>
 #include <string>
+#include <ctime>
 
 namespace PistacheCustomHttpHeaders {
 class LastModified : public Pistache::Http::Header::Header {
@@ -38,10 +39,24 @@ class LastModified : public Pistache::Http::Header::Header {
 
     static auto format(std::time_t cftime) -> std::string {
         std::array<char, 48> buffer{};
-
+        std::tm tm_time{};
+#if defined(_WIN32) || defined(_WIN64)
+        // Use gmtime_s on Windows
+        errno_t err = gmtime_s(&tm_time, &cftime);
+        if (err != 0) {
+            // Unable to convert time
+            return {};
+        }
+#else
+        // Use gmtime_r on POSIX
+        if (!gmtime_r(&cftime, &tm_time)) {
+            // Unable to convert time
+            return {};
+        }
+#endif
         size_t strft_res_sz =
             strftime(buffer.data(), buffer.size(), "%a, %d %b %Y %H:%M:%S GMT",
-                     std::gmtime(&cftime));
+                     &tm_time);
 
         return {buffer.data(), strft_res_sz};
     }
