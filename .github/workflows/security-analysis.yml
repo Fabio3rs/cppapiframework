@@ -34,14 +34,10 @@ jobs:
         sudo apt-get install -y build-essential cmake ninja-build
         sudo apt-get install -y clang-18 clang-tidy-18 clang-format cppcheck valgrind
         sudo apt-get install -y libpoco-dev libmysqlcppconn-dev
-        # Install SBOM generation tools
-        wget -O /tmp/syft.tar.gz https://github.com/anchore/syft/releases/latest/download/syft_linux_amd64.tar.gz
-        tar -xzf /tmp/syft.tar.gz -C /tmp
-        sudo mv /tmp/syft /usr/local/bin/
-        # Install security scanner
-        wget -O /tmp/grype.tar.gz https://github.com/anchore/grype/releases/latest/download/grype_linux_amd64.tar.gz
-        tar -xzf /tmp/grype.tar.gz -C /tmp
-        sudo mv /tmp/grype /usr/local/bin/
+        # Install SBOM generation tools using official installation script
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+        # Install security scanner using official installation script  
+        curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /usr/local/bin
 
     - name: Configure Build with Security Flags
       run: |
