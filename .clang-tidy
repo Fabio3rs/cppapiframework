@@ -1,8 +1,8 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,read*,modern*,hicpp*,performance*,-readability-magic-numbers,-clang-diagnostic-gnu-statement-expression,-hicpp-use-auto,-modernize-use-equals-default,-modernize-deprecated-headers,-readability-uppercase-literal-suffix'
+# Enhanced security-focused clang-tidy configuration for enterprise-grade analysis
+Checks:          'clang-diagnostic-*,clang-analyzer-*,clang-analyzer-security*,cert-*,bugprone-*,concurrency-*,cppcoreguidelines-*,read*,modern*,hicpp*,performance*,misc-*,-readability-magic-numbers,-clang-diagnostic-gnu-statement-expression,-hicpp-use-auto,-modernize-use-equals-default,-modernize-deprecated-headers,-readability-uppercase-literal-suffix,-cert-err33-c'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
 FormatStyle:     file
 User:            fabio
 CheckOptions:

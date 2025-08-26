@@ -20,8 +20,10 @@ set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 if(NOT DEFINED DISABLE_MANUAL_FIND_PACKAGES)
-    find_package(GTest REQUIRED)
-    include(GoogleTest)
+    if ("${CompileTestsApiFramework}" STREQUAL "ON")
+        find_package(GTest REQUIRED)
+        include(GoogleTest)
+    endif()
     find_package(Git)
     find_package(OpenSSL REQUIRED)
     find_package(PkgConfig)
@@ -91,17 +93,19 @@ target_compile_definitions(${projectname} PRIVATE "PROJECT_NAME=\"cppapiframewor
 
 # Compiler-specific compile flags
 if (NOT DEFINED USING_COMPILER_FLAGS)
+    add_compile_definitions(_FORTIFY_SOURCE=3)
+
     if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
         message(STATUS "Setting G++ flags")
         # G++
-        target_compile_options(${projectname} PRIVATE -Wall -Werror -Wextra -std=gnu++20 -Wformat-security -Wconversion -Wsign-conversion  -Wno-gnu -Wno-gnu-statement-expression)
+        target_compile_options(${projectname} PRIVATE -Wall -Werror -Wextra -Wformat-security -Wconversion -Wsign-conversion  -Wno-gnu -Wno-gnu-statement-expression)
     elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
         message(STATUS "Setting MSVC flags")
         # MSVC
         target_compile_options(${projectname} PRIVATE /EHsc /W2 /c)
     elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
         message(STATUS "Setting Clang flags")
-        set(USING_COMPILER_FLAGS -Weverything -Werror -Wno-unused-macros -std=gnu++20 -Wno-unsafe-buffer-usage -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors -Wno-gnu -Wno-gnu-statement-expression)
+        set(USING_COMPILER_FLAGS -Weverything -Werror -Wno-unused-macros -Wno-unsafe-buffer-usage -Wno-disabled-macro-expansion -Wpedantic -Wno-padded -Wno-constant-conversion -Wno-c++98-compat -Wno-padded -Wno-date-time -Wno-c++98-compat-pedantic -Wno-exit-time-destructors -Wno-global-constructors -Wno-gnu -Wno-gnu-statement-expression)
         target_compile_options(${PROJECT_NAME} PRIVATE ${USING_COMPILER_FLAGS})
         # Clang-tidy
         if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

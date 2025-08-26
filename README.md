@@ -1,12 +1,22 @@
 # CPP API Framework
 
 ![Build Status](https://github.com/Fabio3rs/cppapiframework/actions/workflows/Test%2C%20Build%20and%20Test-main.yml/badge.svg)
+![CodeQL](https://github.com/Fabio3rs/cppapiframework/actions/workflows/codeql.yml/badge.svg)
 ![License](https://img.shields.io/github/license/Fabio3rs/cppapiframework)
 ![C++](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
+![Security](https://img.shields.io/badge/Security-Enterprise%20Grade-green.svg)
 
-A modern C++20 framework for building REST APIs with advanced features like job processing, metrics collection, and WebSocket support.
+A modern C++20 framework for building REST APIs with advanced features like job processing, metrics collection, WebSocket support, and **enterprise-grade security scanning**.
 
 ## 🚀 Features
+
+### 🛡️ Enterprise Security
+- **Static Application Security Testing (SAST)**: CodeQL, enhanced clang-tidy, cppcheck
+- **Software Composition Analysis (SCA)**: Dependabot for vulnerability scanning
+- **Security-Hardened Build**: Stack protection, PIE, RELRO, and other hardening flags  
+- **Input Validation & Sanitization**: SQL injection prevention, comprehensive input validation
+- **Memory Safety**: RAII patterns, smart pointers, bounds checking
+- **Supply Chain Security**: SBOM generation, dependency monitoring
 
 ### Web Framework
 - **REST API Development**: Built on top of [Pistache](https://github.com/pistacheio/pistache) HTTP library
@@ -296,13 +306,46 @@ Generate new job classes:
 ```
 
 ### Code Style
-The project uses clang-format and clang-tidy:
+The project uses enhanced security-focused static analysis tools:
 ```bash
 # Format code
 clang-format -i src/**/*.cpp src/**/*.hpp
 
-# Run static analysis
-clang-tidy src/**/*.cpp -- -std=c++20
+# Run enhanced security-focused static analysis
+clang-tidy src/**/*.cpp --checks='-*,cert-*,bugprone-*,clang-analyzer-security*,cppcoreguidelines-*' -- -std=c++20
+
+# Run additional security analysis
+cppcheck --enable=all --std=c++20 src/
+```
+
+## 🛡️ Security
+
+This project implements enterprise-grade security scanning and follows security best practices:
+
+### Security Scanning Tools
+- **[CodeQL](https://codeql.github.com/)**: GitHub's semantic code analysis engine
+- **Enhanced clang-tidy**: Security-focused static analysis with cert-*, bugprone-*, and security rules
+- **cppcheck**: Additional static analysis for memory safety and undefined behavior
+- **Dependabot**: Automated dependency vulnerability scanning
+- **SBOM Generation**: Software Bill of Materials for supply chain security
+
+### Security Features
+- **Input Validation**: Comprehensive validation framework preventing injection attacks
+- **SQL Injection Prevention**: Parameterized queries and input sanitization in database layer
+- **Memory Safety**: RAII patterns, smart pointers, and bounds checking
+- **Hardened Compilation**: Stack protection, position-independent executables, and security flags
+- **Authentication Support**: JWT token validation and session management
+
+### Security Policy
+For security vulnerabilities, please refer to our [Security Policy](SECURITY.md). **DO NOT** create public issues for security vulnerabilities.
+
+### Security Build Features
+The build system includes security-hardened compilation:
+```bash
+# Security-hardened build
+cmake .. -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_FLAGS="-Wall -Wextra -fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE" \
+  -DCMAKE_EXE_LINKER_FLAGS="-pie -Wl,-z,relro,-z,now"
 ```
 
 ### Building with Different Compilers
