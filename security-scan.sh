@@ -41,7 +41,7 @@ echo "Using compiler: $CXX"
 
 cmake .. -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wsecurity -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE" \
+    -DCMAKE_CXX_FLAGS="-Wall -Wextra -fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE" \
     -DCMAKE_EXE_LINKER_FLAGS="-pie -Wl,-z,relro,-z,now" \
     -DCompileTestsApiFramework=OFF > ../security-reports/build-config.log 2>&1
 

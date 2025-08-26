@@ -81,7 +81,7 @@ Instead, please report security vulnerabilities through one of the following cha
 1. **Never commit secrets**: Use environment variables or secure vaults
 2. **Validate all inputs**: Assume all external input is malicious
 3. **Use safe functions**: Avoid deprecated C functions prone to buffer overflows
-4. **Enable compiler warnings**: Build with `-Wall -Wextra -Wsecurity`
+4. **Enable compiler warnings**: Build with `-Wall -Wextra`
 5. **Run security tools**: Use provided clang-tidy and cppcheck configurations
 6. **Update dependencies**: Keep all libraries and tools current
 
