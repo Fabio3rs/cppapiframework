@@ -50,7 +50,7 @@ jobs:
         mkdir -p build && cd build
         cmake .. -G Ninja \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wsecurity -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -Wformat -Wformat-security" \
+          -DCMAKE_CXX_FLAGS="-Wall -Wextra -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -Wformat -Wformat-security" \
           -DCMAKE_EXE_LINKER_FLAGS="-pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack" \
           -DCompileTestsApiFramework=OFF
 
@@ -177,10 +177,3 @@ jobs:
           sbom.txt
           vulnerabilities.json
           security-summary.md
-
-    - name: Upload SBOM to Dependency Graph (if available)
-      uses: advanced-security/github-sbom-generator-action@v0.0.1
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      continue-on-error: true
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
