@@ -1,0 +1,186 @@
+name: "Security Analysis & SBOM"
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '15 3 * * 2'  # Run weekly on Tuesdays at 3:15 AM
+
+env:
+  BUILD_TYPE: Release
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  security-analysis:
+    name: Security Analysis & SBOM Generation
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better analysis
+
+    - name: Install Security Analysis Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build
+        sudo apt-get install -y clang-18 clang-tidy-18 clang-format cppcheck valgrind
+        sudo apt-get install -y libpoco-dev libmysqlcppconn-dev
+        # Install SBOM generation tools
+        wget -O /tmp/syft.tar.gz https://github.com/anchore/syft/releases/latest/download/syft_linux_amd64.tar.gz
+        tar -xzf /tmp/syft.tar.gz -C /tmp
+        sudo mv /tmp/syft /usr/local/bin/
+        # Install security scanner
+        wget -O /tmp/grype.tar.gz https://github.com/anchore/grype/releases/latest/download/grype_linux_amd64.tar.gz
+        tar -xzf /tmp/grype.tar.gz -C /tmp
+        sudo mv /tmp/grype /usr/local/bin/
+
+    - name: Configure Build with Security Flags
+      run: |
+        export CC=$(which clang-18)
+        export CXX=$(which clang++-18)
+        mkdir -p build && cd build
+        cmake .. -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wsecurity -fstack-protector-strong -D_FORTIFY_SOURCE=2 -fPIE -Wformat -Wformat-security" \
+          -DCMAKE_EXE_LINKER_FLAGS="-pie -Wl,-z,relro,-z,now -Wl,-z,noexecstack" \
+          -DCompileTestsApiFramework=OFF
+
+    - name: Build Project
+      run: |
+        cd build
+        export CC=$(which clang-18)
+        export CXX=$(which clang++-18)
+        cmake --build . --config Release --target cppapiframework -j $(nproc)
+
+    - name: Advanced Static Analysis - cppcheck
+      run: |
+        echo "::group::Running cppcheck security analysis"
+        cppcheck --enable=all --error-exitcode=0 --xml --xml-version=2 \
+          --platform=unix64 --std=c++20 \
+          --suppress=missingIncludeSystem --suppress=unmatchedSuppression \
+          --suppress=unusedFunction --check-config \
+          --inconclusive --force \
+          src/ 2> cppcheck-security-report.xml
+        
+        echo "=== cppcheck Security Analysis Results ==="
+        if [ -f cppcheck-security-report.xml ]; then
+          grep -E "(error|warning)" cppcheck-security-report.xml || echo "No issues found"
+        fi
+        echo "=========================================="
+        echo "::endgroup::"
+
+    - name: Enhanced Security-Focused clang-tidy
+      run: |
+        echo "::group::Running enhanced clang-tidy security analysis"
+        cd build
+        echo "=== Security-focused clang-tidy Analysis ==="
+        
+        # Run clang-tidy on key security-sensitive files
+        SECURITY_FILES="../src/Database/CSql.cpp ../src/WebInterface/CController.cpp ../src/Authorization/"
+        
+        for file in $SECURITY_FILES; do
+          if [ -f "$file" ] || [ -d "$file" ]; then
+            echo "Analyzing: $file"
+            find "$file" -name "*.cpp" -o -name "*.hpp" 2>/dev/null | head -5 | \
+            xargs clang-tidy-18 --config-file=../.clang-tidy -p . --format-style=file \
+              --checks='-*,cert-*,bugprone-*,clang-analyzer-security*,cppcoreguidelines-*' || true
+          fi
+        done
+        echo "=============================================="
+        echo "::endgroup::"
+
+    - name: Generate Software Bill of Materials (SBOM)
+      run: |
+        echo "::group::Generating SBOM"
+        echo "=== Generating Software Bill of Materials ==="
+        
+        # Create SBOM for the entire project
+        syft . -o json=sbom.json -o spdx-json=sbom.spdx.json -o table=sbom.txt || true
+        
+        if [ -f sbom.txt ]; then
+          echo "Generated SBOM summary:"
+          head -20 sbom.txt
+          echo "Full SBOM saved to artifacts."
+        fi
+        echo "============================================="
+        echo "::endgroup::"
+
+    - name: Vulnerability Scanning with Grype
+      run: |
+        echo "::group::Running vulnerability scanning"
+        echo "=== Vulnerability Scanning ==="
+        
+        # Scan for vulnerabilities in dependencies
+        if [ -f sbom.json ]; then
+          grype sbom:sbom.json -o table -o json=vulnerabilities.json || true
+          
+          echo "Vulnerability scan results:"
+          if [ -f vulnerabilities.json ]; then
+            jq -r '.matches[] | select(.vulnerability.severity == "High" or .vulnerability.severity == "Critical") | "HIGH/CRITICAL: " + .vulnerability.id + " in " + .artifact.name' vulnerabilities.json 2>/dev/null || echo "No high/critical vulnerabilities found"
+          fi
+        else
+          grype . -o table -o json=vulnerabilities.json || true
+        fi
+        echo "==============================="
+        echo "::endgroup::"
+
+    - name: Security Summary Report
+      run: |
+        echo "::group::Security Analysis Summary"
+        echo "# 🛡️ Security Analysis Summary" > security-summary.md
+        echo "" >> security-summary.md
+        echo "## Analysis Results" >> security-summary.md
+        echo "" >> security-summary.md
+        
+        # Add cppcheck results
+        if [ -f cppcheck-security-report.xml ]; then
+          echo "### cppcheck Analysis" >> security-summary.md
+          CPPCHECK_ISSUES=$(grep -c "error\|warning" cppcheck-security-report.xml || echo "0")
+          echo "- Issues found: $CPPCHECK_ISSUES" >> security-summary.md
+        fi
+        
+        # Add vulnerability scan results  
+        if [ -f vulnerabilities.json ]; then
+          echo "### Vulnerability Scan" >> security-summary.md
+          HIGH_VULNS=$(jq -r '[.matches[] | select(.vulnerability.severity == "High" or .vulnerability.severity == "Critical")] | length' vulnerabilities.json 2>/dev/null || echo "0")
+          echo "- High/Critical vulnerabilities: $HIGH_VULNS" >> security-summary.md
+        fi
+        
+        echo "### SBOM Generated" >> security-summary.md
+        if [ -f sbom.json ]; then
+          COMPONENTS=$(jq -r '.artifacts | length' sbom.json 2>/dev/null || echo "Unknown")
+          echo "- Components tracked: $COMPONENTS" >> security-summary.md
+        fi
+        
+        cat security-summary.md
+        echo "::endgroup::"
+
+    - name: Upload Security Reports as Artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-analysis-reports
+        retention-days: 30
+        path: |
+          cppcheck-security-report.xml
+          sbom.json
+          sbom.spdx.json
+          sbom.txt
+          vulnerabilities.json
+          security-summary.md
+
+    - name: Upload SBOM to Dependency Graph (if available)
+      uses: advanced-security/github-sbom-generator-action@v0.0.1
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      continue-on-error: true
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}

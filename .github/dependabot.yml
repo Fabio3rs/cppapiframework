@@ -1,0 +1,47 @@
+version: 2
+updates:
+  # GitHub Actions security updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "security"
+      prefix-development: "security"
+    labels:
+      - "security"
+      - "dependencies"
+    reviewers:
+      - "Fabio3rs"
+
+  # CMake/C++ dependency scanning via ecosystem detection
+  - package-ecosystem: "cmake"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "security"
+      prefix-development: "security"
+    labels:
+      - "security"
+      - "dependencies"
+      - "c++"
+    reviewers:
+      - "Fabio3rs"
+    # Security-focused update strategy
+    target-branch: "develop"
+    open-pull-requests-limit: 10
+    
+  # Docker dependencies if Dockerfile exists
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "security"
+    labels:
+      - "security"
+      - "dependencies"
+      - "docker"
+    reviewers:
+      - "Fabio3rs"

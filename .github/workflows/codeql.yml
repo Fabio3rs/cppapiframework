@@ -1,0 +1,67 @@
+name: "CodeQL Security Analysis"
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '30 2 * * 1'  # Run weekly on Mondays at 2:30 AM
+
+jobs:
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -y build-essential
+        sudo apt install cmake ninja-build clang-18 clang-tidy-18 clang-format -y
+        sudo add-apt-repository ppa:pistache+team/unstable && sudo apt update && sudo apt install libpistache-dev
+        sudo apt-get install -y libcurl4 libcurl4-openssl-dev libpoco-dev libmysqlcppconn-dev
+        sudo apt install -y libgtest-dev googletest
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # Enhanced security queries for enterprise-grade scanning
+        queries: +security-extended,security-and-quality
+
+    - name: Setup Build Environment  
+      run: |
+        export CC=$(which clang-18)
+        export CXX=$(which clang++-18)
+        mkdir -p build && cd build
+        cmake .. -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wsecurity -fstack-protector-strong -D_FORTIFY_SOURCE=2" \
+          -DCompileTestsApiFramework=OFF
+
+    - name: Build Project
+      run: |
+        cd build
+        export CC=$(which clang-18)
+        export CXX=$(which clang++-18) 
+        cmake --build . --config Release --target cppapiframework -j $(nproc)
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"

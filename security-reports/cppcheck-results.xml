@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<results version="2">
+    <cppcheck version="2.13.0"/>
+    <errors>
+        <error id="unknownMacro" severity="error" msg="There is an unknown macro here somewhere. Configuration is required. If NAME is a macro then please configure it." verbose="There is an unknown macro here somewhere. Configuration is required. If NAME is a macro then please configure it." file0="src/CacheUtils/Cache.cpp">
+            <location file="src/PistacheCustomHttpHeaders/LastModified.hpp" line="12" column="5"/>
+        </error>
+        <error id="checkersReport" severity="information" msg="Active checkers: There was critical errors (use --checkers-report=&lt;filename&gt; to see details)" verbose="Active checkers: There was critical errors (use --checkers-report=&lt;filename&gt; to see details)"/>
+    </errors>
+</results>
