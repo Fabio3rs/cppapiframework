@@ -43,7 +43,7 @@ jobs:
           mkdir -p build
 
       - name: Cache build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{github.workspace}}/build
           key: ${{ runner.os }}-build
