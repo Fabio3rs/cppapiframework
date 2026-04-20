@@ -60,8 +60,7 @@ class Strutils {
     }
 
     static inline auto getCNPJNumbers(const std::string &cnpj) -> std::string {
-        return std::regex_replace(cnpj, std::regex("[^0-9]*"),
-                                  std::string("$1"));
+        return std::regex_replace(cnpj, std::regex("[^A-Za-z0-9]*"), "");
     }
 
     static inline auto join(const std::span<const std::string> &vec,

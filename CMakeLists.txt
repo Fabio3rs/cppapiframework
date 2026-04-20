@@ -3,6 +3,32 @@ set(projectname cppapiframework)
 cmake_minimum_required(VERSION 3.6.0)
 project(${projectname} VERSION 0.1.0)
 
+if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
+    message(STATUS "Configuring ${projectname} as a standalone project")
+    # Quando usado como projeto standalone, ativar testes por padrão
+    set(_DEFAULT_PROJECT_BUILD_TESTS ON)
+else()
+    set(_DEFAULT_PROJECT_BUILD_TESTS OFF)
+endif()
+
+# --- Test options: nova e legada (retrocompatibilidade) --------------------
+# opção legada para compatibilidade com projetos que ainda usam o nome antigo
+option(CompileTestsApiFramework "Legacy: build tests for ${projectname} (deprecated)" OFF)
+
+# opção nomeada pelo projeto, recomendada para controle a partir do CMake superior
+# o valor padrão depende se estamos no topo (standalone) ou como subprojeto
+option(${projectname}_BUILD_TESTS "Build tests for ${projectname}" ${_DEFAULT_PROJECT_BUILD_TESTS})
+
+# Somente inclua CTest se ainda não estiver definido e se alguma opção de teste for requerida
+if(NOT DEFINED BUILD_TESTING)
+    if(CompileTestsApiFramework OR ${${projectname}_BUILD_TESTS})
+        include(CTest)
+    endif()
+else()
+    # BUILD_TESTING já foi definido pelo projeto superior; nada a fazer
+endif()
+
+
 if (NOT DEFINED CPPAPIFRAMEWORK_APPLY_FLAGS)
     message("Applying flags")
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -13,14 +39,12 @@ if (NOT DEFINED CPPAPIFRAMEWORK_APPLY_FLAGS)
     set(CMAKE_C_EXTENSIONS ON)
 endif()
 
-option(CompileTestsApiFramework "CompileTestsApiFramework" ON)
-
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 if(NOT DEFINED DISABLE_MANUAL_FIND_PACKAGES)
-    if ("${CompileTestsApiFramework}" STREQUAL "ON")
+    if (BUILD_TESTING AND cppapiframework_BUILD_TESTS)
         find_package(GTest REQUIRED)
         include(GoogleTest)
     endif()
@@ -138,7 +162,8 @@ endif()
 
 target_link_libraries(${projectname} ${MYSQLCPPCONN_LIBRARY})
 
-if ("${CompileTestsApiFramework}" STREQUAL "ON")
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+if (BUILD_TESTING AND cppapiframework_BUILD_TESTS)
+    message("-- Compilando testes para ${projectname}")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
 
