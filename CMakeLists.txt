@@ -51,6 +51,11 @@ if(NOT DEFINED DISABLE_MANUAL_FIND_PACKAGES)
     find_package(Git)
     find_package(OpenSSL REQUIRED)
     find_package(PkgConfig)
+    find_package(SQLite3)
+
+    if(SQLite3_FOUND)
+        include_directories(${SQLite3_INCLUDE_DIRS})
+    endif()
 endif()
 
 if(NOT DEFINED Poco_LIBRARIES)
@@ -109,6 +114,10 @@ file(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/PistacheCustomHttpHeaders/*.cpp"
 )
 
+if (SQLite3_FOUND)
+    list(APPEND SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/sqlite3/sqlite3raii.cpp")
+endif()
+
 add_library(${projectname} STATIC ${SOURCES})
 
 add_compile_definitions("CUR_JOB_FRAMEWORK_VERSION=\"${CURRENT_JOB_VERSION}\"")
@@ -160,7 +169,7 @@ if(NOT DEFINED MYSQLCPPCONN_LIBRARY)
     set(MYSQLCPPCONN_LIBRARY mysqlcppconn)
 endif()
 
-target_link_libraries(${projectname} ${MYSQLCPPCONN_LIBRARY})
+target_link_libraries(${projectname} ${MYSQLCPPCONN_LIBRARY} ${SQLite3_LIBRARIES})
 
 if (BUILD_TESTING AND cppapiframework_BUILD_TESTS)
     message("-- Compilando testes para ${projectname}")
