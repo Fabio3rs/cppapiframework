@@ -3,13 +3,21 @@
 #define Strutils_hpp
 
 #include <algorithm>
+#include <array>
+#include <cctype>
+#include <concepts>
 #include <cstring>
 #include <limits>
 #include <optional>
+#include <ranges>
 #include <regex>
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 class Strutils {
   public:
@@ -64,18 +72,49 @@ class Strutils {
     }
 
     static inline auto join(const std::span<const std::string> &vec,
-                            const std::string &term) -> std::string {
+                            std::string_view term) -> std::string {
         std::string result;
         result.reserve(vec.size() * term.size());
 
+        bool first = true;
         for (const auto &str : vec) {
+            if (!first) {
+                result += term;
+            }
             result += str;
-            result += term;
+            first = false;
         }
 
-        if (!result.empty() && !term.empty()) {
-            result.erase(result.size() - term.size());
+        return result;
+    }
+
+    template <typename R>
+        requires std::ranges::input_range<const R> &&
+                 std::convertible_to<std::ranges::range_reference_t<const R>,
+                                     std::string_view>
+    [[nodiscard]] static auto join(const R &vec, std::string_view term)
+        -> std::string {
+        std::string result;
+
+#if defined(__cpp_lib_ranges_join_with) && __cpp_lib_ranges_join_with >= 202202L
+        const auto string_views =
+            vec | std::views::transform(
+                      [](const auto &str) { return std::string_view{str}; });
+
+        for (const char chr : string_views | std::views::join_with(term)) {
+            result += chr;
         }
+#else
+        bool first = true;
+        for (const auto &str : vec) {
+            if (!first) {
+                result += term;
+            }
+
+            result += std::string_view{str};
+            first = false;
+        }
+#endif
 
         return result;
     }

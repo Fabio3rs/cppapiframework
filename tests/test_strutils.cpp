@@ -1,6 +1,12 @@
-#include "projstdafx.hpp"
+#include "utils/Strutils.hpp"
 
+#include <array>
+#include <forward_list>
 #include <gtest/gtest.h>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
 TEST(TestStrutils, TestMultiConcat) {
@@ -30,28 +36,35 @@ TEST(TestStrutils, TestExplodeFunction) {
 }
 
 // NOLINTNEXTLINE
-TEST(TestStrutils, JoinTest) {
-    std::vector<std::string> vec1 = {"hello", "world", "!"};
-    std::string result1 = Strutils::join(vec1, " ");
-    EXPECT_EQ(result1, "hello world !");
+TEST(TestStrutils, JoinHandlesSeparatorsAndEmptyValues) {
+    const std::vector<std::string> words = {"hello", "world", "!"};
+    EXPECT_EQ(Strutils::join(words, " "), "hello world !");
+    EXPECT_EQ(Strutils::join(words, ""), "helloworld!");
 
-    std::vector<std::string> vec2 = {"apple", "banana", "cherry"};
-    std::string result2 = Strutils::join(vec2, ", ");
-    EXPECT_EQ(result2, "apple, banana, cherry");
+    const std::vector<std::string> empty_values = {"", "", ""};
+    EXPECT_EQ(Strutils::join(empty_values, "--"), "----");
 
-    std::vector<std::string> vec3 = {"1", "2", "3", "4", "5"};
-    std::string result3 = Strutils::join(vec3, "");
-    EXPECT_EQ(result3, "12345");
+    const std::vector<std::string> one_value = {"only"};
+    EXPECT_EQ(Strutils::join(one_value, "ignored"), "only");
 
-    std::vector<std::string> vec4 = {"", "", ""};
-    std::string result4 = Strutils::join(vec4, " ");
-    EXPECT_EQ(result4, "  ");
+    const std::vector<std::string> no_values;
+    EXPECT_TRUE(Strutils::join(no_values, " ").empty());
+}
 
-    std::vector<std::string> vec5 = {};
-    std::string result5 = Strutils::join(vec5, " ");
-    EXPECT_EQ(result5, "");
+// NOLINTNEXTLINE
+TEST(TestStrutils, JoinSupportsSpanOverload) {
+    const std::array<std::string, 3> values = {"one", "two", "three"};
+    const std::span<const std::string> values_span{values};
 
-    const std::vector<std::string> cvec2 = {"apple", "banana", "cherry"};
-    std::string cresult2 = Strutils::join(vec2, ", ");
-    EXPECT_EQ(cresult2, "apple, banana, cherry");
+    EXPECT_EQ(Strutils::join(values_span, "::"), "one::two::three");
+}
+
+// NOLINTNEXTLINE
+TEST(TestStrutils, JoinSupportsUnsizedRangesAndStringViews) {
+    const std::forward_list<std::string> values = {"one", "two", "three"};
+    EXPECT_EQ(Strutils::join(values, "/"), "one/two/three");
+
+    constexpr std::array<std::string_view, 3> views = {"alpha", "beta",
+                                                       "gamma"};
+    EXPECT_EQ(Strutils::join(views, " | "), "alpha | beta | gamma");
 }
