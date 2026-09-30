@@ -30,8 +30,8 @@ class CLog {
     template <class... Types>
     auto multiRegister(std::string_view format, Types &&...args)
         -> std::string {
-        std::string printbuf =
-            StrFormat::multiRegister(format, std::forward<Types>(args)...);
+        std::string printbuf = StrFormat::multiRegister(
+            getLineBreakPolicy(), format, std::forward<Types>(args)...);
 
         AddToLog(printbuf);
         return printbuf;
@@ -43,7 +43,8 @@ class CLog {
                          Types &&...args) -> std::string {
         std::string printbuf = Strutils::multi_concat(
             file, ":", std::to_string(line), " ", level, " ",
-            StrFormat::multiRegister(format, std::forward<Types>(args)...));
+            StrFormat::multiRegister(getLineBreakPolicy(), format,
+                                     std::forward<Types>(args)...));
 
         AddToLog(printbuf);
         return printbuf;
@@ -70,6 +71,14 @@ class CLog {
 
     explicit CLog(const logOutputInfo &logcfg = {});
 
+    auto setLineBreakPolicy(StrFormat::LineBreakPolicy lbPolicy) -> void {
+        lineBreakPolicy.store(lbPolicy, std::memory_order_relaxed);
+    }
+
+    auto getLineBreakPolicy() const -> StrFormat::LineBreakPolicy {
+        return lineBreakPolicy.load(std::memory_order_relaxed);
+    }
+
   private:
     static auto addLinesToLog(CLog &logInst) -> bool;
     static void threadFn(CLog &logInst);
@@ -81,6 +90,9 @@ class CLog {
     std::atomic<bool> running;
 
     std::unique_ptr<ScopedStreamRedirect> streamRedirect;
+
+    std::atomic<StrFormat::LineBreakPolicy> lineBreakPolicy{
+        StrFormat::LineBreakPolicy::Escape};
     bool Finished;
 
     void insertLogHeader();

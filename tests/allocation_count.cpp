@@ -1,6 +1,7 @@
 #include "allocation_count.hpp"
 #include <cstddef>
 #include <cstdlib>
+#include <new>
 
 void operator delete(void *ptr, size_t blksize) noexcept;
 
@@ -11,7 +12,24 @@ static std::atomic<std::size_t> deallocations{0};
 auto operator new(std::size_t n) -> void * {
     ++allocations;
     allocationSize += n;
-    return malloc(n); // NOLINT(hicpp-no-malloc)
+    if (void *ptr = malloc(n == 0 ? 1 : n)) { // NOLINT(hicpp-no-malloc)
+        return ptr;
+    }
+    throw std::bad_alloc();
+}
+
+// Keep nothrow allocations on the same malloc/free path as throwing new.
+// Otherwise ASan's nothrow new is paired with our free-based delete.
+auto operator new(std::size_t n, const std::nothrow_t &) noexcept -> void * {
+    try {
+        return ::operator new(n);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+void operator delete(void *ptr, const std::nothrow_t &) noexcept {
+    ::operator delete(ptr);
 }
 
 void operator delete(void *ptr) noexcept {

@@ -3,10 +3,19 @@
 #include "PocoJsonStringify.hpp"
 #include <Poco/JSON/Object.h>
 #include <array>
+#include <cstdint>
+#include <numeric>
 #include <string>
-#include <tuple>
+#include <string_view>
+#include <type_traits>
+#include <utility>
 
 namespace StrFormat {
+
+// Applies to actual CR/LF characters in both the format and its arguments.
+// Escape emits literal \\r/\n; already escaped text is not escaped again.
+enum class LineBreakPolicy : std::uint8_t { Remove, Escape, Keep };
+
 class argToString {
     std::string str;
 
@@ -37,10 +46,23 @@ class argToString {
         }
     }
 
-    template <class T,
-              typename = std::enable_if_t<std::is_arithmetic<T>::value>>
     // NOLINTNEXTLINE(hicpp-explicit-conversions)
-    argToString(T value) : str(std::to_string(value)) {}
+    argToString(const Poco::JSON::Array::Ptr &jsonarr) {
+        if (jsonarr.isNull()) {
+            str = "{NULL JSON}";
+        } else {
+            PocoJsonStringify stringifier;
+            stringifier.stringify(jsonarr);
+
+            str = std::move(stringifier.str);
+        }
+    }
+
+    template <class T>
+    // NOLINTNEXTLINE(hicpp-explicit-conversions)
+    argToString(T value)
+        requires std::is_arithmetic_v<T>
+        : str(std::to_string(value)) {}
 };
 
 inline auto getNumericFromString(std::string_view str) -> std::string {
@@ -57,13 +79,36 @@ inline auto getNumericFromString(std::string_view str) -> std::string {
 }
 
 template <class... Types>
-inline auto multiRegister(std::string_view format, Types &&...args)
-    -> std::string {
-    const std::array<argToString, std::tuple_size<std::tuple<Types...>>::value>
-        // NOLINTNEXTLINE(hicpp-no-array-decay)
-        argl = {std::forward<argToString>(args)...};
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+inline auto multiRegister(LineBreakPolicy lbPolicy, std::string_view format,
+                          Types &&...args) -> std::string {
+    const std::array<argToString, sizeof...(Types)> argl = {
+        argToString(std::forward<Types>(args))...};
     std::string printbuf;
-    printbuf.reserve(format.size() + argl.size() * 8);
+    printbuf.reserve(format.size() +
+                     std::accumulate(argl.begin(), argl.end(), size_t{0},
+                                     [](size_t sum, const argToString &arg) {
+                                         return sum + arg.getStr().size();
+                                     }));
+
+    const auto append = [&](std::string_view text) {
+        if (lbPolicy == LineBreakPolicy::Keep) {
+            printbuf += text;
+            return;
+        }
+        size_t start = 0;
+        for (size_t pos = 0; pos < text.size(); ++pos) {
+            if (text[pos] != '\r' && text[pos] != '\n') {
+                continue;
+            }
+            printbuf += text.substr(start, pos - start);
+            if (lbPolicy == LineBreakPolicy::Escape) {
+                printbuf += text[pos] == '\r' ? "\\r" : "\\n";
+            }
+            start = pos + 1;
+        }
+        printbuf += text.substr(start);
+    };
 
     bool ignoreNext = false;
 
@@ -97,7 +142,7 @@ inline auto multiRegister(std::string_view format, Types &&...args)
                     size_t argId = std::stoul(numbuf);
 
                     if (argId < argl.size()) {
-                        printbuf += argl[argId].getStr();
+                        append(argl[argId].getStr());
                     } else {
                         printbuf += "%";
                         printbuf += numbuf;
@@ -108,7 +153,7 @@ inline auto multiRegister(std::string_view format, Types &&...args)
 
         default:
             ignoreNext = false;
-            printbuf.insert(printbuf.end(), 1, curCh);
+            append(format.substr(i, 1));
             break;
         }
     }

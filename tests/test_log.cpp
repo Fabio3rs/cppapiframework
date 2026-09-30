@@ -159,3 +159,29 @@ TEST(TestLog, ForkAndLog) {
     EXPECT_TRUE(findLineOnStream(fsout, "Will exit fork"));
     EXPECT_TRUE(findLineOnStream(fsout, "Inside fork"));
 }
+
+TEST(TestLog, LineBreakPolicies) {
+    std::ostringstream output;
+    CLog log(logOutputInfo{"", &output});
+    EXPECT_EQ(log.getLineBreakPolicy(), StrFormat::LineBreakPolicy::Escape);
+    EXPECT_EQ(log.multiRegister("default\n%0", "arg\r\n"),
+              "default\\narg\\r\\n");
+
+    for (auto policy : {StrFormat::LineBreakPolicy::Remove,
+                        StrFormat::LineBreakPolicy::Escape,
+                        StrFormat::LineBreakPolicy::Keep}) {
+        log.setLineBreakPolicy(policy);
+        EXPECT_EQ(log.getLineBreakPolicy(), policy);
+        const std::string expected =
+            policy == StrFormat::LineBreakPolicy::Remove ? "formatarg" :
+            policy == StrFormat::LineBreakPolicy::Escape ? "format\\narg\\r\\n" :
+                                                         "format\narg\r\n";
+        EXPECT_EQ(log.multiRegister("format\n%0", "arg\r\n"), expected);
+        EXPECT_EQ(log.multiRegisterLN("source.cpp", 42, "INFO", "format\n%0", "arg\r\n"),
+                  "source.cpp:42 INFO " + expected);
+    }
+    log.FinishLog();
+    EXPECT_NE(output.str().find("default\\narg\\r\\n\n"), std::string::npos);
+    EXPECT_NE(output.str().find("source.cpp:42 INFO format\\narg\\r\\n\n"),
+              std::string::npos);
+}
